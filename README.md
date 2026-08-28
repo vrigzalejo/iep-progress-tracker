@@ -26,7 +26,7 @@ The product does **not** generate IEP goals, recommend services, or make educati
 
 - Next.js (App Router) and TypeScript
 - Tailwind CSS and accessible UI primitives
-- Auth.js credentials authentication with hashed passwords
+- Auth.js credentials authentication with hashed passwords, plus optional Microsoft, Google, or OIDC SSO
 - Prisma ORM with SQLite (swap to Postgres for production)
 - Zod validation, server-side authorization, Vitest
 
@@ -52,8 +52,8 @@ Open [http://127.0.0.1:43147](http://127.0.0.1:43147).
 Set these in `.env.local`, then restart the dev server. The UI, page titles, demo emails, and export filename all follow this config.
 
 ```bash
-NEXT_PUBLIC_APP_NAME="Spedgress"
-NEXT_PUBLIC_APP_SLUG="spedgress"
+NEXT_PUBLIC_APP_NAME="IEP Progress Tracker"
+NEXT_PUBLIC_APP_SLUG="iep-progress-tracker"
 ```
 
 Leave `NEXT_PUBLIC_APP_SLUG` unset to derive a hyphenated slug from the name. Optional: `NEXT_PUBLIC_DEMO_EMAIL_DOMAIN` and `NEXT_PUBLIC_DEMO_PASSPHRASE`.
@@ -73,6 +73,23 @@ Addresses follow `NEXT_PUBLIC_APP_SLUG`. With the default slug they are:
 
 All students (Jordan Hale, Casey Hale, Sam Rivera, Avery Chen, Riley Brooks) are fictional. Dana Hale is linked to both Jordan and Casey so the family portal can switch children.
 
+### School SSO
+
+SSO is opt-in and disabled until you set provider credentials. Demo password accounts keep working.
+
+1. Add staff (and parents) in **Team and permissions** with the same email their identity provider uses. Leave the password blank once SSO is configured.
+2. Register the callback URL `{AUTH_URL}/api/auth/callback/{provider}` with the identity provider:
+   - Microsoft Entra ID: `/api/auth/callback/microsoft-entra-id`
+   - Google: `/api/auth/callback/google`
+   - Generic OIDC (Okta, ClassLink, Auth0, and similar): `/api/auth/callback/oidc`
+3. Set the matching `AUTH_*` variables below. Use your **tenant** issuer for Microsoft (`https://login.microsoftonline.com/{tenant-id}/v2.0`), not `common`.
+4. Restrict sign-in with `AUTH_SSO_ALLOWED_DOMAINS=district.edu`.
+5. In production, set `AUTH_CREDENTIALS_ENABLED=false` after SSO works so password login is off.
+
+Unknown emails are rejected unless you explicitly enable JIT provisioning (`AUTH_SSO_JIT_PROVISION=true`). JIT creates staff with `AUTH_SSO_JIT_ROLE` (default `EDUCATOR`) in the first organization. Do not use JIT for parents; link guardian emails first.
+
+Roles stay in this app. The identity provider only proves who the person is.
+
 ## Environment variables
 
 | Variable | Required | Purpose |
@@ -86,6 +103,21 @@ All students (Jordan Hale, Casey Hale, Sam Rivera, Avery Chen, Riley Brooks) are
 | `NEXT_PUBLIC_DEMO_EMAIL_DOMAIN` | No | Domain for demo accounts. Default: `demo.{slug}.school` |
 | `NEXT_PUBLIC_DEMO_PASSPHRASE` | No | Shared demo sign-in passphrase |
 | `SENTRY_DSN` | No | Optional error monitoring. Do not send student payloads |
+| `AUTH_MICROSOFT_ENTRA_ID_ID` | SSO | Entra ID application (client) ID |
+| `AUTH_MICROSOFT_ENTRA_ID_SECRET` | SSO | Entra ID client secret |
+| `AUTH_MICROSOFT_ENTRA_ID_ISSUER` | SSO | `https://login.microsoftonline.com/{tenant-id}/v2.0` |
+| `AUTH_GOOGLE_ID` | SSO | Google OAuth client ID |
+| `AUTH_GOOGLE_SECRET` | SSO | Google OAuth client secret |
+| `AUTH_GOOGLE_HOSTED_DOMAIN` | No | Optional Google Workspace domain (`hd`) |
+| `AUTH_OIDC_ISSUER` | SSO | OIDC issuer URL for Okta, ClassLink, Auth0, and similar |
+| `AUTH_OIDC_ID` | SSO | OIDC client ID |
+| `AUTH_OIDC_SECRET` | SSO | OIDC client secret |
+| `AUTH_OIDC_NAME` | No | Button label, for example `ClassLink` |
+| `AUTH_SSO_ALLOWED_DOMAINS` | No | Comma-separated email domains allowed to use SSO |
+| `AUTH_SSO_JIT_PROVISION` | No | `true` to create unknown users on first SSO sign-in. Default: off |
+| `AUTH_SSO_JIT_ROLE` | No | Role for JIT users. Default: `EDUCATOR` |
+| `AUTH_SSO_ORGANIZATION_ID` | No | Organization to attach JIT users to. Defaults to the first org |
+| `AUTH_CREDENTIALS_ENABLED` | No | Set `false` in production after SSO is live |
 
 `.env*` files are gitignored except `.env.example`.
 
@@ -102,7 +134,7 @@ Automated tests cover authorization rules, progress-signal calculation, and inpu
 ## Deployment
 
 1. Provision Postgres (recommended) or another relational database on encrypted disks.
-2. Set `DATABASE_URL`, `AUTH_SECRET`, and `AUTH_URL`.
+2. Set `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, and SSO provider variables.
 3. Run `npx prisma migrate deploy` and **do not** seed demo students.
 4. Serve the app only over HTTPS (Vercel, Fly.io, or a reverse proxy).
 5. Store evidence uploads on encrypted object storage, not a public bucket.
@@ -113,7 +145,7 @@ Automated tests cover authorization rules, progress-signal calculation, and inpu
 ## Data model (minimum fields)
 
 - **Organization** — school, retention days, privacy notice version
-- **User** — name, email, role, password hash
+- **User** — name, email, role, optional password hash (SSO-only accounts omit it)
 - **Student** — preferred name, grade, school, case manager, IEP review dates, present levels
 - **StudentProvider** — assigned related-service staff with prescribed weekly minutes
 - **GuardianContact** — name, relationship, email, optional phone
@@ -144,7 +176,7 @@ Unauthorized record access returns “not found” to avoid leaking whether a st
 
 | Threat | Mitigation in this MVP |
 | --- | --- |
-| Account takeover | Password hashing (bcrypt), complexity rules, lockout after 8 failures, 8-hour sessions, HTTP-only cookies |
+| Account takeover | Password hashing (bcrypt), complexity rules, lockout after 8 failures, 8-hour sessions, HTTP-only cookies; SSO matches pre-provisioned emails and optional domain allowlist |
 | Privilege escalation | Server-side permission checks on every query and mutation; parents cannot mint staff roles |
 | Record enumeration | `notFound()` for unauthorized student/goal access |
 | Sensitive data in logs / telemetry | Audit entries avoid goal text and notes; error UI does not echo student content |
@@ -160,6 +192,7 @@ Residual risks: SQLite is not encrypted by itself (use disk encryption or SQLCip
 - [ ] Qualified FERPA / privacy review completed
 - [ ] Demo seed disabled; no fictional students in the production database
 - [ ] Unique `AUTH_SECRET`; demo passphrase removed
+- [ ] SSO configured (Microsoft, Google, or OIDC) with tenant issuer and domain allowlist; credentials sign-in disabled in production
 - [ ] HTTPS only; HSTS at the load balancer
 - [ ] Postgres (or equivalent) on encrypted volumes; backups encrypted
 - [ ] Evidence files in private, encrypted storage with access logging

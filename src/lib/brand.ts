@@ -1,8 +1,8 @@
 /**
  * Product branding. Change these in `.env.local` (then restart the dev server):
  *
- *   NEXT_PUBLIC_APP_NAME="Spedgress"
- *   NEXT_PUBLIC_APP_SLUG="spedgress"
+ *   NEXT_PUBLIC_APP_NAME="IEP Progress Tracker"
+ *   NEXT_PUBLIC_APP_SLUG="iep-progress-tracker"
  *
  * Leave SLUG blank to derive it from the name (lowercase, hyphenated).
  */

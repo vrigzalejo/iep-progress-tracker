@@ -12,6 +12,7 @@ import { PERMISSION_MATRIX } from "@/lib/permissions";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { formatDate } from "@/lib/utils";
 import { ROLE_LABELS, ROLES } from "@/lib/constants";
+import { isSsoConfigured } from "@/lib/sso";
 
 export const metadata = { title: "Team and permissions" };
 
@@ -23,6 +24,7 @@ export default async function TeamPage({
   const user = await requirePermission("team.manage");
   const team = await listTeam(user);
   const { saved, error } = await searchParams;
+  const ssoReady = isSsoConfigured();
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -75,6 +77,7 @@ export default async function TeamPage({
                 <p className="font-semibold">{member.name}</p>
                 <p className="text-sm text-muted">
                   {member.email} · {ROLE_LABELS[member.role as keyof typeof ROLE_LABELS]}
+                  {member.hasPassword ? "" : " · school SSO"}
                   {member.deactivatedAt ? " · deactivated" : ""}
                 </p>
                 <p className="text-xs text-muted">
@@ -139,10 +142,18 @@ export default async function TeamPage({
             </Select>
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="password">Temporary password</Label>
-            <Input id="password" name="password" type="password" required minLength={12} />
+            <Label htmlFor="password">Temporary password{ssoReady ? " (optional with SSO)" : ""}</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              required={!ssoReady}
+              minLength={ssoReady ? undefined : 12}
+            />
             <p className="mt-1 text-sm text-muted">
-              At least 12 characters with upper, lower, number, and symbol.
+              {ssoReady
+                ? "Leave blank to let this person sign in only with school SSO. Their email must match the identity provider."
+                : "At least 12 characters with upper, lower, number, and symbol."}
             </p>
           </div>
           <div>
