@@ -6,6 +6,7 @@ import { SignInForm } from "@/components/sign-in-form";
 import { Skeleton } from "@/components/ui/alert";
 import { isStaff } from "@/lib/permissions";
 import { APP_NAME } from "@/lib/brand";
+import { isCredentialsSignInEnabled, listSsoProviders } from "@/lib/sso";
 
 export const metadata = { title: "Sign in" };
 
@@ -25,7 +26,10 @@ export default async function SignInPage() {
         </div>
       </div>
       <Suspense fallback={<Skeleton className="mx-auto h-96 max-w-5xl" />}>
-        <SignInForm />
+        <SignInForm
+          ssoProviders={listSsoProviders()}
+          credentialsEnabled={isCredentialsSignInEnabled()}
+        />
       </Suspense>
     </div>
   );
