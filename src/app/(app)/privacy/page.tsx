@@ -1,0 +1,168 @@
+import {
+  archiveStudentAction,
+  deleteStudentDataAction,
+  recordConsentAction,
+  updateRetentionAction,
+} from "@/app/actions";
+import { Alert, FormError } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Input, Label, Select } from "@/components/ui/input";
+import { requireUser, getOrganization, listVisibleStudents, listAudit } from "@/lib/queries";
+import { can } from "@/lib/permissions";
+import { ConfirmSubmit } from "@/components/confirm-submit";
+
+export const metadata = { title: "Privacy and data" };
+
+export default async function PrivacyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string; error?: string }>;
+}) {
+  const user = await requireUser();
+  const org = await getOrganization(user);
+  const students = await listVisibleStudents(user);
+  const audit = can(user.role, "audit.view") ? await listAudit(user) : [];
+  const { saved, error } = await searchParams;
+
+  return (
+    <div className="mx-auto max-w-4xl space-y-6">
+      <div>
+        <h1 className="font-serif text-3xl">Privacy, consent, and data management</h1>
+        <p className="mt-2 text-muted">
+          Student records in ProgressPath are sensitive educational data. This product is designed
+          around FERPA-aligned practices. It is not a legal determination of FERPA compliance.
+        </p>
+      </div>
+
+      <Alert title="We do not use student data to train AI models" tone="success">
+        ProgressPath does not send IEP goals, progress notes, or student profiles to generative AI
+        services. There is no AI goal writer in this product.
+      </Alert>
+      {saved ? (
+        <Alert title="Privacy settings saved" tone="success">
+          Your change is recorded in the audit log.
+        </Alert>
+      ) : null}
+      <FormError error={error} />
+
+      <Card>
+        <CardTitle>Privacy notice</CardTitle>
+        <div className="mt-3 space-y-3 text-sm">
+          <p>
+            ProgressPath stores preferred name, school, grade, assigned staff, guardian contact
+            information, IEP goal text, progress scores, session notes, optional evidence files, and
+            messages needed to support instruction and family communication.
+          </p>
+          <p>
+            Access is limited by role. Sessions use HTTP-only cookies and expire after eight hours.
+            Passwords are hashed. All views and changes are written to an audit log. Data in transit
+            should be served over HTTPS. Data at rest in production should sit on encrypted disks
+            (and, when available, database encryption).
+          </p>
+          <p>Notice version: {org.noticeVersion}.</p>
+        </div>
+        {user.role === "PARENT" && students[0] ? (
+          <form action={recordConsentAction} className="mt-4">
+            <input type="hidden" name="studentId" value={students[0].id} />
+            <Button type="submit">I acknowledge this notice for my student</Button>
+          </form>
+        ) : null}
+      </Card>
+
+      {can(user.role, "privacy.manage") ? (
+        <>
+          <Card>
+            <CardTitle>Retention</CardTitle>
+            <p className="mt-2 text-sm text-muted">
+              Default is 2,555 days (about seven years). Align this with your district records
+              schedule before production use.
+            </p>
+            <form action={updateRetentionAction} className="mt-4 flex flex-wrap items-end gap-3">
+              <div>
+                <Label htmlFor="retentionDays">Keep records for (days)</Label>
+                <Input
+                  id="retentionDays"
+                  name="retentionDays"
+                  type="number"
+                  min={30}
+                  max={3650}
+                  defaultValue={org.retentionDays}
+                />
+              </div>
+              <Button type="submit">Save retention</Button>
+            </form>
+          </Card>
+          <Card>
+            <CardTitle>Export and deletion</CardTitle>
+            <p className="mt-2 text-sm text-muted">
+              Export a CSV of visible caseload progress. Deletion is permanent and requires typing
+              the student’s preferred name.
+            </p>
+            <a className="mt-3 inline-flex min-h-11 items-center font-semibold text-forest underline" href="/api/export">
+              Download CSV export
+            </a>
+            <form action={deleteStudentDataAction} className="mt-6 space-y-3 rounded-lg border border-danger/30 p-4">
+              <p className="font-semibold text-danger">Permanently delete a student record</p>
+              <Label htmlFor="studentId">Student</Label>
+              <Select id="studentId" name="studentId" required>
+                <option value="">Select…</option>
+                {students.map((student) => (
+                  <option key={student.id} value={student.id}>
+                    {student.preferredName}
+                  </option>
+                ))}
+              </Select>
+              <Label htmlFor="confirm">Type the preferred name to confirm</Label>
+              <Input id="confirm" name="confirm" required />
+              <ConfirmSubmit
+                message="This permanently deletes the student record and cannot be undone. Continue?"
+                label="Delete permanently"
+              />
+            </form>
+          </Card>
+          <Card>
+            <CardTitle>Audit history</CardTitle>
+            <ul className="mt-3 max-h-96 overflow-auto text-sm">
+              {audit.map((item) => (
+                <li key={item.id} className="border-b border-border py-2">
+                  {formatDate(item.createdAt)} · {item.user.name} · {item.action} · {item.resourceType}
+                  {item.details ? ` · ${item.details}` : ""}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </>
+      ) : can(user.role, "student.export") ? (
+        <Card>
+          <CardTitle>Export your caseload</CardTitle>
+          <a className="mt-3 inline-flex font-semibold text-forest underline" href="/api/export">
+            Download CSV
+          </a>
+        </Card>
+      ) : null}
+
+      {can(user.role, "student.archive") ? (
+        <Card>
+          <CardTitle>Archive a profile</CardTitle>
+          <p className="mt-2 text-sm text-muted">Archived profiles leave active caseloads but remain in the audit trail until deletion.</p>
+          <form action={archiveStudentAction} className="mt-4 flex flex-wrap items-end gap-3">
+            <div>
+              <Label htmlFor="archiveStudent">Student</Label>
+              <Select id="archiveStudent" name="studentId" required>
+                {students.map((student) => (
+                  <option key={student.id} value={student.id}>
+                    {student.preferredName}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <Button type="submit" variant="secondary">
+              Archive
+            </Button>
+          </form>
+        </Card>
+      ) : null}
+    </div>
+  );
+}

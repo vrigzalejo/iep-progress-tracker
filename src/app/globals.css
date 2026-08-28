@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f3efe6;
+  --surface: #fffdf8;
+  --ink: #1b241f;
+  --muted: #4d5a53;
+  --forest: #1b5c48;
+  --forest-deep: #123d31;
+  --terracotta: #8a3f1d;
+  --gold: #6d5010;
+  --sky: #1d5270;
+  --border: #d4cec2;
+  --focus: #1b5c48;
+  --danger: #8a2430;
+  --ring: #1b5c48;
+  --background: var(--paper);
+  --foreground: var(--ink);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-forest: var(--forest);
+  --color-forest-deep: var(--forest-deep);
+  --color-terracotta: var(--terracotta);
+  --color-gold: var(--gold);
+  --color-sky: var(--sky);
+  --color-border: var(--border);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-source-sans);
+  --font-serif: var(--font-source-serif);
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-source-sans), "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+
+*:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -3rem;
+  z-index: 50;
+  background: var(--forest-deep);
+  color: white;
+  padding: 0.5rem 0.85rem;
+  border-radius: 0.35rem;
+}
+
+.skip-link:focus {
+  top: 0.75rem;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+    color: black;
+  }
+  a {
+    text-decoration: none;
+    color: black;
+  }
+}
