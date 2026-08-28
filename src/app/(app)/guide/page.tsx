@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardTitle } from "@/components/ui/card";
 import { requireUser } from "@/lib/queries";
+import { APP_NAME } from "@/lib/brand";
 
 export const metadata = { title: "Setup guide" };
 
@@ -17,7 +18,7 @@ const STEPS = [
   },
   {
     title: "Add student profiles",
-    body: "Enter preferred name, grade, school, case manager, providers, and guardian contacts. Stop there. Extra identifiers do not belong in ProgressPath.",
+    body: `Enter preferred name, grade, school, case manager, providers, and guardian contacts. Stop there. Extra identifiers do not belong in ${APP_NAME}.`,
     href: "/students/new",
   },
   {
@@ -27,12 +28,12 @@ const STEPS = [
   },
   {
     title: "Log progress during sessions",
-    body: "Use the mobile-friendly progress form after each session. Attach evidence only when it helps the team.",
+    body: "Tap independent, prompted, or incorrect trials during the session. Mark absent or declined when the service was not delivered.",
     href: "/dashboard",
   },
   {
-    title: "Share a family report",
-    body: "Build a report, preview it, and print or save PDF. Families see shared goals and supportive language.",
+    title: "Write the period report and meeting packet",
+    body: "Choose an IEP progress code, add a short narrative, and print the family report or annual meeting packet.",
     href: "/reports",
   },
 ];

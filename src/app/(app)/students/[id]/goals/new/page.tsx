@@ -11,11 +11,14 @@ import {
   MEASUREMENT_LABELS,
   MEASUREMENT_TYPES,
   PERIOD_LABELS,
+  PROMPT_LEVEL_LABELS,
+  PROMPT_LEVELS,
   REPORTING_PERIODS,
   SERVICE_AREA_LABELS,
   SERVICE_AREAS,
 } from "@/lib/constants";
 import { isoDate } from "@/lib/utils";
+import { APP_NAME } from "@/lib/brand";
 
 export const metadata = { title: "Add IEP goal" };
 
@@ -39,7 +42,7 @@ export default async function NewGoalPage({
           summary families can follow.
         </p>
       </div>
-      <Alert title="ProgressPath does not write IEP goals" tone="warning">
+      <Alert title={`${APP_NAME} does not write IEP goals`} tone="warning">
         Staff enter goals from the IEP. This product does not generate goals or recommend services.
       </Alert>
       <Card>
@@ -123,6 +126,62 @@ export default async function NewGoalPage({
             <input type="checkbox" name="sharedWithGuardians" defaultChecked className="h-4 w-4" />
             Share this goal with linked parents and guardians
           </label>
+          <fieldset className="rounded-lg border border-border p-4">
+            <legend className="px-1 text-sm font-semibold">Mastery rule</legend>
+            <p className="mb-3 text-sm text-muted">
+              Match the IEP language, such as 80% across 3 consecutive sessions with no more than a
+              verbal prompt.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="consecutiveSessionsNeeded">Consecutive sessions needed</Label>
+                <Input
+                  id="consecutiveSessionsNeeded"
+                  name="consecutiveSessionsNeeded"
+                  type="number"
+                  min="1"
+                  max="10"
+                  defaultValue={3}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="maxPromptForMastery">Max prompt that still counts</Label>
+                <Select id="maxPromptForMastery" name="maxPromptForMastery" defaultValue="INDEPENDENT">
+                  {PROMPT_LEVELS.map((level) => (
+                    <option key={level} value={level}>
+                      {PROMPT_LEVEL_LABELS[level]}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+          </fieldset>
+          <div>
+            <Label htmlFor="presentLevelsSnapshot">Present levels at goal start (optional)</Label>
+            <Textarea
+              id="presentLevelsSnapshot"
+              name="presentLevelsSnapshot"
+              placeholder="What the student could do when this goal began."
+            />
+          </div>
+          <fieldset className="rounded-lg border border-border p-4">
+            <legend className="px-1 text-sm font-semibold">First short-term objective (optional)</legend>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="objectiveWording">Official objective wording</Label>
+                <Textarea id="objectiveWording" name="objectiveWording" />
+              </div>
+              <div>
+                <Label htmlFor="objectiveSummary">Plain-language summary</Label>
+                <Textarea id="objectiveSummary" name="objectiveSummary" />
+              </div>
+              <div>
+                <Label htmlFor="objectiveTarget">Objective target value</Label>
+                <Input id="objectiveTarget" name="objectiveTarget" type="number" step="0.1" />
+              </div>
+            </div>
+          </fieldset>
           <Button type="submit">Save goal</Button>
         </form>
       </Card>

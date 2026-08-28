@@ -11,6 +11,7 @@ import { requirePermission, listTeam } from "@/lib/queries";
 import { PERMISSION_MATRIX } from "@/lib/permissions";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { formatDate } from "@/lib/utils";
+import { ROLE_LABELS, ROLES } from "@/lib/constants";
 
 export const metadata = { title: "Team and permissions" };
 

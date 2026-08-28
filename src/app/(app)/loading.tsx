@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/alert";
+import { APP_NAME } from "@/lib/brand";
 
 export default function Loading() {
   return (
@@ -10,7 +11,7 @@ export default function Loading() {
         <Skeleton className="h-32" />
         <Skeleton className="h-32" />
       </div>
-      <p className="sr-only">Loading ProgressPath</p>
+      <p className="sr-only">Loading {APP_NAME}</p>
     </div>
   );
 }

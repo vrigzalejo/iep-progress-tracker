@@ -8,112 +8,140 @@ datasource db {
 }
 
 model Organization {
-  id               String   @id @default(cuid())
-  name             String
-  retentionDays    Int      @default(2555)
-  noticeVersion    String   @default("2026-08")
-  createdAt        DateTime @default(now())
-  users            User[]
-  students         Student[]
-  auditLogs        AuditLog[]
+  id                String                   @id @default(cuid())
+  name              String
+  retentionDays     Int                      @default(2555)
+  noticeVersion     String                   @default("2026-08")
+  createdAt         DateTime                 @default(now())
+  users             User[]
+  students          Student[]
+  auditLogs         AuditLog[]
+  reportingPeriods  ReportingPeriodWindow[]
 }
 
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  name             String
-  title            String?
-  role             String
-  passwordHash     String
-  organizationId   String
-  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  lastLoginAt      DateTime?
-  failedSignIns    Int       @default(0)
-  lockedUntil      DateTime?
-  createdAt        DateTime  @default(now())
-  deactivatedAt    DateTime?
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  title          String?
+  role           String
+  passwordHash   String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lastLoginAt    DateTime?
+  failedSignIns  Int       @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime  @default(now())
+  deactivatedAt  DateTime?
 
-  managedStudents  Student[]         @relation("CaseManager")
-  providerLinks    StudentProvider[]
-  guardianLinks    GuardianContact[]
-  progressEntries  ProgressEntry[]
-  messages         Message[]
-  auditLogs        AuditLog[]
-  createdGoals     IepGoal[]         @relation("GoalAuthor")
+  managedStudents   Student[]              @relation("CaseManager")
+  providerLinks     StudentProvider[]
+  guardianLinks     GuardianContact[]
+  progressEntries   ProgressEntry[]
+  messages          Message[]
+  auditLogs         AuditLog[]
+  createdGoals      IepGoal[]              @relation("GoalAuthor")
+  periodStatements  GoalPeriodStatement[]
 
   @@index([organizationId, role])
 }
 
 model Student {
-  id              String    @id @default(cuid())
-  preferredName   String
-  grade           String
-  school          String
-  caseManagerId   String
-  caseManager     User      @relation("CaseManager", fields: [caseManagerId], references: [id])
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  archivedAt      DateTime?
-  createdAt       DateTime  @default(now())
+  id                String    @id @default(cuid())
+  preferredName     String
+  grade             String
+  school            String
+  caseManagerId     String
+  caseManager       User      @relation("CaseManager", fields: [caseManagerId], references: [id])
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  archivedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  iepAnnualReviewAt DateTime?
+  iepTriennialAt    DateTime?
+  presentLevels     String?
 
-  providers       StudentProvider[]
-  guardians       GuardianContact[]
-  goals           IepGoal[]
-  messages        Message[]
-  consents        ConsentRecord[]
+  providers  StudentProvider[]
+  guardians  GuardianContact[]
+  goals      IepGoal[]
+  messages   Message[]
+  consents   ConsentRecord[]
 
   @@index([organizationId])
   @@index([caseManagerId])
 }
 
 model StudentProvider {
-  studentId    String
-  userId       String
-  serviceArea  String
-  student      Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId       String
+  userId          String
+  serviceArea     String
+  minutesPerWeek  Int     @default(0)
+  sessionsPerWeek Int     @default(0)
+  student         Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([studentId, userId])
 }
 
 model GuardianContact {
-  id            String  @id @default(cuid())
-  studentId     String
-  student       Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  name          String
-  relationship  String
-  email         String
-  phone         String?
-  userId        String?
-  user          User?   @relation(fields: [userId], references: [id])
+  id           String  @id @default(cuid())
+  studentId    String
+  student      Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  name         String
+  relationship String
+  email        String
+  phone        String?
+  userId       String?
+  user         User?   @relation(fields: [userId], references: [id])
 }
 
 model IepGoal {
-  id                   String    @id @default(cuid())
-  studentId            String
-  student              Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  officialWording      String
-  plainLanguageSummary String
-  baseline             String
-  measurableTarget     String
-  targetValue          Float
-  unit                 String
-  reportingPeriod      String
-  nextReportDue        DateTime
-  serviceArea          String
-  measurementMethod    String
-  status               String
-  startDate            DateTime
-  endDate              DateTime?
-  sharedWithGuardians  Boolean   @default(true)
-  createdById          String
-  createdBy            User      @relation("GoalAuthor", fields: [createdById], references: [id])
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-  entries              ProgressEntry[]
+  id                         String    @id @default(cuid())
+  studentId                  String
+  student                    Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  officialWording            String
+  plainLanguageSummary       String
+  baseline                   String
+  measurableTarget           String
+  targetValue                Float
+  unit                       String
+  reportingPeriod            String
+  nextReportDue              DateTime
+  serviceArea                String
+  measurementMethod          String
+  status                     String
+  startDate                  DateTime
+  endDate                    DateTime?
+  sharedWithGuardians        Boolean   @default(true)
+  consecutiveSessionsNeeded  Int       @default(1)
+  maxPromptForMastery        String    @default("INDEPENDENT")
+  presentLevelsSnapshot      String?
+  createdById                String
+  createdBy                  User      @relation("GoalAuthor", fields: [createdById], references: [id])
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  entries                    ProgressEntry[]
+  objectives                 GoalObjective[]
+  periodStatements           GoalPeriodStatement[]
 
   @@index([studentId])
   @@index([nextReportDue])
+}
+
+model GoalObjective {
+  id                   String   @id @default(cuid())
+  goalId               String
+  goal                 IepGoal  @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  officialWording      String
+  plainLanguageSummary String
+  targetValue          Float
+  unit                 String
+  status               String   @default("ACTIVE")
+  sortOrder            Int      @default(0)
+  createdAt            DateTime @default(now())
+  entries              ProgressEntry[]
+
+  @@index([goalId])
 }
 
 model ProgressEntry {
@@ -129,8 +157,55 @@ model ProgressEntry {
   authorId         String
   author           User     @relation(fields: [authorId], references: [id])
   createdAt        DateTime @default(now())
+  sessionOutcome   String   @default("PRESENT")
+  setting          String   @default("CLASSROOM")
+  conditionTag     String?
+  accommodations   String?
+  minutesDelivered Int?
+  groupSize        Int?
+  homeCarryover    String?
+  objectiveId      String?
+  objective        GoalObjective? @relation(fields: [objectiveId], references: [id], onDelete: SetNull)
+  trials           ProgressTrial[]
 
   @@index([goalId, recordedAt])
+}
+
+model ProgressTrial {
+  id          String        @id @default(cuid())
+  entryId     String
+  entry       ProgressEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  result      String
+  promptLevel String        @default("INDEPENDENT")
+  sortOrder   Int           @default(0)
+}
+
+model ReportingPeriodWindow {
+  id             String                 @id @default(cuid())
+  organizationId String
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  label          String
+  startsAt       DateTime
+  endsAt         DateTime
+  statements     GoalPeriodStatement[]
+
+  @@index([organizationId, startsAt])
+}
+
+model GoalPeriodStatement {
+  id           String                 @id @default(cuid())
+  goalId       String
+  goal         IepGoal                @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  periodId     String
+  period       ReportingPeriodWindow  @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  progressCode String
+  narrative    String
+  authorId     String
+  author       User                   @relation(fields: [authorId], references: [id])
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@unique([goalId, periodId])
 }
 
 model Message {
@@ -141,6 +216,7 @@ model Message {
   fromUser   User     @relation(fields: [fromUserId], references: [id])
   body       String
   createdAt  DateTime @default(now())
+  visibility String   @default("FAMILY")
 
   @@index([studentId, createdAt])
 }

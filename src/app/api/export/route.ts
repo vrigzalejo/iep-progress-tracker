@@ -3,6 +3,7 @@ import { requireStaff, assertStudentAccess } from "@/lib/queries";
 import { prisma } from "@/lib/db";
 import { writeAudit } from "@/lib/audit";
 import { can } from "@/lib/permissions";
+import { APP_SLUG } from "@/lib/brand";
 
 export async function GET() {
   const user = await requireStaff();
@@ -70,7 +71,7 @@ export async function GET() {
   return new NextResponse([header.join(","), ...rows].join("\n"), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": "attachment; filename=progresspath-export.csv",
+      "Content-Disposition": `attachment; filename=${APP_SLUG}-export.csv`,
       "Cache-Control": "no-store",
     },
   });
