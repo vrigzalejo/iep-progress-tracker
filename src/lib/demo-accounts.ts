@@ -1,22 +1,24 @@
+import { demoEmail } from "@/lib/brand";
+
 export const DEMO_ACCOUNTS = [
   {
     role: "Administrator",
-    email: "chris.okonkwo@demo.progresspath.school",
+    email: demoEmail("chris.okonkwo"),
     name: "Chris Okonkwo",
   },
   {
     role: "Educator",
-    email: "maya.ellis@demo.progresspath.school",
+    email: demoEmail("maya.ellis"),
     name: "Maya Ellis",
   },
   {
     role: "Provider",
-    email: "priya.shah@demo.progresspath.school",
+    email: demoEmail("priya.shah"),
     name: "Priya Shah",
   },
   {
     role: "Parent / guardian",
-    email: "dana.hale@demo.progresspath.school",
+    email: demoEmail("dana.hale"),
     name: "Dana Hale",
   },
 ] as const;

@@ -11,6 +11,8 @@ import { Input, Label, Select } from "@/components/ui/input";
 import { requireUser, getOrganization, listVisibleStudents, listAudit } from "@/lib/queries";
 import { can } from "@/lib/permissions";
 import { ConfirmSubmit } from "@/components/confirm-submit";
+import { formatDate } from "@/lib/utils";
+import { APP_NAME } from "@/lib/brand";
 
 export const metadata = { title: "Privacy and data" };
 
@@ -30,13 +32,13 @@ export default async function PrivacyPage({
       <div>
         <h1 className="font-serif text-3xl">Privacy, consent, and data management</h1>
         <p className="mt-2 text-muted">
-          Student records in ProgressPath are sensitive educational data. This product is designed
+          Student records in {APP_NAME} are sensitive educational data. This product is designed
           around FERPA-aligned practices. It is not a legal determination of FERPA compliance.
         </p>
       </div>
 
       <Alert title="We do not use student data to train AI models" tone="success">
-        ProgressPath does not send IEP goals, progress notes, or student profiles to generative AI
+        {APP_NAME} does not send IEP goals, progress notes, or student profiles to generative AI
         services. There is no AI goal writer in this product.
       </Alert>
       {saved ? (
@@ -50,7 +52,7 @@ export default async function PrivacyPage({
         <CardTitle>Privacy notice</CardTitle>
         <div className="mt-3 space-y-3 text-sm">
           <p>
-            ProgressPath stores preferred name, school, grade, assigned staff, guardian contact
+            {APP_NAME} stores preferred name, school, grade, assigned staff, guardian contact
             information, IEP goal text, progress scores, session notes, optional evidence files, and
             messages needed to support instruction and family communication.
           </p>

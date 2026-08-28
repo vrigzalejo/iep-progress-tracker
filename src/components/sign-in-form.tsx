@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FieldError, Input, Label } from "@/components/ui/input";
 import { DEMO_ACCOUNTS } from "@/lib/demo-accounts";
-import { DEMO_PASSPHRASE } from "@/lib/constants";
+import { APP_NAME, DEMO_PASSPHRASE } from "@/lib/brand";
 
 export function SignInForm() {
   const router = useRouter();
@@ -38,7 +38,7 @@ export function SignInForm() {
   return (
     <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1.1fr_0.9fr]">
       <Card>
-        <h1 className="font-serif text-3xl">Sign in to ProgressPath</h1>
+        <h1 className="font-serif text-3xl">Sign in to {APP_NAME}</h1>
         <p className="mt-2 text-muted">
           Use your school-issued or family account. Sessions expire after eight hours.
         </p>
@@ -108,7 +108,7 @@ export function SignInForm() {
           </ul>
         </Card>
         <p className="text-sm text-muted">
-          ProgressPath is designed around FERPA-aligned practices: least privilege, audit logs, and
+          {APP_NAME} is designed around FERPA-aligned practices: least privilege, audit logs, and
           data minimization. This demonstration is not a legal compliance certification.
         </p>
       </div>

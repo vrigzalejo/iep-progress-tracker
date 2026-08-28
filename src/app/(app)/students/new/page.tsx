@@ -1,7 +1,7 @@
 import { createStudentAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { Input, Label, Select } from "@/components/ui/input";
+import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { requirePermission, listTeam } from "@/lib/queries";
 
 export const metadata = { title: "Add student" };
@@ -45,6 +45,24 @@ export default async function NewStudentPage() {
                 </option>
               ))}
             </Select>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="iepAnnualReviewAt">Annual IEP review (optional)</Label>
+              <Input id="iepAnnualReviewAt" name="iepAnnualReviewAt" type="date" />
+            </div>
+            <div>
+              <Label htmlFor="iepTriennialAt">Triennial evaluation (optional)</Label>
+              <Input id="iepTriennialAt" name="iepTriennialAt" type="date" />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="presentLevels">Present levels snapshot (optional)</Label>
+            <Textarea
+              id="presentLevels"
+              name="presentLevels"
+              placeholder="Only the present levels needed to understand current goals."
+            />
           </div>
           <fieldset>
             <legend className="mb-2 text-sm font-semibold">Service providers</legend>

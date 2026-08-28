@@ -5,6 +5,7 @@ import { Logo } from "@/components/logo";
 import { SignInForm } from "@/components/sign-in-form";
 import { Skeleton } from "@/components/ui/alert";
 import { isStaff } from "@/lib/permissions";
+import { APP_NAME } from "@/lib/brand";
 
 export const metadata = { title: "Sign in" };
 
@@ -19,7 +20,7 @@ export default async function SignInPage() {
       <div className="mx-auto mb-8 flex max-w-5xl items-center gap-3">
         <Logo />
         <div>
-          <p className="font-serif text-2xl">ProgressPath</p>
+          <p className="font-serif text-2xl">{APP_NAME}</p>
           <p className="text-sm text-muted">IEP progress that families and teams can follow.</p>
         </div>
       </div>

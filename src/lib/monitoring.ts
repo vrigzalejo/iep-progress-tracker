@@ -1,6 +1,8 @@
+import { APP_SLUG } from "@/lib/brand";
+
 export function captureError(error: unknown, context?: Record<string, unknown>) {
   const message = error instanceof Error ? error.message : "Unknown error";
-  console.error("[ProgressPath]", message, context ?? {});
+  console.error(`[${APP_SLUG}]`, message, context ?? {});
   // Production: set SENTRY_DSN and initialize @sentry/nextjs in instrumentation.ts.
   // Student payloads must never be sent to third-party telemetry without a DPA.
 }

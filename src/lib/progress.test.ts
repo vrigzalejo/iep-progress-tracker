@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeDataSignal, trendSlope } from "./progress";
+import { computeDataSignal, scoreFromTrials, trendSlope } from "./progress";
 
 const day = (offset: number) => {
   const date = new Date("2026-08-28T12:00:00Z");
@@ -8,7 +8,7 @@ const day = (offset: number) => {
 };
 
 describe("computeDataSignal", () => {
-  it("returns needs data when there are no entries", () => {
+  it("returns needs data when there are no present sessions", () => {
     expect(
       computeDataSignal(
         {
@@ -16,21 +16,23 @@ describe("computeDataSignal", () => {
           startDate: day(-30),
           nextReportDue: day(10),
           status: "ACTIVE",
-          entries: [],
+          consecutiveSessionsNeeded: 1,
+          entries: [{ recordedAt: day(-2), score: 90, sessionOutcome: "ABSENT" }],
         },
         day(0),
       ),
     ).toBe("NEEDS_DATA");
   });
 
-  it("returns goal met when the latest score reaches the target", () => {
+  it("does not mark goal met from a single probe when consecutive sessions are required", () => {
     expect(
       computeDataSignal(
         {
           targetValue: 80,
           startDate: day(-30),
-          nextReportDue: day(10),
+          nextReportDue: day(20),
           status: "ACTIVE",
+          consecutiveSessionsNeeded: 3,
           entries: [
             { recordedAt: day(-14), score: 60 },
             { recordedAt: day(-2), score: 82 },
@@ -38,10 +40,31 @@ describe("computeDataSignal", () => {
         },
         day(0),
       ),
+    ).toBe("ON_TRACK");
+  });
+
+  it("returns goal met when consecutive present sessions reach the target", () => {
+    expect(
+      computeDataSignal(
+        {
+          targetValue: 80,
+          startDate: day(-30),
+          nextReportDue: day(10),
+          status: "ACTIVE",
+          consecutiveSessionsNeeded: 3,
+          entries: [
+            { recordedAt: day(-10), score: 82 },
+            { recordedAt: day(-6), score: 80, sessionOutcome: "ABSENT" },
+            { recordedAt: day(-5), score: 84 },
+            { recordedAt: day(-2), score: 86 },
+          ],
+        },
+        day(0),
+      ),
     ).toBe("GOAL_MET");
   });
 
-  it("returns needs data when the latest entry is stale", () => {
+  it("returns needs data when the latest present entry is stale", () => {
     expect(
       computeDataSignal(
         {
@@ -82,6 +105,7 @@ describe("computeDataSignal", () => {
           startDate: day(-30),
           nextReportDue: day(20),
           status: "ACTIVE",
+          consecutiveSessionsNeeded: 3,
           entries: [
             { recordedAt: day(-12), score: 70 },
             { recordedAt: day(-3), score: 78 },
@@ -90,6 +114,35 @@ describe("computeDataSignal", () => {
         day(0),
       ),
     ).toBe("ON_TRACK");
+  });
+});
+
+describe("scoreFromTrials", () => {
+  it("computes percent independent when only independent trials count", () => {
+    expect(
+      scoreFromTrials(
+        [
+          { result: "INDEPENDENT", promptLevel: "INDEPENDENT" },
+          { result: "INDEPENDENT", promptLevel: "INDEPENDENT" },
+          { result: "PROMPTED", promptLevel: "VERBAL" },
+          { result: "INCORRECT", promptLevel: "INDEPENDENT" },
+        ],
+        "INDEPENDENT",
+      ),
+    ).toBe(50);
+  });
+
+  it("counts allowed prompts as success", () => {
+    expect(
+      scoreFromTrials(
+        [
+          { result: "INDEPENDENT", promptLevel: "INDEPENDENT" },
+          { result: "PROMPTED", promptLevel: "GESTURE" },
+          { result: "PROMPTED", promptLevel: "VERBAL" },
+        ],
+        "GESTURE",
+      ),
+    ).toBeCloseTo(66.7);
   });
 });
 

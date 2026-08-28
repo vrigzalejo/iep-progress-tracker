@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarClock, CircleDashed, Users } from "lucide-react";
+import { CalendarClock, CircleDashed, ClipboardCheck, Timer, Users } from "lucide-react";
 import { StatusIndicator } from "@/components/status-indicator";
 import { Alert, EmptyState } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ export const metadata = { title: "Dashboard" };
 export default async function DashboardPage() {
   const user = await requireStaff();
   const data = await getDashboardData(user);
+  const minutesGaps = data.serviceMinutes.filter((row) => row.gap > 0);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -22,8 +23,8 @@ export default async function DashboardPage() {
           <p className="text-sm font-semibold uppercase tracking-wide text-forest">Educator workspace</p>
           <h1 className="font-serif text-3xl">Good to see you, {user.name.split(" ")[0]}</h1>
           <p className="mt-1 max-w-2xl text-muted">
-            This dashboard highlights reporting dates, goals waiting for a recent note, and students
-            whose latest scores need a closer look. It does not make IEP decisions.
+            This dashboard highlights reporting dates, IEP reviews, uncovered service minutes, and
+            goals waiting for a present-session note. It does not make IEP decisions.
           </p>
         </div>
         <Button asChild>
@@ -31,7 +32,7 @@ export default async function DashboardPage() {
         </Button>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <div className="flex items-center gap-2 text-forest">
             <CalendarClock className="h-5 w-5" aria-hidden="true" />
@@ -46,17 +47,23 @@ export default async function DashboardPage() {
             <CardTitle className="text-lg">Needs recent data</CardTitle>
           </div>
           <p className="mt-2 font-serif text-4xl">{data.needingData.length}</p>
-          <CardDescription>Goals without a fresh progress entry.</CardDescription>
+          <CardDescription>Goals without a fresh present-session entry.</CardDescription>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 text-sky">
+            <ClipboardCheck className="h-5 w-5" aria-hidden="true" />
+            <CardTitle className="text-lg">IEP reviews</CardTitle>
+          </div>
+          <p className="mt-2 font-serif text-4xl">{data.iepReviews.length}</p>
+          <CardDescription>Annual reviews due in the next 30 days.</CardDescription>
         </Card>
         <Card>
           <div className="flex items-center gap-2 text-terracotta">
-            <Users className="h-5 w-5" aria-hidden="true" />
-            <CardTitle className="text-lg">Students to review</CardTitle>
+            <Timer className="h-5 w-5" aria-hidden="true" />
+            <CardTitle className="text-lg">Minutes gap</CardTitle>
           </div>
-          <p className="mt-2 font-serif text-4xl">
-            {new Set(data.needingAttention.map((goal) => goal.studentId)).size}
-          </p>
-          <CardDescription>Students with a goal marked needs attention or needs data.</CardDescription>
+          <p className="mt-2 font-serif text-4xl">{minutesGaps.length}</p>
+          <CardDescription>Services below this week’s prescribed minutes.</CardDescription>
         </Card>
       </div>
 
@@ -108,8 +115,60 @@ export default async function DashboardPage() {
                     <StatusIndicator signal={goal.signal} />
                   </div>
                   <Button asChild variant="secondary" size="sm" className="mt-3">
-                    <Link href={`/goals/${goal.id}/progress/new`}>Add progress</Link>
+                    <Link href={`/goals/${goal.id}/progress/new`}>Log a session</Link>
                   </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardTitle>IEP meeting dates</CardTitle>
+          {data.iepReviews.length === 0 ? (
+            <p className="mt-3 text-sm text-muted">No annual reviews fall in the next 30 days.</p>
+          ) : (
+            <ul className="mt-4 divide-y divide-border">
+              {data.iepReviews.map((student) => (
+                <li key={student.id} className="flex items-center justify-between gap-3 py-3">
+                  <div>
+                    <Link href={`/students/${student.id}`} className="font-semibold hover:underline">
+                      {student.preferredName}
+                    </Link>
+                    <p className="text-sm text-muted">Annual review {formatDate(student.iepAnnualReviewAt)}</p>
+                  </div>
+                  <Button asChild variant="secondary" size="sm">
+                    <Link href={`/reports/${student.id}/meeting`}>Packet</Link>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-forest" aria-hidden="true" />
+            <CardTitle>Service minutes this week</CardTitle>
+          </div>
+          {data.serviceMinutes.length === 0 ? (
+            <p className="mt-3 text-sm text-muted">No prescribed weekly minutes are on file yet.</p>
+          ) : (
+            <ul className="mt-4 divide-y divide-border text-sm">
+              {data.serviceMinutes.map((row) => (
+                <li key={`${row.studentId}-${row.serviceArea}`} className="flex justify-between gap-3 py-2">
+                  <div>
+                    <Link href={`/students/${row.studentId}`} className="font-semibold hover:underline">
+                      {row.studentName}
+                    </Link>
+                    <p className="text-muted">
+                      {SERVICE_AREA_LABELS[row.serviceArea as ServiceArea] ?? row.serviceArea} · {row.providerName}
+                    </p>
+                  </div>
+                  <Badge tone={row.gap > 0 ? "terracotta" : "forest"}>
+                    {row.delivered}/{row.prescribed} min
+                  </Badge>
                 </li>
               ))}
             </ul>
@@ -137,8 +196,8 @@ export default async function DashboardPage() {
       </Card>
 
       <Alert title="How to read these indicators" tone="info">
-        On track, needs attention, and goal met describe recent scores against the written target.
-        They are not grades, diagnoses, or automatic IEP amendments.
+        On track, needs attention, and goal met describe recent present-session scores against the
+        written mastery rule. They are not grades, diagnoses, or automatic IEP amendments.
       </Alert>
     </div>
   );

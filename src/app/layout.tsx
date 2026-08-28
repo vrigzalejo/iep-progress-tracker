@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Source_Sans_3, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
+import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 
 const sourceSans = Source_Sans_3({
   variable: "--font-source-sans",
@@ -16,11 +17,10 @@ const sourceSerif = Source_Serif_4({
 
 export const metadata: Metadata = {
   title: {
-    default: "ProgressPath",
-    template: "%s · ProgressPath",
+    default: APP_NAME,
+    template: `%s · ${APP_NAME}`,
   },
-  description:
-    "ProgressPath helps special education teams track IEP goals and share clear, parent-friendly progress.",
+  description: APP_TAGLINE,
   robots: { index: false, follow: false },
 };
 

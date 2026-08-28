@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { seedDemoData } from "@/lib/seed";
 import { can, canAccessStudent, isStaff, type Permission } from "@/lib/permissions";
 import type { Role } from "@/lib/constants";
-import { computeDataSignal } from "@/lib/progress";
+import { computeDataSignal, deliveredMinutesInRange } from "@/lib/progress";
 import { writeAudit } from "@/lib/audit";
 
 export type SessionUser = {
@@ -13,6 +13,26 @@ export type SessionUser = {
   email: string;
   role: Role;
   organizationId: string;
+};
+
+const goalDetailInclude = {
+  entries: {
+    include: {
+      author: { select: { id: true, name: true, role: true } },
+      trials: { orderBy: { sortOrder: "asc" as const } },
+      objective: { select: { id: true, plainLanguageSummary: true } },
+    },
+    orderBy: { recordedAt: "asc" as const },
+  },
+  objectives: { orderBy: { sortOrder: "asc" as const } },
+  periodStatements: {
+    include: {
+      period: true,
+      author: { select: { name: true } },
+    },
+    orderBy: { createdAt: "desc" as const },
+  },
+  createdBy: { select: { id: true, name: true } },
 };
 
 export async function requireUser(): Promise<SessionUser> {
@@ -104,7 +124,12 @@ export async function listVisibleStudents(user: SessionUser, query?: string) {
       caseManager: { select: { id: true, name: true } },
       providers: { include: { user: { select: { id: true, name: true, title: true } } } },
       guardians: true,
-      goals: { include: { entries: { orderBy: { recordedAt: "asc" } } } },
+      goals: {
+        include: {
+          entries: { orderBy: { recordedAt: "asc" } },
+          periodStatements: { include: { period: true } },
+        },
+      },
     },
     orderBy: { preferredName: "asc" },
   });
@@ -121,13 +146,11 @@ export async function getStudentDetail(user: SessionUser, studentId: string) {
       },
       guardians: true,
       goals: {
-        include: {
-          entries: { include: { author: { select: { id: true, name: true } } }, orderBy: { recordedAt: "asc" } },
-          createdBy: { select: { name: true } },
-        },
+        include: goalDetailInclude,
         orderBy: { createdAt: "asc" },
       },
       messages: {
+        where: user.role === "PARENT" ? { visibility: "FAMILY" } : {},
         include: { fromUser: { select: { id: true, name: true, role: true } } },
         orderBy: { createdAt: "asc" },
       },
@@ -170,11 +193,7 @@ export async function getGoalDetail(user: SessionUser, goalId: string) {
           caseManager: { select: { id: true, name: true } },
         },
       },
-      entries: {
-        include: { author: { select: { id: true, name: true, role: true } } },
-        orderBy: { recordedAt: "asc" },
-      },
-      createdBy: { select: { id: true, name: true } },
+      ...goalDetailInclude,
     },
   });
   if (!goal) notFound();
@@ -206,6 +225,49 @@ export async function getGoalDetail(user: SessionUser, goalId: string) {
   return { ...goal, signal: computeDataSignal(goal) };
 }
 
+export async function listReportingPeriods(user: SessionUser) {
+  return prisma.reportingPeriodWindow.findMany({
+    where: { organizationId: user.organizationId },
+    orderBy: { startsAt: "desc" },
+  });
+}
+
+export function currentReportingPeriod<T extends { startsAt: Date; endsAt: Date }>(
+  periods: T[],
+  now = new Date(),
+) {
+  return (
+    periods.find((period) => period.startsAt <= now && period.endsAt >= now) ?? periods[0] ?? null
+  );
+}
+
+export function summarizeServiceMinutes(
+  students: Awaited<ReturnType<typeof listVisibleStudents>>,
+  now = new Date(),
+) {
+  const weekStart = new Date(now.getTime() - 7 * 86_400_000);
+  return students.flatMap((student) =>
+    student.providers
+      .filter((link) => link.minutesPerWeek > 0)
+      .map((link) => {
+        const entries = student.goals
+          .filter((goal) => goal.serviceArea === link.serviceArea)
+          .flatMap((goal) => goal.entries);
+        const delivered = deliveredMinutesInRange(entries, weekStart, now);
+        return {
+          studentId: student.id,
+          studentName: student.preferredName,
+          serviceArea: link.serviceArea,
+          providerName: link.user.name,
+          prescribed: link.minutesPerWeek,
+          sessionsPerWeek: link.sessionsPerWeek,
+          delivered,
+          gap: link.minutesPerWeek - delivered,
+        };
+      }),
+  );
+}
+
 export async function getDashboardData(user: SessionUser) {
   const students = await listVisibleStudents(user);
   const goals = students.flatMap((student) =>
@@ -219,6 +281,7 @@ export async function getDashboardData(user: SessionUser) {
 
   const now = new Date();
   const inTwoWeeks = new Date(now.getTime() + 14 * 86_400_000);
+  const inThirtyDays = new Date(now.getTime() + 30 * 86_400_000);
 
   const deadlines = goals
     .filter((goal) => goal.status === "ACTIVE" && goal.nextReportDue <= inTwoWeeks)
@@ -229,6 +292,18 @@ export async function getDashboardData(user: SessionUser) {
     (goal) => goal.signal === "NEEDS_ATTENTION" || goal.signal === "NEEDS_DATA",
   );
 
+  const iepReviews = students
+    .filter((student) => student.iepAnnualReviewAt && student.iepAnnualReviewAt <= inThirtyDays)
+    .map((student) => ({
+      id: student.id,
+      preferredName: student.preferredName,
+      iepAnnualReviewAt: student.iepAnnualReviewAt as Date,
+      iepTriennialAt: student.iepTriennialAt,
+    }))
+    .sort((a, b) => a.iepAnnualReviewAt.getTime() - b.iepAnnualReviewAt.getTime());
+
+  const serviceMinutes = summarizeServiceMinutes(students, now);
+
   const recentActivity = isStaff(user.role)
     ? await prisma.auditLog.findMany({
         where: { organizationId: user.organizationId },
@@ -238,7 +313,16 @@ export async function getDashboardData(user: SessionUser) {
       })
     : [];
 
-  return { students, goals, deadlines, needingData, needingAttention, recentActivity };
+  return {
+    students,
+    goals,
+    deadlines,
+    needingData,
+    needingAttention,
+    iepReviews,
+    serviceMinutes,
+    recentActivity,
+  };
 }
 
 export async function listTeam(user: SessionUser) {

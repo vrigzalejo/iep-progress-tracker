@@ -22,6 +22,7 @@ import { signOutAction } from "@/app/actions";
 import { can, isStaff, type Permission } from "@/lib/permissions";
 import type { Role } from "@/lib/constants";
 import { ROLE_LABELS } from "@/lib/constants";
+import { APP_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 const LINKS: {
@@ -78,7 +79,7 @@ export function AppShell({
           <div className="flex items-center justify-between px-4 py-5">
             <Link href={isStaff(user.role) ? "/dashboard" : "/parent"} className="flex items-center gap-2">
               <Logo className="h-9 w-9" />
-              <span className="font-serif text-xl">ProgressPath</span>
+              <span className="font-serif text-xl">{APP_NAME}</span>
             </Link>
             <button className="lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu">
               <X />
@@ -138,7 +139,7 @@ export function AppShell({
                 />
               </form>
             ) : (
-              <p className="text-sm text-muted">Family portal — records for your student only</p>
+              <p className="text-sm text-muted">Family portal — records for your linked students only</p>
             )}
           </header>
           <main id="main" className="flex-1 px-4 py-6 sm:px-8">
