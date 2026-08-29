@@ -1,0 +1,28 @@
+name: Release
+
+description: Cut a production release from development to main.
+title: "Release "
+labels: ["release"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "0.3.0"
+    validations:
+      required: true
+  - type: textarea
+    id: issues
+    attributes:
+      label: Issues in this release
+      description: Issue numbers going to production.
+      value: |
+        - #
+    validations:
+      required: true
+  - type: textarea
+    id: test
+    attributes:
+      label: Production test plan
+    validations:
+      required: true

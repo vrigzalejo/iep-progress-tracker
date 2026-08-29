@@ -99,8 +99,12 @@ Do not open feature PRs directly to `main`.
 | --- | --- |
 | Anytime | File an issue the moment you notice work |
 | Work session | Pick one issue, ship it to `development` |
+| Every PR | GitHub Actions runs tests, lint, and a Docker image build |
+| Merge to `main` | GitHub Actions also pushes `ghcr.io/vrigzalejo/iep-progress-tracker` |
 | When `development` is stable | One release PR to `main` |
 | After release | Close the release issue |
+
+Cluster apply (`kubectl apply -k deploy/k8s`) stays manual until the school provides registry pull secrets and cluster credentials. Point the Deployment image at the GHCR tag from the main pipeline.
 
 ## Example
 

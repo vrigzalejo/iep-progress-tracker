@@ -136,7 +136,7 @@ npm run lint
 npm run build
 ```
 
-Automated tests cover authorization rules, progress-signal calculation, and input validation.
+Automated tests cover authorization rules, progress-signal calculation, and input validation. Pull requests to `development` and `main` run these checks and a Docker image build. Merges to `main` publish `ghcr.io/vrigzalejo/iep-progress-tracker`.
 
 ## Deployment
 
@@ -182,6 +182,7 @@ Manifests are in `deploy/k8s` (namespace, config, secret, PVCs, Postgres Statefu
 docker build -t iep-progress-tracker:0.2.0 .
 # Kind: kind load docker-image iep-progress-tracker:0.2.0
 # Minikube: minikube image load iep-progress-tracker:0.2.0
+# Production: use ghcr.io/vrigzalejo/iep-progress-tracker:latest (published on merge to main)
 
 # Edit deploy/k8s/secret.yaml (AUTH_SECRET, POSTGRES_PASSWORD)
 # Edit deploy/k8s/configmap.yaml (POSTGRES_USER, POSTGRES_DB, AUTH_URL) and the Ingress host
