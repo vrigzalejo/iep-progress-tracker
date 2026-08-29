@@ -27,7 +27,7 @@ The product does **not** generate IEP goals, recommend services, or make educati
 - Next.js (App Router) and TypeScript
 - Tailwind CSS and accessible UI primitives
 - Auth.js credentials authentication with hashed passwords, plus optional Microsoft, Google, or OIDC SSO
-- Prisma ORM with Postgres
+- Prisma ORM with Postgres (local Docker, or hosted Supabase / Neon)
 - Zod validation, server-side authorization, Vitest
 
 ## Local setup
@@ -98,10 +98,17 @@ Roles stay in this app. The identity provider only proves who the person is.
 | --- | --- | --- |
 | `POSTGRES_USER` | No | Database user. Default: `iep` |
 | `POSTGRES_PASSWORD` | No | Database password. Default: `iep` (change this) |
-| `POSTGRES_DB` | No | Database name. Default: `iep` |
+| `POSTGRES_DB` | No | Database name. Default: `iep`. Vercel also sets `POSTGRES_DATABASE` |
 | `POSTGRES_HOST` | No | Hostname. Default: `127.0.0.1` (Compose app uses `db`) |
 | `POSTGRES_PORT` | No | Port. Default: `5432` |
-| `DATABASE_URL` | No | Full Postgres URL. When set, it overrides the `POSTGRES_*` variables. Use this for RDS, Cloud SQL, or Azure Database |
+| `DATABASE_URL` | No | Full Postgres URL. When set, it overrides the `POSTGRES_*` variables. Use this for RDS, Cloud SQL, Azure Database, Neon, or the Supabase pooler |
+| `POSTGRES_URL` | No | Vercel/Neon/Supabase pooled URL. Used when `DATABASE_URL` is unset |
+| `POSTGRES_PRISMA_URL` | No | Vercel pooled URL (`pgbouncer=true`). Preferred over `POSTGRES_URL` at runtime |
+| `POSTGRES_URL_NON_POOLING` / `DIRECT_URL` | No | Direct Postgres URL for `prisma migrate deploy` (required for the Supabase pooler) |
+| `SUPABASE_URL` | Supabase | Project URL (`https://PROJECT.supabase.co`). `NEXT_PUBLIC_SUPABASE_URL` is also accepted |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase | Server-only key for private evidence Storage. Never expose as `NEXT_PUBLIC_*` |
+| `SUPABASE_EVIDENCE_BUCKET` | No | Private Storage bucket for evidence. Default: `iep-evidence` |
+| `BLOB_READ_WRITE_TOKEN` | Vercel | Private Blob store token if you are not using Supabase Storage |
 | `AUTH_SECRET` | Yes | Auth.js session signing secret (`openssl rand -base64 32`) |
 | `AUTH_URL` | Production | Public origin, for example `https://iep-progress-tracker.example.edu` |
 | `NEXT_PUBLIC_DEMO_MODE` | No | Keep `true` until you remove seed data |
@@ -144,10 +151,32 @@ Automated tests cover authorization rules, progress-signal calculation, and inpu
 2. Set `POSTGRES_*` (or `DATABASE_URL`), `AUTH_SECRET`, `AUTH_URL`, and SSO provider variables.
 3. Run `npx prisma migrate deploy` (the container does this on start) and **do not** seed demo students.
 4. Serve the app only over HTTPS (Vercel, Fly.io, or a reverse proxy).
-5. Store evidence uploads on encrypted object storage, not a public bucket.
+5. Store evidence uploads on encrypted object storage, not a public bucket. On Vercel, use **Supabase Storage** (private bucket) or a private Blob store.
 6. Optional: add `@sentry/nextjs` using `SENTRY_DSN`, with PII scrubbing enabled.
 
-`Dockerfile` is included for container deploys. For Vercel, connect the repo and set the environment variables above.
+`Dockerfile` is included for container deploys.
+
+### Vercel and Supabase
+
+The hosted setup this repo is aimed at: **Next.js on Vercel**, **Postgres and private evidence files on Supabase**. Create the Supabase project in a **US region**. School SSO stays in this app (Auth.js); do not turn on Supabase Auth for staff or parents.
+
+Connect the GitHub repo (`vrigzalejo/iep-progress-tracker`) in Vercel. Set the **production branch to `main`**. Preview deploys should use a separate Supabase project or branch so `prisma migrate deploy` during build does not change production.
+
+1. In Supabase, copy the **transaction pooler** URI into `DATABASE_URL` (port `6543`, add `pgbouncer=true`) and the **direct / session** URI into `DIRECT_URL` (port `5432`).
+2. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Keep the service role key on the server only. The app creates a private `iep-evidence` bucket on first upload if it is missing.
+3. In Vercel, set:
+   - `AUTH_SECRET` (long random string)
+   - `AUTH_URL` (the deployment origin, for example `https://your-project.vercel.app`)
+   - `DATABASE_URL`, `DIRECT_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+   - `NEXT_PUBLIC_DEMO_MODE=true` only for a fictional demo; `false` before real students
+4. Deploy. The `vercel-build` script runs `prisma migrate deploy` then `next build`. Functions stay in `iad1` (US East).
+5. Confirm `GET /api/health` returns `{"ok":true}`.
+
+You can instead use Neon + a private Vercel Blob store. If both Supabase Storage and Blob are configured, evidence files go to Supabase.
+
+Do not seed demo students on a production database. Vercel and Supabase are subprocessors; complete a DPA (and a BAA if your district requires one) before real student records. Disk uploads used by Docker/Kubernetes do not persist on Vercel.
+
+SSO callback URLs must use the Vercel `AUTH_URL`: `{AUTH_URL}/api/auth/callback/{provider}`.
 
 ### Docker
 
@@ -242,7 +271,7 @@ Unauthorized record access returns “not found” to avoid leaking whether a st
 | Demo data mistaken for real records | Persistent demonstration banner; fictional names and emails |
 | AI leakage | No generative features; documented ban on using student data for model training |
 
-Residual risks: point production Postgres at encrypted volumes and backups; this demo Compose stack uses a local passphrase; evidence files are still on a PVC until you wire object storage.
+Residual risks: point production Postgres at encrypted volumes and backups; this demo Compose stack uses a local passphrase; evidence files stay on a PVC in Docker/Kubernetes until you wire object storage. Hosted deploys use private Supabase Storage (or a private Vercel Blob store) for evidence.
 
 ## Production-launch checklist
 
@@ -258,7 +287,7 @@ Residual risks: point production Postgres at encrypted volumes and backups; this
 - [ ] Error monitoring configured **without** student payloads
 - [ ] Accessibility review (WCAG 2.2 AA) with keyboard and screen-reader testing
 - [ ] Incident response contact posted for staff
-- [ ] Data processing agreement if any subprocessors are added
+- [ ] Data processing agreement if any subprocessors are added (including Vercel, Supabase, Neon, and Blob storage)
 
 ## Architecture notes
 

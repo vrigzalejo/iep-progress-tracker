@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { hash, compare } from "bcryptjs";
 import { signOut } from "@/auth";
 import { prisma } from "@/lib/db";
+import { evidenceSizeLimitBytes, storeEvidenceFile } from "@/lib/evidence-storage";
 import { writeAudit } from "@/lib/audit";
 import { can, isStaff } from "@/lib/permissions";
 import {
@@ -122,17 +123,22 @@ export async function createProgressAction(formData: FormData): Promise<void> {
   let evidencePath: string | undefined;
   let evidenceLabel = parsed.data.evidenceLabel || undefined;
   if (evidence instanceof File && evidence.size > 0) {
-    if (evidence.size > 5 * 1024 * 1024) {
-      fail(returnTo, "Evidence files must be 5 MB or smaller.");
+    const maxBytes = evidenceSizeLimitBytes();
+    if (evidence.size > maxBytes) {
+      fail(
+        returnTo,
+        `Evidence files must be ${Math.floor(maxBytes / (1024 * 1024))} MB or smaller.`,
+      );
     }
-    const { mkdir, writeFile } = await import("node:fs/promises");
-    const path = await import("node:path");
-    const dir = path.join(process.cwd(), "data", "uploads");
-    await mkdir(dir, { recursive: true });
     const safeName = `${goal.id}-${Date.now()}-${evidence.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-    const dest = path.join(dir, safeName);
-    await writeFile(dest, Buffer.from(await evidence.arrayBuffer()));
-    evidencePath = safeName;
+    try {
+      evidencePath = await storeEvidenceFile(safeName, evidence);
+    } catch {
+      fail(
+        returnTo,
+        "Could not store the evidence file. Configure private Supabase Storage or a Vercel Blob store.",
+      );
+    }
     evidenceLabel = evidenceLabel || evidence.name;
   }
 

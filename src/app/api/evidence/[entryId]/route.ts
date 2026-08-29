@@ -1,10 +1,9 @@
 import { notFound } from "next/navigation";
 import { NextResponse } from "next/server";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { prisma } from "@/lib/db";
 import { requireStaff, assertStudentAccess } from "@/lib/queries";
 import { writeAudit } from "@/lib/audit";
+import { readEvidenceFile } from "@/lib/evidence-storage";
 
 export async function GET(
   _request: Request,
@@ -19,9 +18,8 @@ export async function GET(
   if (!entry?.evidencePath) notFound();
   await assertStudentAccess(user, entry.goal.studentId);
 
-  const filePath = path.join(process.cwd(), "data", "uploads", entry.evidencePath);
-  const bytes = await readFile(filePath).catch(() => null);
-  if (!bytes) notFound();
+  const body = await readEvidenceFile(entry.evidencePath);
+  if (!body) notFound();
 
   await writeAudit({
     organizationId: user.organizationId,
@@ -32,7 +30,8 @@ export async function GET(
     studentId: entry.goal.studentId,
   });
 
-  return new NextResponse(new Uint8Array(bytes), {
+  const payload = body instanceof Uint8Array ? new Uint8Array(body) : body;
+  return new NextResponse(payload, {
     headers: {
       "Content-Type": "application/octet-stream",
       "Content-Disposition": `attachment; filename="${entry.evidenceLabel ?? "evidence"}"`,
