@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: iep-progress-tracker
+  namespace: iep-progress-tracker
+  labels:
+    app.kubernetes.io/name: iep-progress-tracker
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "6m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: iep-progress-tracker.example.edu
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: iep-progress-tracker
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - iep-progress-tracker.example.edu
+      secretName: iep-progress-tracker-tls
