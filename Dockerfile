@@ -9,7 +9,8 @@ COPY package.json package-lock.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 COPY src/lib/database-url.ts ./src/lib/database-url.ts
-RUN npm ci
+RUN find prisma/migrations -mindepth 1 -type d -empty -delete \
+  && npm ci
 
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
@@ -24,7 +25,8 @@ ENV NEXT_PUBLIC_APP_SLUG=$NEXT_PUBLIC_APP_SLUG
 ENV NEXT_PUBLIC_DEMO_MODE=$NEXT_PUBLIC_DEMO_MODE
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npx prisma generate && npm run build \
+RUN find prisma/migrations -mindepth 1 -type d -empty -delete \
+  && npx prisma generate && npm run build \
   && node scripts/copy-runtime-modules.mjs
 
 FROM node:22-bookworm-slim AS runner

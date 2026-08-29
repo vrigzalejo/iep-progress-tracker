@@ -10,6 +10,7 @@ coverage
 .env.*.local
 prisma/*.db
 prisma/*.db-journal
+prisma/migrations/20260828101928_iep_session_practice
 data/uploads
 *.md
 !README.md
