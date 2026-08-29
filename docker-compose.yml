@@ -1,6 +1,6 @@
 # Credentials come from `.env.local` via `--env-file` (see npm run docker:up).
-# Changing POSTGRES_* after the first start does not update an existing volume;
-# use `docker compose down -v` only if you can wipe local data.
+# Changing POSTGRES_* after the first start does not update an existing volume.
+# If migrate fails (leftover SQLite history), wipe local data: docker compose --env-file .env.local down -v
 services:
   db:
     image: postgres:16-alpine
