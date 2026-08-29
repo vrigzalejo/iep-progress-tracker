@@ -326,7 +326,7 @@ export async function getDashboardData(user: SessionUser) {
 }
 
 export async function listTeam(user: SessionUser) {
-  return prisma.user.findMany({
+  const team = await prisma.user.findMany({
     where: { organizationId: user.organizationId },
     select: {
       id: true,
@@ -337,9 +337,14 @@ export async function listTeam(user: SessionUser) {
       lastLoginAt: true,
       deactivatedAt: true,
       createdAt: true,
+      passwordHash: true,
     },
     orderBy: [{ role: "asc" }, { name: "asc" }],
   });
+  return team.map(({ passwordHash, ...member }) => ({
+    ...member,
+    hasPassword: Boolean(passwordHash),
+  }));
 }
 
 export async function getOrganization(user: SessionUser) {

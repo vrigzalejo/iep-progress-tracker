@@ -27,6 +27,7 @@ import {
   trialSchema,
 } from "@/lib/validation";
 import { SERVICE_AREAS, type PromptLevel, type ServiceArea } from "@/lib/constants";
+import { isSsoConfigured } from "@/lib/sso";
 
 export async function signOutAction() {
   await signOut({ redirectTo: "/sign-in" });
@@ -502,7 +503,10 @@ export async function createTeamMemberAction(formData: FormData): Promise<void> 
   if (!parsed.success) {
     fail("/team", parsed.error.issues[0]?.message ?? "Check the team form.");
   }
-  const passwordHash = await hash(parsed.data.password, 12);
+  if (!parsed.data.password && !isSsoConfigured()) {
+    fail("/team", "Set a temporary password, or configure school SSO first.");
+  }
+  const passwordHash = parsed.data.password ? await hash(parsed.data.password, 12) : null;
   const created = await prisma.user.create({
     data: {
       name: parsed.data.name,
@@ -643,6 +647,9 @@ export async function changePasswordAction(formData: FormData): Promise<void> {
   }
   const record = await prisma.user.findUnique({ where: { id: user.id } });
   if (!record) fail("/setup", "Account not found.");
+  if (!record.passwordHash) {
+    fail("/setup", "This account uses school SSO. There is no password to change.");
+  }
   const valid = await compare(parsed.data.currentPassword, record.passwordHash);
   if (!valid) fail("/setup", "Current password is not correct.");
   await prisma.user.update({

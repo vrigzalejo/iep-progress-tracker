@@ -3,8 +3,8 @@ import type { Role } from "@/lib/constants";
 
 declare module "next-auth" {
   interface User {
-    role: Role;
-    organizationId: string;
+    role?: Role;
+    organizationId?: string;
   }
 
   interface Session {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { progressSchema, signInSchema, studentSchema } from "./validation";
+import { progressSchema, signInSchema, studentSchema, teamMemberSchema } from "./validation";
 
 describe("validation", () => {
   it("rejects a present session without a note or trials", () => {
@@ -54,6 +54,28 @@ describe("validation", () => {
 
   it("requires a valid email at sign-in", () => {
     expect(signInSchema.safeParse({ email: "not-an-email", password: "x" }).success).toBe(false);
+  });
+
+  it("allows creating a team member without a password for SSO", () => {
+    expect(
+      teamMemberSchema.safeParse({
+        name: "Maya Ellis",
+        email: "maya@district.edu",
+        role: "EDUCATOR",
+        password: "",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("still enforces password complexity when a password is provided", () => {
+    expect(
+      teamMemberSchema.safeParse({
+        name: "Maya Ellis",
+        email: "maya@district.edu",
+        role: "EDUCATOR",
+        password: "short",
+      }).success,
+    ).toBe(false);
   });
 
   it("requires preferred name on student profiles", () => {

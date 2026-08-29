@@ -1,7 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["better-sqlite3", "@prisma/adapter-better-sqlite3"],
+  output: "standalone",
+  serverExternalPackages: ["pg", "@prisma/adapter-pg"],
+  outputFileTracingIncludes: {
+    "/*": [
+      "./node_modules/pg/**/*",
+      "./node_modules/pg-pool/**/*",
+      "./node_modules/@prisma/adapter-pg/**/*",
+      "./src/generated/prisma/**/*",
+    ],
+  },
   poweredByHeader: false,
   agentRules: false,
   async headers() {

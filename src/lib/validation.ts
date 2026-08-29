@@ -151,7 +151,18 @@ export const teamMemberSchema = z.object({
   email: z.string().email(),
   title: z.string().trim().max(80).optional().or(z.literal("")),
   role: z.enum(ROLES),
-  password: passwordSchema,
+  password: z.string().optional().or(z.literal("")),
+}).superRefine((value, ctx) => {
+  const password = value.password ?? "";
+  if (!password) return;
+  const result = passwordSchema.safeParse(password);
+  if (!result.success) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["password"],
+      message: result.error.issues[0]?.message ?? "Check the password.",
+    });
+  }
 });
 
 export const retentionSchema = z.object({

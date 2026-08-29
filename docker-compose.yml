@@ -1,0 +1,66 @@
+# Credentials come from `.env.local` via `--env-file` (see npm run docker:up).
+# Changing POSTGRES_* after the first start does not update an existing volume;
+# use `docker compose down -v` only if you can wipe local data.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-iep}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-iep}
+      POSTGRES_DB: ${POSTGRES_DB:-iep}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-IEP Progress Tracker}
+        NEXT_PUBLIC_APP_SLUG: ${NEXT_PUBLIC_APP_SLUG:-iep-progress-tracker}
+        NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-true}
+    image: iep-progress-tracker:0.3.0
+    user: "0:0"
+    ports:
+      - "43147:43147"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-iep}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-iep}
+      POSTGRES_DB: ${POSTGRES_DB:-iep}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      DATABASE_URL: ""
+      AUTH_URL: ${AUTH_URL:-http://127.0.0.1:43147}
+      NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-true}
+      NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-IEP Progress Tracker}
+      NEXT_PUBLIC_APP_SLUG: ${NEXT_PUBLIC_APP_SLUG:-iep-progress-tracker}
+    env_file:
+      - path: .env.local
+        required: false
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - app-uploads:/app/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:43147/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  pg-data:
+  app-uploads:
