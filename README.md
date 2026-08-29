@@ -179,9 +179,9 @@ The app still stores evidence files on disk, so keep **one app replica** until y
 Manifests are in `deploy/k8s` (namespace, config, secret, PVCs, Postgres StatefulSet, app Deployment, Service, Ingress).
 
 ```bash
-docker build -t iep-progress-tracker:0.2.0 .
-# Kind: kind load docker-image iep-progress-tracker:0.2.0
-# Minikube: minikube image load iep-progress-tracker:0.2.0
+docker build -t iep-progress-tracker:0.3.0 .
+# Kind: kind load docker-image iep-progress-tracker:0.3.0
+# Minikube: minikube image load iep-progress-tracker:0.3.0
 # Production: use ghcr.io/vrigzalejo/iep-progress-tracker:latest (published on merge to main)
 
 # Edit deploy/k8s/secret.yaml (AUTH_SECRET, POSTGRES_PASSWORD)

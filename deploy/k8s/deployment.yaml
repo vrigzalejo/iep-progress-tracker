@@ -51,7 +51,7 @@ spec:
               drop: ["ALL"]
       containers:
         - name: app
-          image: iep-progress-tracker:0.2.0
+          image: iep-progress-tracker:0.3.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
