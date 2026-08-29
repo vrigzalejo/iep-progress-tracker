@@ -1,0 +1,22 @@
+name: Enhancement
+
+description: A new feature or workflow for staff, families, or school IT.
+title: ""
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What should change
+      description: One or two sentences. Who it is for (educator, provider, parent, admin, or school IT).
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Checklist the pull request must satisfy.
+      value: |
+        - [ ]
+    validations:
+      required: true
