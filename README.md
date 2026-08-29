@@ -27,20 +27,22 @@ The product does **not** generate IEP goals, recommend services, or make educati
 - Next.js (App Router) and TypeScript
 - Tailwind CSS and accessible UI primitives
 - Auth.js credentials authentication with hashed passwords, plus optional Microsoft, Google, or OIDC SSO
-- Prisma ORM with SQLite (swap to Postgres for production)
+- Prisma ORM with Postgres
 - Zod validation, server-side authorization, Vitest
 
 ## Local setup
 
-Requirements: Node.js 22+ and npm.
+Requirements: Node.js 22+, npm, and Docker (or another Postgres 16 instance). The app no longer uses SQLite.
 
 ```bash
 git clone <this-repo>
 cd iep-progress-tracker
 cp .env.example .env.local
 # set AUTH_SECRET to a long random string
+# optional: change POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+npm run docker:db
 npm install
-npx prisma migrate dev
+npx prisma migrate deploy
 npx prisma db seed
 npm run dev -- --port 43147 --hostname 127.0.0.1
 ```
@@ -94,7 +96,12 @@ Roles stay in this app. The identity provider only proves who the person is.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `DATABASE_URL` | Yes | Prisma connection string. Local default: `file:./prisma/dev.db` |
+| `POSTGRES_USER` | No | Database user. Default: `iep` |
+| `POSTGRES_PASSWORD` | No | Database password. Default: `iep` (change this) |
+| `POSTGRES_DB` | No | Database name. Default: `iep` |
+| `POSTGRES_HOST` | No | Hostname. Default: `127.0.0.1` (Compose app uses `db`) |
+| `POSTGRES_PORT` | No | Port. Default: `5432` |
+| `DATABASE_URL` | No | Full Postgres URL. When set, it overrides the `POSTGRES_*` variables. Use this for RDS, Cloud SQL, or Azure Database |
 | `AUTH_SECRET` | Yes | Auth.js session signing secret (`openssl rand -base64 32`) |
 | `AUTH_URL` | Production | Public origin, for example `https://iep-progress-tracker.example.edu` |
 | `NEXT_PUBLIC_DEMO_MODE` | No | Keep `true` until you remove seed data |
@@ -133,14 +140,56 @@ Automated tests cover authorization rules, progress-signal calculation, and inpu
 
 ## Deployment
 
-1. Provision Postgres (recommended) or another relational database on encrypted disks.
-2. Set `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, and SSO provider variables.
-3. Run `npx prisma migrate deploy` and **do not** seed demo students.
+1. Provision Postgres on encrypted disks (or use the in-cluster StatefulSet for a small deploy).
+2. Set `POSTGRES_*` (or `DATABASE_URL`), `AUTH_SECRET`, `AUTH_URL`, and SSO provider variables.
+3. Run `npx prisma migrate deploy` (the container does this on start) and **do not** seed demo students.
 4. Serve the app only over HTTPS (Vercel, Fly.io, or a reverse proxy).
 5. Store evidence uploads on encrypted object storage, not a public bucket.
 6. Optional: add `@sentry/nextjs` using `SENTRY_DSN`, with PII scrubbing enabled.
 
 `Dockerfile` is included for container deploys. For Vercel, connect the repo and set the environment variables above.
+
+### Docker
+
+The Compose file starts **Postgres** and the app. The app image runs migrations on start, then listens on port **43147**. Evidence uploads live in `/app/data`.
+
+```bash
+# AUTH_SECRET and POSTGRES_* must be set in .env.local
+npm run docker:up
+```
+
+Open [http://127.0.0.1:43147](http://127.0.0.1:43147). Stop with `npm run docker:down`. Volumes keep Postgres data (`pg-data`) and uploads (`app-uploads`).
+
+Compose reads `.env.local` (`--env-file`) so the database user, password, and name match Next.js. After the first start, Postgres keeps the original credentials on the volume; changing them in `.env.local` does not rewrite an existing database.
+
+For local Next.js against Compose Postgres only:
+
+```bash
+npm run docker:db
+npx prisma migrate deploy
+npm run dev
+```
+
+`GET /api/health` returns `{ "ok": true }` after Postgres is reachable. It does not require a session.
+
+The app still stores evidence files on disk, so keep **one app replica** until you move uploads to object storage. Postgres itself is a separate service and can use a PVC.
+
+### Kubernetes
+
+Manifests are in `deploy/k8s` (namespace, config, secret, PVCs, Postgres StatefulSet, app Deployment, Service, Ingress).
+
+```bash
+docker build -t iep-progress-tracker:0.2.0 .
+# Kind: kind load docker-image iep-progress-tracker:0.2.0
+# Minikube: minikube image load iep-progress-tracker:0.2.0
+
+# Edit deploy/k8s/secret.yaml (AUTH_SECRET, POSTGRES_PASSWORD)
+# Edit deploy/k8s/configmap.yaml (POSTGRES_USER, POSTGRES_DB, AUTH_URL) and the Ingress host
+kubectl apply -k deploy/k8s
+kubectl -n iep-progress-tracker port-forward svc/iep-progress-tracker 43147:80
+```
+
+Replace the placeholders in `deploy/k8s/secret.yaml` before any real student data. Set `POSTGRES_USER` and `POSTGRES_DB` in `deploy/k8s/configmap.yaml` to match. Point Ingress `iep-progress-tracker.example.edu` at your cluster and use HTTPS. For a managed database (RDS, Cloud SQL, Azure Database), drop the Postgres StatefulSet and set `DATABASE_URL` on the secret.
 
 ## Data model (minimum fields)
 
@@ -185,7 +234,7 @@ Unauthorized record access returns “not found” to avoid leaking whether a st
 | Demo data mistaken for real records | Persistent demonstration banner; fictional names and emails |
 | AI leakage | No generative features; documented ban on using student data for model training |
 
-Residual risks: SQLite is not encrypted by itself (use disk encryption or SQLCipher/Postgres TDE in production); this demo uses a shared passphrase; object storage and key management are not wired until you deploy.
+Residual risks: point production Postgres at encrypted volumes and backups; this demo Compose stack uses a local passphrase; evidence files are still on a PVC until you wire object storage.
 
 ## Production-launch checklist
 

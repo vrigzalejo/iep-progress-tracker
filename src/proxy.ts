@@ -6,6 +6,7 @@ export function proxy(request: NextRequest) {
   const isPublic =
     pathname.startsWith("/sign-in") ||
     pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/health") ||
     pathname === "/privacy-notice";
   const session =
     request.cookies.get("authjs.session-token") ??

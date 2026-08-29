@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: iep-progress-tracker-uploads
+  namespace: iep-progress-tracker
+  labels:
+    app.kubernetes.io/name: iep-progress-tracker
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: iep-progress-tracker-postgres
+  namespace: iep-progress-tracker
+  labels:
+    app.kubernetes.io/name: iep-progress-tracker
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
