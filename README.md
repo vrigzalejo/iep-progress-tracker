@@ -162,6 +162,13 @@ Open [http://127.0.0.1:43147](http://127.0.0.1:43147). Stop with `npm run docker
 
 Compose reads `.env.local` (`--env-file`) so the database user, password, and name match Next.js. After the first start, Postgres keeps the original credentials on the volume; changing them in `.env.local` does not rewrite an existing database.
 
+If `prisma migrate` reports a failed SQLite-era migration, the volume still has old history. Wipe it (this deletes local demo data) and start again:
+
+```bash
+docker compose --env-file .env.local down -v
+npm run docker:up
+```
+
 For local Next.js against Compose Postgres only:
 
 ```bash
