@@ -212,3 +212,9 @@ Primary flows:
 1. Staff sign in → dashboard → student → goal → log a session (trials or outcome) → period comment → report or meeting packet
 2. Parent signs in → family portal (switch children if linked) → shared goals, home carryover, report, family messages
 3. Administrator → team roles, retention, audit, deletion
+
+## Contributing
+
+Work starts as a GitHub issue, then a branch off `development`, then a pull request **into `development`**. `main` is production and only receives release PRs from `development`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for labels, branch names, `Fixes #` linking, and the release steps.
