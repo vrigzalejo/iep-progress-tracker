@@ -1,5 +1,5 @@
 ---
-description: GitHub issue and PR workflow for this repo. Always apply.
+description: Local-first experiment, then GitHub issue and PR when asked. Always apply.
 alwaysApply: true
 ---
 
@@ -7,7 +7,11 @@ alwaysApply: true
 
 Never commit to `development` or `main`. GitHub rulesets require pull requests.
 
-1. Open a GitHub issue first (what / who / done-when).
+Default: experiment locally. Do not open issues, commit, or open PRs unless the user asks.
+
+When the user asks to land work:
+
+1. Open a GitHub issue (what / who / done-when).
 2. Branch `{issue-number}-{short-slug}` from `development`.
 3. PR into `development` with `Fixes #N` in the body. Squash merge.
 4. Do not delete `development`. Feature branches may be deleted after merge.
