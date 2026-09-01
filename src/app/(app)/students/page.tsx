@@ -19,7 +19,10 @@ export default async function StudentsPage({
   const params = await searchParams;
   let students = await listVisibleStudents(user, params.q);
   if (params.school) students = students.filter((student) => student.school === params.school);
-  if (params.grade) students = students.filter((student) => student.grade === params.grade);
+  if (params.grade) {
+    const grade = params.grade.trim().toLowerCase();
+    students = students.filter((student) => student.grade.toLowerCase() === grade);
+  }
   const schools = [...new Set((await listVisibleStudents(user)).map((student) => student.school))];
 
   return (

@@ -1,8 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
-  serverExternalPackages: ["pg", "@prisma/adapter-pg"],
+  // Docker/K8s need standalone. Vercel builds the default Next.js output.
+  ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
+  serverExternalPackages: ["pg", "@prisma/adapter-pg", "@prisma/client", "@supabase/supabase-js"],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "4.5mb",
+    },
+  },
   outputFileTracingIncludes: {
     "/*": [
       "./node_modules/pg/**/*",

@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 import { defineConfig } from "prisma/config";
-import { databaseUrl } from "./src/lib/database-url";
+import { migrateDatabaseUrl } from "./src/lib/database-url";
 
 config();
 config({ path: ".env.local", override: true });
@@ -12,6 +12,6 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: databaseUrl(),
+    url: migrateDatabaseUrl(),
   },
 });

@@ -1,24 +1,24 @@
-import { demoEmail } from "@/lib/brand";
+import { demoEmail, DEMO_USER_DISPLAY_NAMES } from "@/lib/brand";
 
 export const DEMO_ACCOUNTS = [
   {
     role: "Administrator",
-    email: demoEmail("chris.okonkwo"),
-    name: "Chris Okonkwo",
+    email: demoEmail("crisanto.reyes"),
+    name: DEMO_USER_DISPLAY_NAMES["crisanto.reyes"],
   },
   {
     role: "Educator",
-    email: demoEmail("maya.ellis"),
-    name: "Maya Ellis",
+    email: demoEmail("maricel.santos"),
+    name: DEMO_USER_DISPLAY_NAMES["maricel.santos"],
   },
   {
     role: "Provider",
-    email: demoEmail("priya.shah"),
-    name: "Priya Shah",
+    email: demoEmail("patricia.cruz"),
+    name: DEMO_USER_DISPLAY_NAMES["patricia.cruz"],
   },
   {
     role: "Parent / guardian",
-    email: demoEmail("dana.hale"),
-    name: "Dana Hale",
+    email: demoEmail("diana.santos"),
+    name: DEMO_USER_DISPLAY_NAMES["diana.santos"],
   },
 ] as const;

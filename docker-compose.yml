@@ -1,6 +1,7 @@
 # Credentials come from `.env.local` via `--env-file` (see npm run docker:up).
 # Changing POSTGRES_* after the first start does not update an existing volume.
-# If migrate fails (leftover SQLite history), wipe local data: docker compose --env-file .env.local down -v
+# If migrate fails (leftover SQLite history), wipe local data only if you can:
+# docker compose --env-file .env.local down -v
 services:
   db:
     image: postgres:16-alpine
@@ -25,7 +26,7 @@ services:
         NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-IEP Progress Tracker}
         NEXT_PUBLIC_APP_SLUG: ${NEXT_PUBLIC_APP_SLUG:-iep-progress-tracker}
         NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-true}
-    image: iep-progress-tracker:0.3.0
+    image: iep-progress-tracker:0.4.0,
     user: "0:0"
     ports:
       - "43147:43147"

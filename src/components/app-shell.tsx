@@ -77,7 +77,7 @@ export function AppShell({
           )}
         >
           <div className="flex items-center justify-between px-4 py-5">
-            <Link href={isStaff(user.role) ? "/dashboard" : "/parent"} className="flex items-center gap-2">
+            <Link href={isStaff(user.role) ? "/dashboard" : "/parent"} className="flex cursor-pointer items-center gap-2">
               <Logo className="h-9 w-9" />
               <span className="font-serif text-xl">{APP_NAME}</span>
             </Link>
@@ -94,7 +94,7 @@ export function AppShell({
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "mb-1 flex min-h-11 items-center gap-3 rounded-md px-3 text-sm",
+                    "mb-1 flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-3 text-sm",
                     active ? "bg-white/15 font-semibold" : "hover:bg-white/10",
                   )}
                   onClick={() => setOpen(false)}
@@ -109,7 +109,11 @@ export function AppShell({
             <p className="font-semibold">{user.name}</p>
             <p className="text-white/80">{ROLE_LABELS[user.role]}</p>
             <form action={signOutAction}>
-              <Button variant="ghost" className="mt-3 w-full justify-start text-white hover:bg-white/10">
+              <Button
+                type="submit"
+                variant="ghost"
+                className="mt-3 w-full cursor-pointer justify-start text-white hover:bg-white/10"
+              >
                 <LogOut className="h-4 w-4" />
                 Sign out
               </Button>

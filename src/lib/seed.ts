@@ -1,7 +1,15 @@
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { DEMO_PASSPHRASE, PRIVACY_NOTICE_VERSION } from "@/lib/constants";
-import { demoEmail, isDemoLocalPart } from "@/lib/brand";
+import {
+  DEMO_ELEMENTARY_SCHOOL,
+  DEMO_MIDDLE_SCHOOL,
+  DEMO_ORG_NAME,
+  DEMO_USER_DISPLAY_NAMES,
+  applyDemoTextReplacements,
+  canonicalDemoLocalPart,
+  demoEmail,
+} from "@/lib/brand";
 
 function daysFromNow(days: number) {
   const date = new Date();
@@ -22,18 +30,18 @@ async function backfillDemoPracticeData() {
   if (!org) return;
 
   const educator = await prisma.user.findFirst({
-    where: { OR: [{ email: demoEmail("maya.ellis") }, { email: { startsWith: "maya.ellis@" } }] },
+    where: { OR: [{ email: demoEmail("maricel.santos") }, { email: { startsWith: "maricel.santos@" } }] },
   });
   const speech = await prisma.user.findFirst({
-    where: { OR: [{ email: demoEmail("priya.shah") }, { email: { startsWith: "priya.shah@" } }] },
+    where: { OR: [{ email: demoEmail("patricia.cruz") }, { email: { startsWith: "patricia.cruz@" } }] },
   });
   const ot = await prisma.user.findFirst({
-    where: { OR: [{ email: demoEmail("luis.navarro") }, { email: { startsWith: "luis.navarro@" } }] },
+    where: { OR: [{ email: demoEmail("lorenzo.bautista") }, { email: { startsWith: "lorenzo.bautista@" } }] },
   });
-  const parentJordan = await prisma.user.findFirst({
-    where: { OR: [{ email: demoEmail("dana.hale") }, { email: { startsWith: "dana.hale@" } }] },
+  const parentJaime = await prisma.user.findFirst({
+    where: { OR: [{ email: demoEmail("diana.santos") }, { email: { startsWith: "diana.santos@" } }] },
   });
-  if (!educator || !speech || !ot || !parentJordan) return;
+  if (!educator || !speech || !ot || !parentJaime) return;
 
   const q4 = await prisma.reportingPeriodWindow.create({
     data: {
@@ -52,10 +60,10 @@ async function backfillDemoPracticeData() {
     },
   });
 
-  const jordan = await prisma.student.findFirst({ where: { preferredName: "Jordan Hale" } });
-  const sam = await prisma.student.findFirst({ where: { preferredName: "Sam Rivera" } });
-  const avery = await prisma.student.findFirst({ where: { preferredName: "Avery Chen" } });
-  const riley = await prisma.student.findFirst({ where: { preferredName: "Riley Brooks" } });
+  const jordan = await prisma.student.findFirst({ where: { preferredName: "Jaime Santos" } });
+  const sam = await prisma.student.findFirst({ where: { preferredName: "Samuel Villanueva" } });
+  const avery = await prisma.student.findFirst({ where: { preferredName: "Andrea Tan" } });
+  const riley = await prisma.student.findFirst({ where: { preferredName: "Rafael Bautista" } });
 
   if (jordan) {
     await prisma.student.update({
@@ -64,7 +72,7 @@ async function backfillDemoPracticeData() {
         iepAnnualReviewAt: daysFromNow(18),
         iepTriennialAt: daysFromNow(200),
         presentLevels:
-          "Jordan reads grade-level informational text at 62 WCPM and asks for help with a prompt during small-group work.",
+          "Jaime reads grade-level informational text at 62 WCPM and asks for help with a prompt during small-group work.",
       },
     });
     await prisma.studentProvider.updateMany({
@@ -83,7 +91,7 @@ async function backfillDemoPracticeData() {
       data: {
         iepAnnualReviewAt: daysFromNow(8),
         iepTriennialAt: daysFromNow(90),
-        presentLevels: "Sam writes 2 of 5 first-name letters with a consistent starting point.",
+        presentLevels: "Samuel writes 2 of 5 first-name letters with a consistent starting point.",
       },
     });
     await prisma.studentProvider.updateMany({
@@ -118,28 +126,28 @@ async function backfillDemoPracticeData() {
     });
   }
 
-  const caseyExisting = await prisma.student.findFirst({ where: { preferredName: "Casey Hale" } });
+  const caseyExisting = await prisma.student.findFirst({ where: { preferredName: "Carla Santos" } });
   if (!caseyExisting) {
     const casey = await prisma.student.create({
       data: {
-        preferredName: "Casey Hale",
+        preferredName: "Carla Santos",
         grade: "K",
-        school: "Maple Ridge Elementary",
+        school: DEMO_ELEMENTARY_SCHOOL,
         caseManagerId: educator.id,
         organizationId: org.id,
         iepAnnualReviewAt: daysFromNow(40),
-        presentLevels: "Casey follows one-step classroom directions with a gesture prompt.",
+        presentLevels: "Carla follows one-step classroom directions with a gesture prompt.",
         providers: {
           create: [{ userId: educator.id, serviceArea: "ADAPTIVE", minutesPerWeek: 60, sessionsPerWeek: 5 }],
         },
         guardians: {
           create: [
             {
-              name: "Dana Hale",
+              name: DEMO_USER_DISPLAY_NAMES["diana.santos"],
               relationship: "Parent",
-              email: demoEmail("dana.hale"),
+              email: demoEmail("diana.santos"),
               phone: "555-0142",
-              userId: parentJordan.id,
+              userId: parentJaime.id,
             },
           ],
         },
@@ -149,8 +157,8 @@ async function backfillDemoPracticeData() {
       data: {
         studentId: casey.id,
         officialWording:
-          "Given a one-step classroom direction, Casey will begin the action within 10 seconds in 4 of 5 opportunities across 3 consecutive school days.",
-        plainLanguageSummary: "Casey is practicing starting a classroom job after one direction.",
+          "Given a one-step classroom direction, Carla will begin the action within 10 seconds in 4 of 5 opportunities across 3 consecutive school days.",
+        plainLanguageSummary: "Carla is practicing starting a classroom job after one direction.",
         baseline: "Began within 10 seconds in 2 of 5 opportunities with a gesture.",
         measurableTarget: "4 of 5 opportunities across 3 consecutive days.",
         targetValue: 80,
@@ -196,7 +204,7 @@ async function backfillDemoPracticeData() {
         periodId: q1.id,
         progressCode: "SUFFICIENT",
         narrative:
-          "Casey is beginning more classroom jobs after one direction, especially with a small gesture.",
+          "Carla is beginning more classroom jobs after one direction, especially with a small gesture.",
         authorId: educator.id,
       },
     });
@@ -205,7 +213,7 @@ async function backfillDemoPracticeData() {
         studentId: casey.id,
         fromUserId: educator.id,
         visibility: "FAMILY",
-        body: "Casey started the morning job after one direction three times today.",
+        body: "Carla started the morning job after one direction three times today.",
         createdAt: daysAgo(1),
       },
     });
@@ -228,7 +236,7 @@ async function backfillDemoPracticeData() {
         await prisma.goalObjective.create({
           data: {
             goalId: goal.id,
-            officialWording: "Jordan will read 75 WCPM with 96% accuracy on 3 consecutive weekly probes.",
+            officialWording: "Jaime will read 75 WCPM with 96% accuracy on 3 consecutive weekly probes.",
             plainLanguageSummary: "First benchmark: reach 75 words correct per minute.",
             targetValue: 75,
             unit: "WCPM",
@@ -241,7 +249,7 @@ async function backfillDemoPracticeData() {
           periodId: q1.id,
           progressCode: "SUFFICIENT",
           narrative:
-            "This quarter Jordan is reading 84 WCPM on informational probes. The annual target is 90 WCPM across three consecutive probes.",
+            "This quarter Jaime is reading 84 WCPM on informational probes. The annual target is 90 WCPM across three consecutive probes.",
           authorId: educator.id,
         },
       });
@@ -250,7 +258,7 @@ async function backfillDemoPracticeData() {
           goalId: goal.id,
           periodId: q4.id,
           progressCode: "SUFFICIENT",
-          narrative: "Jordan moved from 62 to the mid-70s WCPM last quarter. Accuracy stayed high.",
+          narrative: "Jaime moved from 62 to the mid-70s WCPM last quarter. Accuracy stayed high.",
           authorId: educator.id,
         },
       });
@@ -262,7 +270,7 @@ async function backfillDemoPracticeData() {
           periodId: q1.id,
           progressCode: "SUFFICIENT",
           narrative:
-            "Jordan used a practiced request independently in 4 of 5 book-club chances. Please keep practicing the phrase at home before homework.",
+            "Jaime used a practiced request independently in 4 of 5 book-club chances. Please keep practicing the phrase at home before homework.",
           authorId: speech.id,
         },
       });
@@ -297,7 +305,7 @@ async function backfillDemoPracticeData() {
           periodId: q1.id,
           progressCode: "INSUFFICIENT",
           narrative:
-            "Sam’s name writing is more consistent with the highlighted strip, but size still drops when the model is removed.",
+            "Samuel’s name writing is more consistent with the highlighted strip, but size still drops when the model is removed.",
           authorId: ot.id,
         },
       });
@@ -308,7 +316,7 @@ async function backfillDemoPracticeData() {
         });
       }
     }
-    if (goal.student.preferredName === "Jordan Hale" && goal.measurementMethod === "RATE") {
+    if (goal.student.preferredName === "Jaime Santos" && goal.measurementMethod === "RATE") {
       const latest = [...goal.entries].sort((a, b) => b.recordedAt.getTime() - a.recordedAt.getTime())[0];
       if (latest) {
         await prisma.progressEntry.update({
@@ -343,7 +351,7 @@ async function backfillDemoPracticeData() {
           recordedAt: daysAgo(9),
           score: 0,
           measurementType: "PERCENT_ACCURACY",
-          notes: "Avery was absent; makeup scheduled for next week.",
+          notes: "Andrea was absent; makeup scheduled for next week.",
           authorId: speech.id,
           sessionOutcome: "ABSENT",
           setting: "CLASSROOM",
@@ -358,26 +366,147 @@ async function migrateDemoBrand() {
   const users = await prisma.user.findMany();
   const passwordHash = await hash(DEMO_PASSPHRASE, 12);
   for (const user of users) {
-    const localPart = user.email.split("@")[0];
-    if (!isDemoLocalPart(localPart)) continue;
-    const nextEmail = demoEmail(localPart);
-    if (user.email === nextEmail) continue;
+    const nextLocal = canonicalDemoLocalPart(user.email.split("@")[0]);
+    if (!nextLocal) continue;
+    const nextEmail = demoEmail(nextLocal);
+    const nextName = DEMO_USER_DISPLAY_NAMES[nextLocal];
+    if (user.email === nextEmail && user.name === nextName) continue;
     await prisma.user.update({
       where: { id: user.id },
-      data: { email: nextEmail, passwordHash },
+      data: {
+        email: nextEmail,
+        name: nextName,
+        ...(user.email === nextEmail ? {} : { passwordHash }),
+      },
     });
   }
 
   const guardians = await prisma.guardianContact.findMany();
   for (const guardian of guardians) {
-    const localPart = guardian.email.split("@")[0];
-    if (!isDemoLocalPart(localPart)) continue;
-    const nextEmail = demoEmail(localPart);
-    if (guardian.email === nextEmail) continue;
+    const nextLocal = canonicalDemoLocalPart(guardian.email.split("@")[0]);
+    if (!nextLocal) continue;
+    const nextEmail = demoEmail(nextLocal);
+    const nextName = DEMO_USER_DISPLAY_NAMES[nextLocal];
+    if (guardian.email === nextEmail && guardian.name === nextName) continue;
     await prisma.guardianContact.update({
       where: { id: guardian.id },
-      data: { email: nextEmail },
+      data: { email: nextEmail, name: nextName },
     });
+  }
+
+  const demoOrg = await prisma.organization.findFirst({
+    where: { name: { in: ["Maple Ridge Demonstration School", DEMO_ORG_NAME] } },
+  });
+  if (!demoOrg) return;
+
+  await prisma.organization.updateMany({
+    where: { name: "Maple Ridge Demonstration School" },
+    data: { name: DEMO_ORG_NAME },
+  });
+  await prisma.student.updateMany({
+    where: { school: "Maple Ridge Elementary" },
+    data: { school: DEMO_ELEMENTARY_SCHOOL },
+  });
+  await prisma.student.updateMany({
+    where: { school: "Cedar Grove Middle School" },
+    data: { school: DEMO_MIDDLE_SCHOOL },
+  });
+
+  const studentNames: [string, string][] = [
+    ["Jordan Hale", "Jaime Santos"],
+    ["Casey Hale", "Carla Santos"],
+    ["Sam Rivera", "Samuel Villanueva"],
+    ["Avery Chen", "Andrea Tan"],
+    ["Riley Brooks", "Rafael Bautista"],
+  ];
+  for (const [from, to] of studentNames) {
+    await prisma.student.updateMany({ where: { preferredName: from }, data: { preferredName: to } });
+  }
+
+  const consents = await prisma.consentRecord.findMany();
+  for (const consent of consents) {
+    const next = applyDemoTextReplacements(consent.guardianName);
+    if (next !== consent.guardianName) {
+      await prisma.consentRecord.update({
+        where: { id: consent.id },
+        data: { guardianName: next },
+      });
+    }
+  }
+
+  const students = await prisma.student.findMany();
+  for (const student of students) {
+    const presentLevels = applyDemoTextReplacements(student.presentLevels ?? "");
+    if (presentLevels !== (student.presentLevels ?? "")) {
+      await prisma.student.update({
+        where: { id: student.id },
+        data: { presentLevels },
+      });
+    }
+  }
+
+  const goals = await prisma.iepGoal.findMany();
+  for (const goal of goals) {
+    const data = {
+      officialWording: applyDemoTextReplacements(goal.officialWording),
+      plainLanguageSummary: applyDemoTextReplacements(goal.plainLanguageSummary),
+      baseline: applyDemoTextReplacements(goal.baseline),
+      measurableTarget: applyDemoTextReplacements(goal.measurableTarget),
+      presentLevelsSnapshot: goal.presentLevelsSnapshot
+        ? applyDemoTextReplacements(goal.presentLevelsSnapshot)
+        : goal.presentLevelsSnapshot,
+    };
+    if (
+      data.officialWording !== goal.officialWording ||
+      data.plainLanguageSummary !== goal.plainLanguageSummary ||
+      data.baseline !== goal.baseline ||
+      data.measurableTarget !== goal.measurableTarget ||
+      data.presentLevelsSnapshot !== goal.presentLevelsSnapshot
+    ) {
+      await prisma.iepGoal.update({ where: { id: goal.id }, data });
+    }
+  }
+
+  const objectives = await prisma.goalObjective.findMany();
+  for (const objective of objectives) {
+    const officialWording = applyDemoTextReplacements(objective.officialWording);
+    const plainLanguageSummary = applyDemoTextReplacements(objective.plainLanguageSummary);
+    if (
+      officialWording !== objective.officialWording ||
+      plainLanguageSummary !== objective.plainLanguageSummary
+    ) {
+      await prisma.goalObjective.update({
+        where: { id: objective.id },
+        data: { officialWording, plainLanguageSummary },
+      });
+    }
+  }
+
+  const entries = await prisma.progressEntry.findMany();
+  for (const entry of entries) {
+    const notes = applyDemoTextReplacements(entry.notes ?? "");
+    if (notes !== (entry.notes ?? "")) {
+      await prisma.progressEntry.update({ where: { id: entry.id }, data: { notes } });
+    }
+  }
+
+  const statements = await prisma.goalPeriodStatement.findMany();
+  for (const statement of statements) {
+    const narrative = applyDemoTextReplacements(statement.narrative);
+    if (narrative !== statement.narrative) {
+      await prisma.goalPeriodStatement.update({
+        where: { id: statement.id },
+        data: { narrative },
+      });
+    }
+  }
+
+  const messages = await prisma.message.findMany();
+  for (const message of messages) {
+    const body = applyDemoTextReplacements(message.body);
+    if (body !== message.body) {
+      await prisma.message.update({ where: { id: message.id }, data: { body } });
+    }
   }
 }
 
@@ -393,7 +522,7 @@ export async function seedDemoData() {
 
   const org = await prisma.organization.create({
     data: {
-      name: "Maple Ridge Demonstration School",
+      name: DEMO_ORG_NAME,
       retentionDays: 2555,
       noticeVersion: PRIVACY_NOTICE_VERSION,
     },
@@ -401,8 +530,8 @@ export async function seedDemoData() {
 
   await prisma.user.create({
     data: {
-      email: demoEmail("chris.okonkwo"),
-      name: "Chris Okonkwo",
+      email: demoEmail("crisanto.reyes"),
+      name: DEMO_USER_DISPLAY_NAMES["crisanto.reyes"],
       title: "Director of Special Education",
       role: "ADMINISTRATOR",
       passwordHash,
@@ -412,8 +541,8 @@ export async function seedDemoData() {
 
   const educator = await prisma.user.create({
     data: {
-      email: demoEmail("maya.ellis"),
-      name: "Maya Ellis",
+      email: demoEmail("maricel.santos"),
+      name: DEMO_USER_DISPLAY_NAMES["maricel.santos"],
       title: "Special education teacher",
       role: "EDUCATOR",
       passwordHash,
@@ -423,8 +552,8 @@ export async function seedDemoData() {
 
   const speech = await prisma.user.create({
     data: {
-      email: demoEmail("priya.shah"),
-      name: "Priya Shah",
+      email: demoEmail("patricia.cruz"),
+      name: DEMO_USER_DISPLAY_NAMES["patricia.cruz"],
       title: "Speech-language pathologist",
       role: "PROVIDER",
       passwordHash,
@@ -434,8 +563,8 @@ export async function seedDemoData() {
 
   const ot = await prisma.user.create({
     data: {
-      email: demoEmail("luis.navarro"),
-      name: "Luis Navarro",
+      email: demoEmail("lorenzo.bautista"),
+      name: DEMO_USER_DISPLAY_NAMES["lorenzo.bautista"],
       title: "Occupational therapist",
       role: "PROVIDER",
       passwordHash,
@@ -443,10 +572,10 @@ export async function seedDemoData() {
     },
   });
 
-  const parentJordan = await prisma.user.create({
+  const parentJaime = await prisma.user.create({
     data: {
-      email: demoEmail("dana.hale"),
-      name: "Dana Hale",
+      email: demoEmail("diana.santos"),
+      name: DEMO_USER_DISPLAY_NAMES["diana.santos"],
       title: "Parent / guardian",
       role: "PARENT",
       passwordHash,
@@ -456,8 +585,8 @@ export async function seedDemoData() {
 
   const parentSam = await prisma.user.create({
     data: {
-      email: demoEmail("alex.rivera"),
-      name: "Alex Rivera",
+      email: demoEmail("andres.villanueva"),
+      name: DEMO_USER_DISPLAY_NAMES["andres.villanueva"],
       title: "Parent / guardian",
       role: "PARENT",
       passwordHash,
@@ -485,15 +614,15 @@ export async function seedDemoData() {
 
   const jordan = await prisma.student.create({
     data: {
-      preferredName: "Jordan Hale",
+      preferredName: "Jaime Santos",
       grade: "4",
-      school: "Maple Ridge Elementary",
+      school: DEMO_ELEMENTARY_SCHOOL,
       caseManagerId: educator.id,
       organizationId: org.id,
       iepAnnualReviewAt: daysFromNow(18),
       iepTriennialAt: daysFromNow(200),
       presentLevels:
-        "Jordan reads grade-level informational text at 62 WCPM and asks for help with a prompt during small-group work. Strengths include vocabulary and rereading to keep meaning.",
+        "Jaime reads grade-level informational text at 62 WCPM and asks for help with a prompt during small-group work. Strengths include vocabulary and rereading to keep meaning.",
       providers: {
         create: [
           { userId: speech.id, serviceArea: "SPEECH_LANGUAGE", minutesPerWeek: 60, sessionsPerWeek: 2 },
@@ -503,17 +632,17 @@ export async function seedDemoData() {
       guardians: {
         create: [
           {
-            name: "Dana Hale",
+            name: DEMO_USER_DISPLAY_NAMES["diana.santos"],
             relationship: "Parent",
-            email: demoEmail("dana.hale"),
+            email: demoEmail("diana.santos"),
             phone: "555-0142",
-            userId: parentJordan.id,
+            userId: parentJaime.id,
           },
         ],
       },
       consents: {
         create: {
-          guardianName: "Dana Hale",
+          guardianName: DEMO_USER_DISPLAY_NAMES["diana.santos"],
           noticeVersion: PRIVACY_NOTICE_VERSION,
           grantedAt: daysAgo(40),
         },
@@ -523,31 +652,31 @@ export async function seedDemoData() {
 
   const casey = await prisma.student.create({
     data: {
-      preferredName: "Casey Hale",
+      preferredName: "Carla Santos",
       grade: "K",
-      school: "Maple Ridge Elementary",
+      school: DEMO_ELEMENTARY_SCHOOL,
       caseManagerId: educator.id,
       organizationId: org.id,
       iepAnnualReviewAt: daysFromNow(40),
       presentLevels:
-        "Casey follows one-step classroom directions with a gesture prompt and is beginning to use a visual schedule at arrival.",
+        "Carla follows one-step classroom directions with a gesture prompt and is beginning to use a visual schedule at arrival.",
       providers: {
         create: [{ userId: educator.id, serviceArea: "ADAPTIVE", minutesPerWeek: 60, sessionsPerWeek: 5 }],
       },
       guardians: {
         create: [
           {
-            name: "Dana Hale",
+            name: DEMO_USER_DISPLAY_NAMES["diana.santos"],
             relationship: "Parent",
-            email: demoEmail("dana.hale"),
+            email: demoEmail("diana.santos"),
             phone: "555-0142",
-            userId: parentJordan.id,
+            userId: parentJaime.id,
           },
         ],
       },
       consents: {
         create: {
-          guardianName: "Dana Hale",
+          guardianName: DEMO_USER_DISPLAY_NAMES["diana.santos"],
           noticeVersion: PRIVACY_NOTICE_VERSION,
           grantedAt: daysAgo(40),
         },
@@ -557,15 +686,15 @@ export async function seedDemoData() {
 
   const sam = await prisma.student.create({
     data: {
-      preferredName: "Sam Rivera",
+      preferredName: "Samuel Villanueva",
       grade: "2",
-      school: "Maple Ridge Elementary",
+      school: DEMO_ELEMENTARY_SCHOOL,
       caseManagerId: educator.id,
       organizationId: org.id,
       iepAnnualReviewAt: daysFromNow(8),
       iepTriennialAt: daysFromNow(90),
       presentLevels:
-        "Sam writes 2 of 5 first-name letters with a consistent starting point and uses a visual schedule for classroom transitions.",
+        "Samuel writes 2 of 5 first-name letters with a consistent starting point and uses a visual schedule for classroom transitions.",
       providers: {
         create: [
           { userId: ot.id, serviceArea: "OCCUPATIONAL_THERAPY", minutesPerWeek: 30, sessionsPerWeek: 1 },
@@ -575,9 +704,9 @@ export async function seedDemoData() {
       guardians: {
         create: [
           {
-            name: "Alex Rivera",
+            name: DEMO_USER_DISPLAY_NAMES["andres.villanueva"],
             relationship: "Parent",
-            email: demoEmail("alex.rivera"),
+            email: demoEmail("andres.villanueva"),
             phone: "555-0188",
             userId: parentSam.id,
           },
@@ -585,7 +714,7 @@ export async function seedDemoData() {
       },
       consents: {
         create: {
-          guardianName: "Alex Rivera",
+          guardianName: DEMO_USER_DISPLAY_NAMES["andres.villanueva"],
           noticeVersion: PRIVACY_NOTICE_VERSION,
           grantedAt: daysAgo(28),
         },
@@ -595,30 +724,30 @@ export async function seedDemoData() {
 
   const avery = await prisma.student.create({
     data: {
-      preferredName: "Avery Chen",
+      preferredName: "Andrea Tan",
       grade: "6",
-      school: "Cedar Grove Middle School",
+      school: DEMO_MIDDLE_SCHOOL,
       caseManagerId: educator.id,
       organizationId: org.id,
       iepAnnualReviewAt: daysFromNow(55),
       presentLevels:
-        "Avery contributes an on-topic comment in about 1 of 4 language samples and benefits from a sentence starter.",
+        "Andrea contributes an on-topic comment in about 1 of 4 language samples and benefits from a sentence starter.",
       providers: {
         create: [{ userId: speech.id, serviceArea: "SPEECH_LANGUAGE", minutesPerWeek: 45, sessionsPerWeek: 1 }],
       },
       guardians: {
         create: [
           {
-            name: "Morgan Chen",
+            name: DEMO_USER_DISPLAY_NAMES["mikaela.tan"],
             relationship: "Parent",
-            email: demoEmail("morgan.chen"),
+            email: demoEmail("mikaela.tan"),
             phone: "555-0160",
           },
         ],
       },
       consents: {
         create: {
-          guardianName: "Morgan Chen",
+          guardianName: DEMO_USER_DISPLAY_NAMES["mikaela.tan"],
           noticeVersion: PRIVACY_NOTICE_VERSION,
           grantedAt: daysAgo(60),
         },
@@ -628,22 +757,22 @@ export async function seedDemoData() {
 
   const riley = await prisma.student.create({
     data: {
-      preferredName: "Riley Brooks",
+      preferredName: "Rafael Bautista",
       grade: "3",
-      school: "Maple Ridge Elementary",
+      school: DEMO_ELEMENTARY_SCHOOL,
       caseManagerId: educator.id,
       organizationId: org.id,
       iepAnnualReviewAt: daysFromNow(-2),
-      presentLevels: "Riley solves two-step word problems at 40% accuracy with a graphic organizer.",
+      presentLevels: "Rafael solves two-step word problems at 40% accuracy with a graphic organizer.",
       providers: {
         create: [{ userId: educator.id, serviceArea: "ACADEMIC", minutesPerWeek: 120, sessionsPerWeek: 5 }],
       },
       guardians: {
         create: [
           {
-            name: "Taylor Brooks",
+            name: DEMO_USER_DISPLAY_NAMES["teresa.bautista"],
             relationship: "Guardian",
-            email: demoEmail("taylor.brooks"),
+            email: demoEmail("teresa.bautista"),
           },
         ],
       },
@@ -654,9 +783,9 @@ export async function seedDemoData() {
     data: {
       studentId: jordan.id,
       officialWording:
-        "Given a grade-level informational passage, Jordan will read 90 words correct per minute with at least 98% accuracy on 3 consecutive weekly probes.",
+        "Given a grade-level informational passage, Jaime will read 90 words correct per minute with at least 98% accuracy on 3 consecutive weekly probes.",
       plainLanguageSummary:
-        "Jordan is practicing reading grade-level passages smoothly and accurately so that meaning stays clear.",
+        "Jaime is practicing reading grade-level passages smoothly and accurately so that meaning stays clear.",
       baseline: "62 words correct per minute with 94% accuracy (September probe).",
       measurableTarget: "90 words correct per minute with 98% accuracy.",
       targetValue: 90,
@@ -678,7 +807,7 @@ export async function seedDemoData() {
   await prisma.goalObjective.create({
     data: {
       goalId: jordanReading.id,
-      officialWording: "Jordan will read 75 WCPM with 96% accuracy on 3 consecutive weekly probes.",
+      officialWording: "Jaime will read 75 WCPM with 96% accuracy on 3 consecutive weekly probes.",
       plainLanguageSummary: "First benchmark: reach 75 words correct per minute.",
       targetValue: 75,
       unit: "WCPM",
@@ -690,9 +819,9 @@ export async function seedDemoData() {
     data: {
       studentId: jordan.id,
       officialWording:
-        "During small-group instruction, Jordan will use a practiced phrase to request clarification or a break in 4 of 5 observed opportunities across two consecutive weeks, independently.",
+        "During small-group instruction, Jaime will use a practiced phrase to request clarification or a break in 4 of 5 observed opportunities across two consecutive weeks, independently.",
       plainLanguageSummary:
-        "Jordan is practicing asking for a repeat, a slower pace, or a short break during group work.",
+        "Jaime is practicing asking for a repeat, a slower pace, or a short break during group work.",
       baseline: "Independent request in 1 of 5 opportunities.",
       measurableTarget: "Independent request in 4 of 5 opportunities.",
       targetValue: 80,
@@ -714,9 +843,9 @@ export async function seedDemoData() {
     data: {
       studentId: sam.id,
       officialWording:
-        "Given lined paper and a visual model, Sam will write 4 of 5 first-name letters with correct start point and size in 3 consecutive occupational therapy sessions.",
+        "Given lined paper and a visual model, Samuel will write 4 of 5 first-name letters with correct start point and size in 3 consecutive occupational therapy sessions.",
       plainLanguageSummary:
-        "Sam is practicing writing the letters in their first name with a comfortable grip and clear starting points.",
+        "Samuel is practicing writing the letters in their first name with a comfortable grip and clear starting points.",
       baseline: "2 of 5 letters with consistent size.",
       measurableTarget: "4 of 5 letters with correct start point and size.",
       targetValue: 80,
@@ -738,9 +867,9 @@ export async function seedDemoData() {
     data: {
       studentId: sam.id,
       officialWording:
-        "Given a two-step visual schedule, Sam will complete classroom transitions within 2 minutes of the cue on 4 of 5 consecutive school days.",
+        "Given a two-step visual schedule, Samuel will complete classroom transitions within 2 minutes of the cue on 4 of 5 consecutive school days.",
       plainLanguageSummary:
-        "Sam is using a picture schedule to move from one classroom activity to the next with less wait time.",
+        "Samuel is using a picture schedule to move from one classroom activity to the next with less wait time.",
       baseline: "Average of 5 minutes from cue to start.",
       measurableTarget: "Transition complete within 2 minutes on 4 of 5 days.",
       targetValue: 80,
@@ -762,9 +891,9 @@ export async function seedDemoData() {
     data: {
       studentId: avery.id,
       officialWording:
-        "In a structured classroom discussion, Avery will contribute an on-topic comment or question using a complete sentence in 3 of 4 weekly language samples.",
+        "In a structured classroom discussion, Andrea will contribute an on-topic comment or question using a complete sentence in 3 of 4 weekly language samples.",
       plainLanguageSummary:
-        "Avery is practicing joining class conversations with a full sentence that stays on the topic.",
+        "Andrea is practicing joining class conversations with a full sentence that stays on the topic.",
       baseline: "On-topic contribution in 1 of 4 samples.",
       measurableTarget: "On-topic contribution in 3 of 4 weekly samples.",
       targetValue: 75,
@@ -786,9 +915,9 @@ export async function seedDemoData() {
     data: {
       studentId: riley.id,
       officialWording:
-        "Given a two-step word problem and a graphic organizer, Riley will identify the operation and compute the correct answer with 80% accuracy on 3 consecutive weekly probes.",
+        "Given a two-step word problem and a graphic organizer, Rafael will identify the operation and compute the correct answer with 80% accuracy on 3 consecutive weekly probes.",
       plainLanguageSummary:
-        "Riley is practicing two-step math stories with a graphic organizer to choose the operation and show the solution.",
+        "Rafael is practicing two-step math stories with a graphic organizer to choose the operation and show the solution.",
       baseline: "40% accuracy on two-step word problems.",
       measurableTarget: "80% accuracy on 3 consecutive weekly probes.",
       targetValue: 80,
@@ -810,8 +939,8 @@ export async function seedDemoData() {
     data: {
       studentId: casey.id,
       officialWording:
-        "Given a one-step classroom direction, Casey will begin the action within 10 seconds in 4 of 5 opportunities across 3 consecutive school days.",
-      plainLanguageSummary: "Casey is practicing starting a classroom job after one direction.",
+        "Given a one-step classroom direction, Carla will begin the action within 10 seconds in 4 of 5 opportunities across 3 consecutive school days.",
+      plainLanguageSummary: "Carla is practicing starting a classroom job after one direction.",
       baseline: "Began within 10 seconds in 2 of 5 opportunities with a gesture.",
       measurableTarget: "4 of 5 opportunities across 3 consecutive days.",
       targetValue: 80,
@@ -897,7 +1026,7 @@ export async function seedDemoData() {
     days: 35,
     score: 74,
     authorId: educator.id,
-    notes: "Used a whisper-phone for self-monitoring. Jordan named two new vocabulary words after reading.",
+    notes: "Used a whisper-phone for self-monitoring. Jaime named two new vocabulary words after reading.",
     measurementType: "RATE",
     minutesDelivered: 30,
     accommodations: "Whisper-phone",
@@ -916,7 +1045,7 @@ export async function seedDemoData() {
     days: 7,
     score: 84,
     authorId: educator.id,
-    notes: "Weekly probe: 84 WCPM, 99% accuracy. Jordan reread one sentence independently to keep meaning.",
+    notes: "Weekly probe: 84 WCPM, 99% accuracy. Jaime reread one sentence independently to keep meaning.",
     measurementType: "RATE",
     evidenceLabel: "Fluency probe 8/21 (on file)",
     minutesDelivered: 30,
@@ -928,7 +1057,7 @@ export async function seedDemoData() {
     days: 42,
     score: 20,
     authorId: speech.id,
-    notes: "Modeled a break request during centers. Jordan used the phrase with a prompt.",
+    notes: "Modeled a break request during centers. Jaime used the phrase with a prompt.",
     minutesDelivered: 30,
     setting: "PULL_OUT",
     trials: [
@@ -960,7 +1089,7 @@ export async function seedDemoData() {
     days: 14,
     score: 60,
     authorId: speech.id,
-    notes: "Jordan asked for a repeat during science without a prompt in 3 of 5 chances.",
+    notes: "Jaime asked for a repeat during science without a prompt in 3 of 5 chances.",
     minutesDelivered: 30,
     setting: "CLASSROOM",
     trials: [
@@ -1088,7 +1217,7 @@ export async function seedDemoData() {
     days: 9,
     score: 0,
     authorId: speech.id,
-    notes: "Avery was absent; makeup scheduled for next week.",
+    notes: "Andrea was absent; makeup scheduled for next week.",
     sessionOutcome: "ABSENT",
     minutesDelivered: 0,
   });
@@ -1141,7 +1270,7 @@ export async function seedDemoData() {
         periodId: q4.id,
         progressCode: "SUFFICIENT",
         narrative:
-          "Jordan moved from 62 to the mid-70s WCPM last quarter. Accuracy stayed high. We will keep weekly probes and partner reading.",
+          "Jaime moved from 62 to the mid-70s WCPM last quarter. Accuracy stayed high. We will keep weekly probes and partner reading.",
         authorId: educator.id,
       },
       {
@@ -1149,7 +1278,7 @@ export async function seedDemoData() {
         periodId: q1.id,
         progressCode: "SUFFICIENT",
         narrative:
-          "This quarter Jordan is reading 84 WCPM on informational probes. The annual target is 90 WCPM across three consecutive probes. Next we will keep the whisper-phone available, then fade it.",
+          "This quarter Jaime is reading 84 WCPM on informational probes. The annual target is 90 WCPM across three consecutive probes. Next we will keep the whisper-phone available, then fade it.",
         authorId: educator.id,
       },
       {
@@ -1157,7 +1286,7 @@ export async function seedDemoData() {
         periodId: q1.id,
         progressCode: "SUFFICIENT",
         narrative:
-          "Jordan used a practiced request independently in 4 of 5 book-club chances. We are fading the cue card. Please keep practicing the phrase at home before homework.",
+          "Jaime used a practiced request independently in 4 of 5 book-club chances. We are fading the cue card. Please keep practicing the phrase at home before homework.",
         authorId: speech.id,
       },
       {
@@ -1165,7 +1294,7 @@ export async function seedDemoData() {
         periodId: q1.id,
         progressCode: "INSUFFICIENT",
         narrative:
-          "Sam’s name writing is more consistent with the highlighted strip, but size still drops when the model is removed. We have not yet seen three consecutive sessions at the target.",
+          "Samuel’s name writing is more consistent with the highlighted strip, but size still drops when the model is removed. We have not yet seen three consecutive sessions at the target.",
         authorId: ot.id,
       },
       {
@@ -1173,7 +1302,7 @@ export async function seedDemoData() {
         periodId: q1.id,
         progressCode: "SUFFICIENT",
         narrative:
-          "Casey is beginning more classroom jobs after one direction, especially with a small gesture. We will keep the visual schedule at arrival.",
+          "Carla is beginning more classroom jobs after one direction, especially with a small gesture. We will keep the visual schedule at arrival.",
         authorId: educator.id,
       },
     ],
@@ -1185,14 +1314,14 @@ export async function seedDemoData() {
         studentId: jordan.id,
         fromUserId: educator.id,
         visibility: "FAMILY",
-        body: "Jordan used a break request independently during book clubs today. We will keep the cue card nearby next week, then fade it.",
+        body: "Jaime used a break request independently during book clubs today. We will keep the cue card nearby next week, then fade it.",
         createdAt: daysAgo(4),
       },
       {
         studentId: jordan.id,
-        fromUserId: parentJordan.id,
+        fromUserId: parentJaime.id,
         visibility: "FAMILY",
-        body: "Thank you for the update. Jordan practiced the same phrase at home before homework.",
+        body: "Thank you for the update. Jaime practiced the same phrase at home before homework.",
         createdAt: daysAgo(3),
       },
       {
@@ -1206,14 +1335,14 @@ export async function seedDemoData() {
         studentId: casey.id,
         fromUserId: educator.id,
         visibility: "FAMILY",
-        body: "Casey started the morning job after one direction three times today. A small point to the picture still helps on the first try.",
+        body: "Carla started the morning job after one direction three times today. A small point to the picture still helps on the first try.",
         createdAt: daysAgo(1),
       },
       {
         studentId: sam.id,
         fromUserId: ot.id,
         visibility: "FAMILY",
-        body: "Sam’s name writing is more consistent with the highlighted strip. We will try a shorter pencil next session.",
+        body: "Samuel’s name writing is more consistent with the highlighted strip. We will try a shorter pencil next session.",
         createdAt: daysAgo(2),
       },
     ],
