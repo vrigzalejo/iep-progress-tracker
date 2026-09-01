@@ -46,7 +46,9 @@ export default async function GuidePage() {
         <h1 className="font-serif text-3xl">Setup guide</h1>
         <p className="mt-2 text-muted">
           A short path from first sign-in to a defensible progress record. This demonstration school
-          is already filled with fictional students so you can click through every role.
+          is already filled with fictional students so you can click through every role. Use{" "}
+          <strong>How to use this site</strong> in the corner if you want a question answered from
+          this guide.
         </p>
       </div>
       <ol className="space-y-4">

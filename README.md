@@ -18,6 +18,7 @@ IEP Progress Tracker is designed around FERPA-aligned practices (data minimizati
 - Use an educator dashboard for reporting dates, IEP reviews, uncovered service minutes, and stale data
 - Keep family threads separate from staff-only notes; parents can switch among linked students
 - Search, filter, export CSV, and review audit history (authorized staff)
+- Ask the in-app how-to assistant how a screen works (it does not generate IEP content or read student records)
 - Configure retention, acknowledge consent, and delete records with confirmation
 
 The product does **not** generate IEP goals, recommend services, or make educational, legal, or clinical decisions. Student data is **not** used to train AI models.
@@ -117,6 +118,9 @@ Roles stay in this app. The identity provider only proves who the person is.
 | `NEXT_PUBLIC_DEMO_EMAIL_DOMAIN` | No | Domain for demo accounts. Default: `demo.{slug}.school` |
 | `NEXT_PUBLIC_DEMO_PASSPHRASE` | No | Shared demo sign-in passphrase |
 | `SENTRY_DSN` | No | Optional error monitoring. Do not send student payloads |
+| `HF_TOKEN` | No | Optional Hugging Face token for the how-to chatbot (`HUGGINGFACE_HUB_TOKEN` also works). Monthly free credits on Inference Providers. Unset = in-app guide answers only. Never send student records |
+| `HF_CHAT_MODEL` | No | Chat model id. Default: `Qwen/Qwen2.5-3B-Instruct:cheapest` |
+| `HF_CHAT_BASE_URL` | No | OpenAI-compatible HF router. Default: `https://router.huggingface.co/v1` |
 | `AUTH_MICROSOFT_ENTRA_ID_ID` | SSO | Entra ID application (client) ID |
 | `AUTH_MICROSOFT_ENTRA_ID_SECRET` | SSO | Entra ID client secret |
 | `AUTH_MICROSOFT_ENTRA_ID_ISSUER` | SSO | `https://login.microsoftonline.com/{tenant-id}/v2.0` |
