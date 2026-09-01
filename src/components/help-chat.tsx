@@ -15,32 +15,35 @@ type ChatMessage = {
 };
 
 const STAFF_PROMPTS = [
-  "How do I log a session?",
-  "Where do I write a progress report?",
-  "Who can see student records?",
+  "What can this app do?",
+  "How do I add a student profile?",
+  "How do I record an IEP goal?",
+  "How do I log a session with trials?",
+  "How does the dashboard work?",
+  "How do I print a meeting packet?",
   "How does search work?",
+  "How do I export a CSV?",
 ];
 
 const FAMILY_PROMPTS = [
   "What can I see in the family portal?",
   "How do I message the team?",
   "How do I switch between children?",
+  "How do I open a progress report?",
+  "How do I print a meeting packet?",
+  "How do I acknowledge the privacy notice?",
 ];
 
-function HelpRichText({ text }: { text: string }) {
-  const blocks = text.split("\n").filter((line) => line.length > 0);
-  return (
-    <div className="space-y-2">
-      {blocks.map((line, index) => (
-        <p key={`${index}-${line.slice(0, 24)}`}>{linkify(line)}</p>
-      ))}
-    </div>
-  );
-}
-
-function linkify(text: string): ReactNode {
-  const parts = text.split(/(\[[^\]]+\]\([^)]+\))/g);
+function formatInline(text: string): ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g);
   return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return (
+        <strong key={index} className="font-semibold">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
     const match = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
     if (!match) return <span key={index}>{part}</span>;
     const href = match[2];
@@ -55,6 +58,17 @@ function linkify(text: string): ReactNode {
   });
 }
 
+function HelpRichText({ text }: { text: string }) {
+  const blocks = text.split("\n").filter((line) => line.length > 0);
+  return (
+    <div className="space-y-2">
+      {blocks.map((line, index) => (
+        <p key={`${index}-${line.slice(0, 24)}`}>{formatInline(line)}</p>
+      ))}
+    </div>
+  );
+}
+
 export function HelpChat({ role }: { role: Role }) {
   const titleId = useId();
   const dialogId = useId();
@@ -63,16 +77,23 @@ export function HelpChat({ role }: { role: Role }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [input, setInput] = useState("");
+  const welcome =
+    role === "PARENT"
+      ? `I can walk through every family screen: Family home, shared goals, reports, meeting packets, messages, and privacy. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`
+      : role === "ADMINISTRATOR"
+        ? `I can walk through every administrator screen: dashboard, students, goals, sessions, reports, search, messages, team, and privacy. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`
+        : `I can walk through every ${ROLE_LABELS[role]} screen: dashboard, students, goals, sessions, reports, search, messages, and privacy. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`;
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
       role: "assistant",
-      content: `I can explain how to use this site as a ${ROLE_LABELS[role]}. Ask about screens, roles, or the usual workflow. I will not write IEP goals or interpret a student's record.`,
+      content: welcome,
     },
   ]);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const prompts = role === "PARENT" ? FAMILY_PROMPTS : STAFF_PROMPTS;
+  const userTurns = messages.filter((message) => message.role === "user").length;
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
@@ -153,7 +174,7 @@ export function HelpChat({ role }: { role: Role }) {
               <h2 id={titleId} className="font-serif text-lg">
                 How to use this site
               </h2>
-              <p className="text-sm text-white/80">Answers from the product guide. Not IEP advice.</p>
+              <p className="text-sm text-white/80">Detailed how-tos for every screen. Not IEP advice.</p>
             </div>
             <button
               type="button"
@@ -182,13 +203,13 @@ export function HelpChat({ role }: { role: Role }) {
                 {error}
               </p>
             ) : null}
-            {messages.length < 3 ? (
+            {userTurns < 2 ? (
               <div className="flex flex-wrap gap-2">
                 {prompts.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
-                    className="rounded-full border border-border bg-white px-3 py-1 text-left text-sm text-forest hover:bg-paper"
+                    className="max-w-full rounded-full border border-border bg-white px-3 py-1 text-left text-sm text-forest hover:bg-paper"
                     onClick={() => void send(prompt)}
                   >
                     {prompt}
@@ -210,7 +231,7 @@ export function HelpChat({ role }: { role: Role }) {
                 onKeyDown={onInputKey}
                 rows={2}
                 maxLength={600}
-                placeholder="Ask how a screen works"
+                placeholder="Ask about any screen or feature"
                 className="min-h-11 flex-1 resize-none rounded-md border border-border bg-white px-3 py-2 text-base text-ink"
               />
               <Button type="submit" size="icon" disabled={pending || !input.trim()} aria-label="Send question">
