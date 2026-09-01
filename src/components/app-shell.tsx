@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Logo } from "@/components/logo";
+import { HelpChat } from "@/components/help-chat";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/app/actions";
 import { can, isStaff, type Permission } from "@/lib/permissions";
@@ -149,6 +150,7 @@ export function AppShell({
           <main id="main" className="flex-1 px-4 py-6 sm:px-8">
             {children}
           </main>
+          <HelpChat role={user.role} />
         </div>
       </div>
     </div>

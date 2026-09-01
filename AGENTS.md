@@ -13,6 +13,7 @@ Push to the `github` remote (`vrigzalejo/iep-progress-tracker`), not `origin` (C
 ## Product constraints
 
 - Do not generate IEP goals, recommend services, or make educational/legal decisions.
+- The how-to chatbot may only explain in-app screens from the product handbook. Optional `HF_TOKEN` rephrases those answers via Hugging Face Inference Providers. Never send student records to a model.
 - Do not use student data to train models. Keep PII out of logs and error UI.
 - Database is Postgres. Credentials come from `POSTGRES_*` or `DATABASE_URL` (Vercel/Supabase/Neon also accept `POSTGRES_URL`). Never commit `.env.local`.
 - Keep **one app replica** until evidence uploads use object storage. On Vercel, use private Supabase Storage (or a private Blob store).
