@@ -4,6 +4,7 @@ import {
   databaseUrl,
   migrateDatabaseUrl,
   pgPoolConnectionString,
+  pgPoolSsl,
   postgresEnv,
   withSupabaseSsl,
 } from "./database-url";
@@ -164,5 +165,24 @@ describe("pgPoolConnectionString", () => {
     expect(next).not.toContain("pgbouncer");
     expect(next).not.toContain("connection_limit");
     expect(next).toContain("sslmode=require");
+  });
+
+  it("adds uselibpqcompat for Supabase pooler TLS", () => {
+    const next = pgPoolConnectionString(
+      "postgresql://postgres:pw@aws-0-us-east-2.pooler.supabase.com:6543/postgres?sslmode=require",
+    );
+    expect(next).toContain("uselibpqcompat=true");
+  });
+
+  it("disables CA verification for Supabase pg.Pool", () => {
+    expect(
+      pgPoolSsl(
+        "postgresql://postgres:pw@aws-0-us-east-2.pooler.supabase.com:6543/postgres?sslmode=require",
+      ),
+    ).toEqual({ rejectUnauthorized: false });
+  });
+
+  it("does not change TLS for local Docker Postgres", () => {
+    expect(pgPoolSsl("postgresql://iep:iep@127.0.0.1:5432/iep")).toBeUndefined();
   });
 });

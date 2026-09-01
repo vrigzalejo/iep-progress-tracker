@@ -1,9 +1,10 @@
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
-import { databaseUrl, pgPoolConnectionString } from "@/lib/database-url";
+import { databaseUrl, pgPoolConnectionString, pgPoolSsl } from "@/lib/database-url";
 
 const connectionString = pgPoolConnectionString(databaseUrl());
+const poolSsl = pgPoolSsl(connectionString);
 const onVercel = Boolean(process.env.VERCEL);
 
 const globalForPrisma = globalThis as unknown as {
@@ -17,6 +18,7 @@ function createClient() {
     existing ??
     new Pool({
       connectionString,
+      ssl: poolSsl,
       max: onVercel ? 1 : 10,
     });
   if (!existing) {

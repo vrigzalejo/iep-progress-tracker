@@ -113,7 +113,7 @@ export default async function PeriodCommentsPage({
                         required
                         minLength={10}
                         defaultValue={existing?.narrative ?? ""}
-                        placeholder="This quarter Jordan practiced… with this support… next we will…"
+                        placeholder="This quarter Jaime practiced… with this support… next we will…"
                       />
                     </div>
                     <Button type="submit">Save comment</Button>

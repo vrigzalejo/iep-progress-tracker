@@ -59,7 +59,7 @@ describe("validation", () => {
   it("allows creating a team member without a password for SSO", () => {
     expect(
       teamMemberSchema.safeParse({
-        name: "Maya Ellis",
+        name: "Maricel Santos",
         email: "maya@district.edu",
         role: "EDUCATOR",
         password: "",
@@ -70,7 +70,7 @@ describe("validation", () => {
   it("still enforces password complexity when a password is provided", () => {
     expect(
       teamMemberSchema.safeParse({
-        name: "Maya Ellis",
+        name: "Maricel Santos",
         email: "maya@district.edu",
         role: "EDUCATOR",
         password: "short",
@@ -83,7 +83,7 @@ describe("validation", () => {
       studentSchema.safeParse({
         preferredName: "  ",
         grade: "4",
-        school: "Maple Ridge",
+        school: "Liwanag Elementary",
         caseManagerId: "u1",
       }).success,
     ).toBe(false);

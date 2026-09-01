@@ -136,7 +136,7 @@ export function SignInForm({
                 <li key={account.email}>
                   <button
                     type="button"
-                    className="w-full rounded-lg border border-border bg-white px-3 py-3 text-left hover:border-forest"
+                    className="w-full cursor-pointer rounded-lg border border-border bg-white px-3 py-3 text-left hover:border-forest"
                     onClick={() => {
                       setEmail(account.email);
                       setPassword(DEMO_PASSPHRASE);

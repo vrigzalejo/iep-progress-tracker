@@ -68,12 +68,12 @@ Addresses follow `NEXT_PUBLIC_APP_SLUG`. With the default slug they are:
 
 | Role | Name | Email |
 | --- | --- | --- |
-| Administrator | Chris Okonkwo | chris.okonkwo@demo.iep-progress-tracker.school |
-| Educator | Maya Ellis | maya.ellis@demo.iep-progress-tracker.school |
-| Provider | Priya Shah | priya.shah@demo.iep-progress-tracker.school |
-| Parent / guardian | Dana Hale | dana.hale@demo.iep-progress-tracker.school |
+| Administrator | Crisanto Reyes | crisanto.reyes@demo.iep-progress-tracker.school |
+| Educator | Maricel Santos | maricel.santos@demo.iep-progress-tracker.school |
+| Provider | Patricia Cruz | patricia.cruz@demo.iep-progress-tracker.school |
+| Parent / guardian | Diana Santos | diana.santos@demo.iep-progress-tracker.school |
 
-All students (Jordan Hale, Casey Hale, Sam Rivera, Avery Chen, Riley Brooks) are fictional. Dana Hale is linked to both Jordan and Casey so the family portal can switch children.
+All students (Jaime Santos, Carla Santos, Samuel Villanueva, Andrea Tan, Rafael Bautista) are fictional. Diana Santos is linked to both Jaime and Carla so the family portal can switch children.
 
 ### School SSO
 

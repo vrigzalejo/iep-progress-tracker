@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { hash, compare } from "bcryptjs";
@@ -30,8 +31,19 @@ import {
 import { SERVICE_AREAS, type PromptLevel, type ServiceArea } from "@/lib/constants";
 import { isSsoConfigured } from "@/lib/sso";
 
+/** Auth.js prefixes relative redirectTo with AUTH_URL; use the request host instead. */
+async function signInRedirect() {
+  const h = await headers();
+  const host = h.get("x-forwarded-host")?.split(",")[0]?.trim() || h.get("host");
+  if (!host) return "/sign-in";
+  const proto =
+    h.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+    (host.startsWith("127.") || host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}/sign-in`;
+}
+
 export async function signOutAction() {
-  await signOut({ redirectTo: "/sign-in" });
+  await signOut({ redirectTo: await signInRedirect() });
 }
 
 function formString(formData: FormData, key: string) {

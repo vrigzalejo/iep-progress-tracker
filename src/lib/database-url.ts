@@ -103,8 +103,25 @@ export function pgPoolConnectionString(url: string) {
   try {
     const parsed = new URL(url);
     for (const key of PG_STRIP_PARAMS) parsed.searchParams.delete(key);
+    if (isSupabaseHost(parsed.hostname)) {
+      parsed.searchParams.set("uselibpqcompat", "true");
+    }
     return parsed.toString();
   } catch {
     return url;
+  }
+}
+
+/**
+ * Node `pg` treats `sslmode=require` as verify-full. The Supabase pooler
+ * then fails with "self-signed certificate in certificate chain".
+ * Keep TLS on; skip CA verification so local seed and Vercel match migrate.
+ */
+export function pgPoolSsl(url: string) {
+  try {
+    if (!isSupabaseHost(new URL(url).hostname)) return undefined;
+    return { rejectUnauthorized: false as const };
+  } catch {
+    return undefined;
   }
 }
