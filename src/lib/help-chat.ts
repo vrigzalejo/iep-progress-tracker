@@ -111,7 +111,12 @@ export function refuseHelpQuestion(question: string) {
   return null;
 }
 
-export function scoreArticle(article: HelpArticle, queryTokens: string[], role: Role) {
+export function scoreArticle(
+  article: HelpArticle,
+  queryTokens: string[],
+  role: Role,
+  questionLower = "",
+) {
   if (article.roles && !article.roles.includes(role)) return 0;
   const titleTokens = tokens(article.title);
   const bodyTokens = tokens(article.body);
@@ -122,22 +127,75 @@ export function scoreArticle(article: HelpArticle, queryTokens: string[], role: 
     if (keywordSet.has(token)) score += 2;
     if (bodyTokens.includes(token)) score += 1;
   }
+  const haystack = questionLower || queryTokens.join(" ");
+  for (const keyword of article.keywords) {
+    const key = keyword.toLowerCase();
+    if ((key.length < 4 && !key.includes(" ")) || !haystack.includes(key)) continue;
+    score += key.includes(" ") ? 5 : 2;
+  }
   return score;
 }
 
 export function retrieveArticles(question: string, role: Role, limit = 3) {
+  const questionLower = question.toLowerCase();
   const queryTokens = tokens(question);
-  if (queryTokens.length === 0) {
+  const ranked = helpArticles()
+    .map((article) => ({
+      article,
+      score: scoreArticle(article, queryTokens, role, questionLower),
+    }))
+    .filter((row) => row.score > 0)
+    .sort((a, b) => b.score - a.score);
+  if (ranked.length === 0) {
     return helpArticles()
-      .filter((article) => !article.roles || article.roles.includes(role))
+      .filter(
+        (article) =>
+          (article.id === "catalog" || article.id === "catalog-family") &&
+          (!article.roles || article.roles.includes(role)),
+      )
       .slice(0, 1);
   }
-  return helpArticles()
-    .map((article) => ({ article, score: scoreArticle(article, queryTokens, role) }))
-    .filter((row) => row.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .map((row) => row.article);
+  return ranked.slice(0, limit).map((row) => row.article);
+}
+
+function hrefLabel(href: string) {
+  const labels: Record<string, string> = {
+    "/guide": "Setup guide",
+    "/setup": "Account setup",
+    "/sign-in": "Sign in",
+    "/dashboard": "Dashboard",
+    "/students": "Students",
+    "/students/new": "Add student",
+    "/reports": "Reports",
+    "/search": "Search",
+    "/messages": "Messages",
+    "/team": "Team",
+    "/privacy": "Privacy",
+    "/privacy-notice": "Privacy notice",
+    "/parent": "Family home",
+  };
+  return labels[href] ?? href.replace(/^\//, "").replace(/\//g, " ");
+}
+
+function isCatalogArticle(article: HelpArticle) {
+  return article.id === "catalog" || article.id === "catalog-family";
+}
+
+function formatHandbookArticles(articles: HelpArticle[]) {
+  const primary = articles[0];
+  if (!primary) return { text: "", hrefs: [] as string[] };
+  const shown = isCatalogArticle(primary)
+    ? [primary]
+    : articles.filter((article) => !isCatalogArticle(article)).slice(0, 2);
+  const text = shown
+    .map((article) => {
+      const links = uniqueHrefs([article])
+        .map((href) => `[${hrefLabel(href)}](${href})`)
+        .join(" · ");
+      return `**${article.title}**\n\n${article.body}\n\nOpen ${links}.`;
+    })
+    .join("\n\n");
+  return { text, hrefs: uniqueHrefs(shown) };
 }
 
 function uniqueHrefs(articles: HelpArticle[]) {
@@ -149,22 +207,25 @@ export function answerFromHandbook(question: string, role: Role): HelpChatResult
   if (refused) {
     return { text: refused, hrefs: ["/guide"], refused: true, source: "handbook" };
   }
-  const articles = retrieveArticles(question, role);
+  const articles = retrieveArticles(question, role, 3);
   if (articles.length === 0) {
-    const overview = helpArticles()[0];
+    const overview =
+      helpArticles().find(
+        (article) =>
+          (article.id === "catalog" || article.id === "catalog-family") &&
+          (!article.roles || article.roles.includes(role)),
+      ) ?? helpArticles()[0];
     return {
-      text: `I can explain how to use ${APP_NAME} for your role (${ROLE_LABELS[role]}). Try asking about logging a session, writing a report, search, or who can see records. The setup guide walks through the full path.`,
+      text: `I can explain every ${APP_NAME} screen for your role (${ROLE_LABELS[role]}). Ask about students, goals, sessions, reports, search, messages, team, or privacy—or say “what can this app do?”`,
       hrefs: overview.hrefs,
       refused: false,
       source: "handbook",
     };
   }
-  const shown = articles[0];
-  const hrefs = uniqueHrefs([shown]);
-  const links = hrefs.map((href) => `[${href.replace(/^\//, "")}](${href})`).join(" · ");
+  const formatted = formatHandbookArticles(articles);
   return {
-    text: `${shown.body} Open ${links}.`,
-    hrefs,
+    text: formatted.text,
+    hrefs: formatted.hrefs,
     refused: false,
     source: "handbook",
   };
@@ -178,10 +239,11 @@ export function helpSystemPrompt(role: Role, articles: HelpArticle[]) {
     `You are the in-app how-to assistant for ${APP_NAME}.`,
     `The signed-in person is a ${ROLE_LABELS[role]}. Answer only how to use this website.`,
     "Use only the handbook excerpts below. If they are not enough, say so and point to /guide.",
+    "Write a detailed how-to: who can do it, the exact clicks, and what the product will not do.",
+    "Use 2 to 5 short paragraphs. Use markdown links only to in-app paths that start with /.",
     "Never generate IEP goals, present levels, services, minutes, placements, or progress narratives.",
     "Never make educational, legal, or clinical decisions. Never ask for student names or record details.",
     "If the person describes a specific student, refuse to interpret the record and tell them to open Students, Search, or Family home.",
-    "Keep answers short. Use markdown links only to in-app paths that start with /.",
     "",
     handbook || "No handbook excerpts matched. Direct the person to /guide.",
   ].join("\n");
@@ -228,7 +290,7 @@ export async function completeHelpChat(messages: ChatMessage[]) {
     body: JSON.stringify({
       model: config.model,
       temperature: 0.2,
-      max_tokens: 450,
+      max_tokens: 800,
       messages,
     }),
   });
@@ -249,7 +311,7 @@ export async function answerHelpQuestion(
   const handbook = answerFromHandbook(asked, role);
   if (handbook.refused) return handbook;
   if (!huggingFaceHelpConfig()) return handbook;
-  const articles = retrieveArticles(asked, role);
+  const articles = retrieveArticles(asked, role, 4);
   const prior = history.slice(-HELP_CHAT_MAX_HISTORY).map((message) => ({
     role: message.role,
     content: normalizeQuestion(message.content),

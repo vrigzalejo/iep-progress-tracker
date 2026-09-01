@@ -32,11 +32,34 @@ describe("help chat", () => {
     expect(scoreArticle(sessions!, ["session"], "PARENT")).toBe(0);
   });
 
+  it("maps feature-wide questions to the catalog", () => {
+    expect(retrieveArticles("what can this app do", "EDUCATOR")[0]?.id).toBe("catalog");
+    expect(retrieveArticles("what can this app do", "PARENT")[0]?.id).toBe("catalog-family");
+  });
+
+  it("explains CSV export and meeting packets", () => {
+    expect(retrieveArticles("download csv export", "EDUCATOR")[0]?.id).toBe("export");
+    expect(retrieveArticles("print the IEP meeting packet", "EDUCATOR")[0]?.id).toBe("meeting");
+  });
+
+  it("describes adding a student profile in detail", () => {
+    const result = answerFromHandbook("how to create student", "EDUCATOR");
+    expect(result.text.toLowerCase()).toMatch(/preferred name/);
+    expect(result.hrefs).toContain("/students/new");
+    expect(result.text).not.toMatch(/Ask about any staff screen/);
+  });
+
   it("answers with in-app links", () => {
     const result = answerFromHandbook("where do I print a progress report", "EDUCATOR");
     expect(result.refused).toBe(false);
     expect(result.hrefs).toContain("/reports");
     expect(result.text.toLowerCase()).toMatch(/report/);
+  });
+
+  it("explains dashboard minutes, objectives, and sign out", () => {
+    expect(retrieveArticles("minutes gap on the dashboard", "EDUCATOR")[0]?.id).toBe("minutes");
+    expect(retrieveArticles("add a short-term objective", "EDUCATOR")[0]?.id).toBe("objectives");
+    expect(retrieveArticles("where is sign out", "EDUCATOR")[0]?.id).toBe("navigation");
   });
 
   it("points refused questions at the setup guide", () => {
