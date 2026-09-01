@@ -12,4 +12,4 @@ resources:
   - ingress.yaml
 images:
   - name: iep-progress-tracker
-    newTag: "0.4.0"
+    newTag: "0.4.1"
