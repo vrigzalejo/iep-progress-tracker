@@ -1,33 +1,13 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { buildDatabaseUrl, databaseUrl, postgresEnv } from "./database-url";
-
-const KEYS = [
-  "DATABASE_URL",
-  "POSTGRES_USER",
-  "POSTGRES_PASSWORD",
-  "POSTGRES_HOST",
-  "POSTGRES_PORT",
-  "POSTGRES_DB",
-] as const;
-
-const original = new Map<string, string | undefined>();
-
-function setEnv(values: Partial<Record<(typeof KEYS)[number], string | undefined>>) {
-  for (const key of KEYS) {
-    if (!original.has(key)) original.set(key, process.env[key]);
-    const next = values[key];
-    if (next === undefined) delete process.env[key];
-    else process.env[key] = next;
-  }
-}
-
-afterEach(() => {
-  for (const [key, value] of original) {
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
-  }
-  original.clear();
-});
+import { describe, expect, it } from "vitest";
+import {
+  buildDatabaseUrl,
+  databaseUrl,
+  migrateDatabaseUrl,
+  pgPoolConnectionString,
+  pgPoolSsl,
+  postgresEnv,
+  withSupabaseSsl,
+} from "./database-url";
 
 describe("postgresEnv", () => {
   it("uses demo defaults when nothing is set", () => {
@@ -57,6 +37,17 @@ describe("postgresEnv", () => {
       database: "iep_prod",
     });
   });
+
+  it("accepts POSTGRES_DATABASE as a Vercel alias for POSTGRES_DB", () => {
+    expect(
+      postgresEnv({
+        POSTGRES_USER: "iep",
+        POSTGRES_PASSWORD: "iep",
+        POSTGRES_HOST: "host",
+        POSTGRES_DATABASE: "neondb",
+      }),
+    ).toMatchObject({ database: "neondb" });
+  });
 });
 
 describe("databaseUrl", () => {
@@ -65,8 +56,26 @@ describe("databaseUrl", () => {
       databaseUrl({
         DATABASE_URL: "postgresql://cloud:pw@db.example:5432/iep",
         POSTGRES_PASSWORD: "ignored",
+        POSTGRES_URL: "postgresql://ignored@db.example:5432/iep",
       }),
     ).toBe("postgresql://cloud:pw@db.example:5432/iep");
+  });
+
+  it("uses Vercel POSTGRES_URL when DATABASE_URL is unset", () => {
+    expect(
+      databaseUrl({
+        POSTGRES_URL: "postgresql://iep:pw@pooler.neon.tech/iep?sslmode=require",
+      }),
+    ).toBe("postgresql://iep:pw@pooler.neon.tech/iep?sslmode=require");
+  });
+
+  it("prefers POSTGRES_PRISMA_URL over POSTGRES_URL", () => {
+    expect(
+      databaseUrl({
+        POSTGRES_PRISMA_URL: "postgresql://iep:pw@pooler/iep?pgbouncer=true",
+        POSTGRES_URL: "postgresql://iep:pw@pooler/iep",
+      }),
+    ).toBe("postgresql://iep:pw@pooler/iep?pgbouncer=true");
   });
 
   it("builds a URL from POSTGRES_* parts", () => {
@@ -94,13 +103,86 @@ describe("databaseUrl", () => {
   });
 
   it("ignores a blank DATABASE_URL", () => {
-    setEnv({
-      DATABASE_URL: "   ",
-      POSTGRES_USER: "sped",
-      POSTGRES_PASSWORD: "s3cret",
-      POSTGRES_HOST: "db",
-      POSTGRES_DB: "iep",
-    });
-    expect(databaseUrl()).toBe("postgresql://sped:s3cret@db:5432/iep");
+    expect(
+      databaseUrl({
+        DATABASE_URL: "   ",
+        POSTGRES_USER: "sped",
+        POSTGRES_PASSWORD: "s3cret",
+        POSTGRES_HOST: "db",
+        POSTGRES_DB: "iep",
+      }),
+    ).toBe("postgresql://sped:s3cret@db:5432/iep");
+  });
+
+  it("adds sslmode=require for Supabase hosts", () => {
+    expect(
+      databaseUrl({
+        DATABASE_URL:
+          "postgresql://postgres:pw@db.abcd.supabase.co:5432/postgres",
+      }),
+    ).toContain("sslmode=require");
+  });
+});
+
+describe("withSupabaseSsl", () => {
+  it("leaves local URLs unchanged", () => {
+    expect(withSupabaseSsl("postgresql://iep:iep@127.0.0.1:5432/iep")).toBe(
+      "postgresql://iep:iep@127.0.0.1:5432/iep",
+    );
+  });
+
+  it("does not duplicate sslmode", () => {
+    const url =
+      "postgresql://postgres:pw@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true";
+    expect(withSupabaseSsl(url)).toBe(url);
+  });
+});
+
+describe("migrateDatabaseUrl", () => {
+  it("prefers a direct non-pooling URL for Prisma CLI", () => {
+    expect(
+      migrateDatabaseUrl({
+        DATABASE_URL: "postgresql://iep:pw@pooler/iep?pgbouncer=true",
+        POSTGRES_URL_NON_POOLING: "postgresql://iep:pw@ep-direct/iep",
+      }),
+    ).toBe("postgresql://iep:pw@ep-direct/iep");
+  });
+
+  it("falls back to the runtime URL", () => {
+    expect(
+      migrateDatabaseUrl({
+        DATABASE_URL: "postgresql://iep:pw@db.example/iep",
+      }),
+    ).toBe("postgresql://iep:pw@db.example/iep");
+  });
+});
+
+describe("pgPoolConnectionString", () => {
+  it("strips Prisma pgbouncer query params", () => {
+    const next = pgPoolConnectionString(
+      "postgresql://iep:pw@pooler.example/iep?pgbouncer=true&sslmode=require&connection_limit=1",
+    );
+    expect(next).not.toContain("pgbouncer");
+    expect(next).not.toContain("connection_limit");
+    expect(next).toContain("sslmode=require");
+  });
+
+  it("adds uselibpqcompat for Supabase pooler TLS", () => {
+    const next = pgPoolConnectionString(
+      "postgresql://postgres:pw@aws-0-us-east-2.pooler.supabase.com:6543/postgres?sslmode=require",
+    );
+    expect(next).toContain("uselibpqcompat=true");
+  });
+
+  it("disables CA verification for Supabase pg.Pool", () => {
+    expect(
+      pgPoolSsl(
+        "postgresql://postgres:pw@aws-0-us-east-2.pooler.supabase.com:6543/postgres?sslmode=require",
+      ),
+    ).toEqual({ rejectUnauthorized: false });
+  });
+
+  it("does not change TLS for local Docker Postgres", () => {
+    expect(pgPoolSsl("postgresql://iep:iep@127.0.0.1:5432/iep")).toBeUndefined();
   });
 });

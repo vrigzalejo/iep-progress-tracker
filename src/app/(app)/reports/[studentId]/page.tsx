@@ -34,7 +34,7 @@ export default async function ReportPreviewPage({
           <Logo />
           <div>
             <p className="font-serif text-2xl">{APP_NAME} report</p>
-            <p className="text-sm text-muted">Maple Ridge Demonstration School</p>
+            <p className="text-sm text-muted">{student.organization.name}</p>
             {period ? <p className="text-sm">{period.label}</p> : null}
           </div>
         </div>

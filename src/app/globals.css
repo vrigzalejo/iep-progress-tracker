@@ -47,6 +47,45 @@ body {
   line-height: 1.5;
 }
 
+@layer base {
+  a,
+  button,
+  [type="button"],
+  [type="submit"],
+  [type="reset"],
+  [role="button"],
+  label[for],
+  select,
+  summary {
+    cursor: pointer;
+  }
+
+  :disabled,
+  [disabled],
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
+/* Unlayered so this beats Tailwind Preflight's button { cursor: default }. */
+a,
+button,
+[type="button"],
+[type="submit"],
+[type="reset"],
+[role="button"],
+label[for],
+select,
+summary {
+  cursor: pointer !important;
+}
+
+:disabled,
+[disabled],
+[aria-disabled="true"] {
+  cursor: not-allowed !important;
+}
+
 *:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;

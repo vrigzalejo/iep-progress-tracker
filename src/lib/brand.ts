@@ -33,17 +33,84 @@ export function demoEmail(localPart: string) {
   return `${localPart}@${DEMO_EMAIL_DOMAIN}`;
 }
 
+export const DEMO_ORG_NAME = "Mabuhay Demonstration School";
+export const DEMO_ELEMENTARY_SCHOOL = "Liwanag Elementary";
+export const DEMO_MIDDLE_SCHOOL = "Katipunan Middle School";
+
 export const DEMO_USER_LOCAL_PARTS = [
-  "chris.okonkwo",
-  "maya.ellis",
-  "priya.shah",
-  "luis.navarro",
-  "dana.hale",
-  "alex.rivera",
-  "morgan.chen",
-  "taylor.brooks",
+  "crisanto.reyes",
+  "maricel.santos",
+  "patricia.cruz",
+  "lorenzo.bautista",
+  "diana.santos",
+  "andres.villanueva",
+  "mikaela.tan",
+  "teresa.bautista",
 ] as const;
+
+/** Previous demo emails still remap onto the current Filipino cast. */
+export const DEMO_LOCAL_PART_ALIASES: Record<string, (typeof DEMO_USER_LOCAL_PARTS)[number]> = {
+  "chris.okonkwo": "crisanto.reyes",
+  "maya.ellis": "maricel.santos",
+  "priya.shah": "patricia.cruz",
+  "luis.navarro": "lorenzo.bautista",
+  "dana.hale": "diana.santos",
+  "alex.rivera": "andres.villanueva",
+  "morgan.chen": "mikaela.tan",
+  "taylor.brooks": "teresa.bautista",
+};
+
+export const DEMO_USER_DISPLAY_NAMES: Record<(typeof DEMO_USER_LOCAL_PARTS)[number], string> = {
+  "crisanto.reyes": "Crisanto Reyes",
+  "maricel.santos": "Maricel Santos",
+  "patricia.cruz": "Patricia Cruz",
+  "lorenzo.bautista": "Lorenzo Bautista",
+  "diana.santos": "Diana Santos",
+  "andres.villanueva": "Andres Villanueva",
+  "mikaela.tan": "Mikaela Tan",
+  "teresa.bautista": "Teresa Bautista",
+};
+
+const DEMO_TEXT_REPLACEMENTS: [string, string][] = [
+  ["Jordan Hale", "Jaime Santos"],
+  ["Casey Hale", "Carla Santos"],
+  ["Sam Rivera", "Samuel Villanueva"],
+  ["Avery Chen", "Andrea Tan"],
+  ["Riley Brooks", "Rafael Bautista"],
+  ["Chris Okonkwo", "Crisanto Reyes"],
+  ["Maya Ellis", "Maricel Santos"],
+  ["Priya Shah", "Patricia Cruz"],
+  ["Luis Navarro", "Lorenzo Bautista"],
+  ["Dana Hale", "Diana Santos"],
+  ["Alex Rivera", "Andres Villanueva"],
+  ["Morgan Chen", "Mikaela Tan"],
+  ["Taylor Brooks", "Teresa Bautista"],
+  ["Maple Ridge Demonstration School", DEMO_ORG_NAME],
+  ["Maple Ridge Elementary", DEMO_ELEMENTARY_SCHOOL],
+  ["Cedar Grove Middle School", DEMO_MIDDLE_SCHOOL],
+  ["Jordan", "Jaime"],
+  ["Casey", "Carla"],
+  ["Avery", "Andrea"],
+  ["Riley", "Rafael"],
+  ["Sam’s", "Samuel’s"],
+  ["Sam's", "Samuel's"],
+  ["Sam will", "Samuel will"],
+  ["Sam is", "Samuel is"],
+  ["Sam writes", "Samuel writes"],
+];
 
 export function isDemoLocalPart(value: string): value is (typeof DEMO_USER_LOCAL_PARTS)[number] {
   return (DEMO_USER_LOCAL_PARTS as readonly string[]).includes(value);
+}
+
+export function canonicalDemoLocalPart(value: string) {
+  if (isDemoLocalPart(value)) return value;
+  return DEMO_LOCAL_PART_ALIASES[value];
+}
+
+export function applyDemoTextReplacements(text: string) {
+  return DEMO_TEXT_REPLACEMENTS.reduce(
+    (next, [from, to]) => next.split(from).join(to),
+    text,
+  );
 }

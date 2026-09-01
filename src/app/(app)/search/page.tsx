@@ -26,6 +26,7 @@ export default async function SearchPage({
         <EmptyState title="No matches">Try a preferred name, school, or a few words from a goal.</EmptyState>
       ) : (
         <>
+          {results.students.length > 0 ? (
           <Card>
             <CardTitle>Students</CardTitle>
             <ul className="mt-3 space-y-2">
@@ -42,6 +43,8 @@ export default async function SearchPage({
               ))}
             </ul>
           </Card>
+          ) : null}
+          {results.goals.length > 0 ? (
           <Card>
             <CardTitle>Goals</CardTitle>
             <ul className="mt-3 space-y-2">
@@ -55,6 +58,7 @@ export default async function SearchPage({
               ))}
             </ul>
           </Card>
+          ) : null}
         </>
       )}
     </div>

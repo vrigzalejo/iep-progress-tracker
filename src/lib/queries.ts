@@ -6,6 +6,7 @@ import { can, canAccessStudent, isStaff, type Permission } from "@/lib/permissio
 import type { Role } from "@/lib/constants";
 import { computeDataSignal, deliveredMinutesInRange } from "@/lib/progress";
 import { writeAudit } from "@/lib/audit";
+import { ilike } from "@/lib/search-filter";
 
 export type SessionUser = {
   id: string;
@@ -103,9 +104,9 @@ export async function listVisibleStudents(user: SessionUser, query?: string) {
     ...(query
       ? {
           OR: [
-            { preferredName: { contains: query } },
-            { school: { contains: query } },
-            { grade: { contains: query } },
+            { preferredName: ilike(query) },
+            { school: ilike(query) },
+            { grade: ilike(query) },
           ],
         }
       : {}),
@@ -140,6 +141,7 @@ export async function getStudentDetail(user: SessionUser, studentId: string) {
   const student = await prisma.student.findFirst({
     where: { id: studentId, organizationId: user.organizationId },
     include: {
+      organization: { select: { name: true } },
       caseManager: { select: { id: true, name: true, title: true, email: true } },
       providers: {
         include: { user: { select: { id: true, name: true, title: true, email: true } } },
@@ -365,20 +367,26 @@ export async function listAudit(user: SessionUser) {
 }
 
 export async function searchRecords(user: SessionUser, query: string) {
+  const caseload = await listVisibleStudents(user);
   const students = await listVisibleStudents(user, query);
-  const studentIds = students.map((student) => student.id);
-  const goals = await prisma.iepGoal.findMany({
-    where: {
-      studentId: { in: studentIds },
-      ...(user.role === "PARENT" ? { sharedWithGuardians: true } : {}),
-      OR: [
-        { officialWording: { contains: query } },
-        { plainLanguageSummary: { contains: query } },
-        { serviceArea: { contains: query.toUpperCase() } },
-      ],
-    },
-    include: { student: { select: { preferredName: true } } },
-    take: 20,
-  });
+  const caseloadIds = caseload.map((student) => student.id);
+  const goals =
+    caseloadIds.length === 0
+      ? []
+      : await prisma.iepGoal.findMany({
+          where: {
+            studentId: { in: caseloadIds },
+            ...(user.role === "PARENT" ? { sharedWithGuardians: true } : {}),
+            OR: [
+              { officialWording: ilike(query) },
+              { plainLanguageSummary: ilike(query) },
+              { measurableTarget: ilike(query) },
+              { serviceArea: ilike(query) },
+              { student: { preferredName: ilike(query) } },
+            ],
+          },
+          include: { student: { select: { preferredName: true } } },
+          take: 20,
+        });
   return { students, goals };
 }
