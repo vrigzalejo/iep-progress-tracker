@@ -20,6 +20,7 @@ describe("evidence storage", () => {
   it("uses disk locally unless object storage is configured", () => {
     expect(evidenceBackend({})).toBe("disk");
     expect(usesObjectStorage({})).toBe(false);
+    expect(evidenceBackend({ NEXT_PUBLIC_DEMO_MODE: "false" })).toBe("disk");
   });
 
   it("prefers Supabase Storage when the service role is set", () => {

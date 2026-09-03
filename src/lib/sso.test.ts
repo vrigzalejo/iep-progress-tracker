@@ -26,6 +26,7 @@ const SSO_KEYS = [
   "AUTH_SSO_JIT_ROLE",
   "AUTH_CREDENTIALS_ENABLED",
   "AUTH_GOOGLE_HOSTED_DOMAIN",
+  "NEXT_PUBLIC_DEMO_MODE",
 ] as const;
 
 const original = new Map<string, string | undefined>();
@@ -107,6 +108,23 @@ describe("sso helpers", () => {
       AUTH_GOOGLE_SECRET: "s",
     });
     expect(isCredentialsSignInEnabled()).toBe(false);
+  });
+
+  it("defaults production with SSO to SSO-only unless credentials are explicitly on", () => {
+    setEnv({
+      NEXT_PUBLIC_DEMO_MODE: "false",
+      AUTH_GOOGLE_ID: "g",
+      AUTH_GOOGLE_SECRET: "s",
+      AUTH_CREDENTIALS_ENABLED: undefined,
+    });
+    expect(isCredentialsSignInEnabled()).toBe(false);
+    setEnv({
+      NEXT_PUBLIC_DEMO_MODE: "false",
+      AUTH_GOOGLE_ID: "g",
+      AUTH_GOOGLE_SECRET: "s",
+      AUTH_CREDENTIALS_ENABLED: "true",
+    });
+    expect(isCredentialsSignInEnabled()).toBe(true);
   });
 
   it("uses an explicit Google hosted domain or a single allowlist domain", () => {

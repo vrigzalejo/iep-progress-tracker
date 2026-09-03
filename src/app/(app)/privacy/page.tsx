@@ -2,6 +2,7 @@ import {
   archiveStudentAction,
   deleteStudentDataAction,
   recordConsentAction,
+  runRetentionAction,
   updateRetentionAction,
 } from "@/app/actions";
 import { Alert, FormError } from "@/components/ui/alert";
@@ -13,6 +14,8 @@ import { can } from "@/lib/permissions";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { formatDate } from "@/lib/utils";
 import { APP_NAME } from "@/lib/brand";
+import { hasCurrentConsent } from "@/lib/consent";
+import { previewRetentionSweep } from "@/lib/retention-sweep";
 
 export const metadata = { title: "Privacy and data" };
 
@@ -26,6 +29,17 @@ export default async function PrivacyPage({
   const students = await listVisibleStudents(user);
   const audit = can(user.role, "audit.view") ? await listAudit(user) : [];
   const { saved, error } = await searchParams;
+  const retentionPreview = can(user.role, "privacy.manage")
+    ? await previewRetentionSweep(user.organizationId)
+    : null;
+  const savedTitle =
+    saved === "retention-preview"
+      ? "Retention dry run recorded"
+      : saved === "retention"
+        ? "Retention sweep finished"
+        : saved
+          ? "Privacy settings saved"
+          : null;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -41,9 +55,9 @@ export default async function PrivacyPage({
         {APP_NAME} does not send IEP goals, progress notes, or student profiles to generative AI
         services. There is no AI goal writer in this product.
       </Alert>
-      {saved ? (
-        <Alert title="Privacy settings saved" tone="success">
-          Your change is recorded in the audit log.
+      {savedTitle ? (
+        <Alert title={savedTitle} tone="success">
+          Your change is recorded in the audit log. Audit rows do not include student names.
         </Alert>
       ) : null}
       <FormError error={error} />
@@ -57,18 +71,40 @@ export default async function PrivacyPage({
             messages needed to support instruction and family communication.
           </p>
           <p>
-            Access is limited by role. Sessions use HTTP-only cookies and expire after eight hours.
-            Passwords are hashed. All views and changes are written to an audit log. Data in transit
-            should be served over HTTPS. Data at rest in production should sit on encrypted disks
-            (and, when available, database encryption).
+            Access is limited by role. Sessions use HTTP-only cookies, expire after eight hours, and
+            sign out after 20 minutes idle on shared machines. Passwords are hashed. Password accounts
+            can enroll an authenticator. All views and changes are written to an audit log. Data in
+            transit should be served over HTTPS. Data at rest in production should sit on encrypted
+            disks (and, when available, database encryption). Evidence files in production use private
+            object storage.
           </p>
           <p>Notice version: {org.noticeVersion}.</p>
         </div>
-        {user.role === "PARENT" && students[0] ? (
-          <form action={recordConsentAction} className="mt-4">
-            <input type="hidden" name="studentId" value={students[0].id} />
-            <Button type="submit">I acknowledge this notice for my student</Button>
-          </form>
+        {user.role === "PARENT" ? (
+          <ul className="mt-4 space-y-4">
+            {students.map((student) => {
+              const acknowledged = hasCurrentConsent(
+                student.consents,
+                org.noticeVersion,
+                user.name,
+              );
+              return (
+                <li key={student.id} className="rounded-lg border border-border p-4">
+                  <p className="font-semibold">{student.preferredName}</p>
+                  {acknowledged ? (
+                    <p className="mt-1 text-sm text-muted">
+                      You acknowledged notice {org.noticeVersion} for this student.
+                    </p>
+                  ) : (
+                    <form action={recordConsentAction} className="mt-3">
+                      <input type="hidden" name="studentId" value={student.id} />
+                      <Button type="submit">I acknowledge this notice for {student.preferredName}</Button>
+                    </form>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         ) : null}
       </Card>
 
@@ -94,16 +130,67 @@ export default async function PrivacyPage({
               </div>
               <Button type="submit">Save retention</Button>
             </form>
+            {retentionPreview ? (
+              <div className="mt-6 space-y-3 border-t border-border pt-4">
+                <p className="text-sm text-muted">
+                  Archived profiles older than {retentionPreview.retentionDays} days (
+                  {retentionPreview.candidateCount} ready) can be purged. Dry run writes an audit
+                  count only. The sweep permanently deletes those archived records and their evidence
+                  files.
+                </p>
+                {retentionPreview.candidates.length > 0 ? (
+                  <ul className="text-sm">
+                    {retentionPreview.candidates.map((candidate) => (
+                      <li key={candidate.id}>
+                        {candidate.preferredName} (archived {formatDate(candidate.archivedAt)})
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted">No archived records are past retention.</p>
+                )}
+                <div className="flex flex-wrap gap-3">
+                  <form action={runRetentionAction}>
+                    <input type="hidden" name="dryRun" value="true" />
+                    <Button type="submit" variant="secondary">
+                      Run dry-run
+                    </Button>
+                  </form>
+                  <form action={runRetentionAction}>
+                    <input type="hidden" name="dryRun" value="false" />
+                    <ConfirmSubmit
+                      message="Permanently delete archived records past the retention period? This cannot be undone."
+                      label="Purge expired records"
+                    />
+                  </form>
+                </div>
+              </div>
+            ) : null}
           </Card>
           <Card>
             <CardTitle>Export and deletion</CardTitle>
             <p className="mt-2 text-sm text-muted">
-              Export a CSV of visible caseload progress. Deletion is permanent and requires typing
-              the student’s preferred name.
+              Export a CSV of visible caseload progress, or download one student’s full file for a
+              records request. Deletion is permanent and requires typing the student’s preferred name.
             </p>
             <a className="mt-3 inline-flex min-h-11 items-center font-semibold text-forest underline" href="/api/export">
               Download CSV export
             </a>
+            <div className="mt-4">
+              <p className="text-sm font-semibold">Student education record (ZIP)</p>
+              <ul className="mt-2 space-y-2">
+                {students.map((student) => (
+                  <li key={student.id}>
+                    <a
+                      className="inline-flex min-h-11 items-center font-semibold text-forest underline"
+                      href={`/api/export/students/${student.id}`}
+                    >
+                      Download file for {student.preferredName}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
             <form action={deleteStudentDataAction} className="mt-6 space-y-3 rounded-lg border border-danger/30 p-4">
               <p className="font-semibold text-danger">Permanently delete a student record</p>
               <Label htmlFor="studentId">Student</Label>

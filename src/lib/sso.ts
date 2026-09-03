@@ -1,4 +1,5 @@
 import { ROLES, type Role } from "@/lib/constants";
+import { isDemoMode } from "@/lib/runtime";
 
 export type SsoProviderButton = {
   id: string;
@@ -56,9 +57,9 @@ export function isSsoConfigured() {
 }
 
 export function isCredentialsSignInEnabled() {
-  if (process.env.AUTH_CREDENTIALS_ENABLED === "false" && isSsoConfigured()) {
-    return false;
-  }
+  if (!isSsoConfigured()) return true;
+  if (process.env.AUTH_CREDENTIALS_ENABLED === "false") return false;
+  if (!isDemoMode() && process.env.AUTH_CREDENTIALS_ENABLED !== "true") return false;
   return true;
 }
 
@@ -71,6 +72,8 @@ export function googleHostedDomain() {
 
 export function signInErrorMessage(code: string | null) {
   switch (code) {
+    case "mfa_required":
+      return "Enter the authenticator code for this account.";
     case "AccessDenied":
       return "No matching school account. Ask an administrator to add your email first.";
     case "OAuthAccountNotLinked":

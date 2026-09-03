@@ -18,6 +18,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { Logo } from "@/components/logo";
 import { HelpChat } from "@/components/help-chat";
+import { IdleTimeout, MfaEnrollGuard } from "@/components/session-guards";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/app/actions";
 import { can, isStaff, type Permission } from "@/lib/permissions";
@@ -48,7 +49,7 @@ export function AppShell({
   user,
   children,
 }: {
-  user: { name: string; email: string; role: Role };
+  user: { name: string; email: string; role: Role; mfaEnrollRequired?: boolean };
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -63,13 +64,17 @@ export function AppShell({
 
   return (
     <div className="min-h-screen">
+      <MfaEnrollGuard required={Boolean(user.mfaEnrollRequired)} />
+      <IdleTimeout />
       <a href="#main" className="skip-link">
         Skip to main content
       </a>
-      <div className="no-print border-b border-[#c9b45c] bg-[#f7efd6] px-4 py-2 text-center text-sm text-gold">
-        Demonstration data only. All students and families on this site are fictional. Do not enter
-        real student records.
-      </div>
+      {process.env.NEXT_PUBLIC_DEMO_MODE !== "false" ? (
+        <div className="no-print border-b border-[#c9b45c] bg-[#f7efd6] px-4 py-2 text-center text-sm text-gold">
+          Demonstration data only. All students and families on this site are fictional. Do not enter
+          real student records.
+        </div>
+      ) : null}
       <div className="flex min-h-[calc(100vh-40px)]">
         <aside
           className={cn(

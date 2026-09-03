@@ -24,6 +24,41 @@ jobs:
       - run: npm test
       - run: npm run lint
 
+  e2e:
+    name: Playwright
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: iep
+          POSTGRES_PASSWORD: iep
+          POSTGRES_DB: iep
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U iep -d iep"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://iep:iep@127.0.0.1:5432/iep
+      AUTH_SECRET: ci-auth-secret-at-least-32-characters-long
+      AUTH_URL: http://127.0.0.1:43147
+      NEXT_PUBLIC_DEMO_MODE: "true"
+      NEXT_PUBLIC_IDLE_MINUTES: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: npx prisma db seed
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+
   image:
     name: Container image
     runs-on: ubuntu-latest

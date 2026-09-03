@@ -1,9 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { seedDemoData } from "@/lib/seed";
 import { can, canAccessStudent, isStaff, type Permission } from "@/lib/permissions";
 import type { Role } from "@/lib/constants";
+import { isDemoMode } from "@/lib/runtime";
 import { computeDataSignal, deliveredMinutesInRange } from "@/lib/progress";
 import { writeAudit } from "@/lib/audit";
 import { ilike } from "@/lib/search-filter";
@@ -14,6 +14,7 @@ export type SessionUser = {
   email: string;
   role: Role;
   organizationId: string;
+  mfaEnrollRequired?: boolean;
 };
 
 const goalDetailInclude = {
@@ -37,16 +38,25 @@ const goalDetailInclude = {
 };
 
 export async function requireUser(): Promise<SessionUser> {
-  await seedDemoData();
   const session = await auth();
   if (!session?.user?.id) redirect("/sign-in");
   const user = session.user;
+  let mfaEnrollRequired = Boolean(user.mfaEnrollRequired);
+  if (mfaEnrollRequired) {
+    const record = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { totpEnabledAt: true, passwordHash: true },
+    });
+    mfaEnrollRequired =
+      !isDemoMode() && Boolean(record?.passwordHash) && !record?.totpEnabledAt;
+  }
   return {
     id: user.id,
     name: user.name ?? "",
     email: user.email ?? "",
     role: user.role,
     organizationId: user.organizationId,
+    mfaEnrollRequired,
   };
 }
 
@@ -125,6 +135,7 @@ export async function listVisibleStudents(user: SessionUser, query?: string) {
       caseManager: { select: { id: true, name: true } },
       providers: { include: { user: { select: { id: true, name: true, title: true } } } },
       guardians: true,
+      consents: { orderBy: { grantedAt: "desc" } },
       goals: {
         include: {
           entries: { orderBy: { recordedAt: "asc" } },
