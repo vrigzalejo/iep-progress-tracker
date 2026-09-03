@@ -31,6 +31,8 @@ model User {
   lastLoginAt    DateTime?
   failedSignIns  Int       @default(0)
   lockedUntil    DateTime?
+  totpSecret     String?
+  totpEnabledAt  DateTime?
   createdAt      DateTime  @default(now())
   deactivatedAt  DateTime?
 

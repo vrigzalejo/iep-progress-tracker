@@ -5,6 +5,7 @@ declare module "next-auth" {
   interface User {
     role?: Role;
     organizationId?: string;
+    mfaEnrollRequired?: boolean;
   }
 
   interface Session {
@@ -12,6 +13,7 @@ declare module "next-auth" {
       id: string;
       role: Role;
       organizationId: string;
+      mfaEnrollRequired?: boolean;
     };
   }
 }
@@ -21,5 +23,6 @@ declare module "next-auth/jwt" {
     id: string;
     role: Role;
     organizationId: string;
+    mfaEnrollRequired?: boolean;
   }
 }

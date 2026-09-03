@@ -1,6 +1,7 @@
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { DEMO_PASSPHRASE, PRIVACY_NOTICE_VERSION } from "@/lib/constants";
+import { isDemoMode } from "@/lib/runtime";
 import {
   DEMO_ELEMENTARY_SCHOOL,
   DEMO_MIDDLE_SCHOOL,
@@ -511,6 +512,9 @@ async function migrateDemoBrand() {
 }
 
 export async function seedDemoData() {
+  if (!isDemoMode()) {
+    return { seeded: false, skipped: true as const };
+  }
   await migrateDemoBrand();
   const existing = await prisma.user.count();
   if (existing > 0) {

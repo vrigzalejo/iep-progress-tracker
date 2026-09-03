@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { hash, compare } from "bcryptjs";
 import { signOut } from "@/auth";
 import { prisma } from "@/lib/db";
-import { evidenceSizeLimitBytes, storeEvidenceFile } from "@/lib/evidence-storage";
+import { evidenceSizeLimitBytes, storeEvidenceFile, deleteEvidenceFile } from "@/lib/evidence-storage";
 import { writeAudit } from "@/lib/audit";
 import { can, isStaff } from "@/lib/permissions";
 import {
@@ -28,8 +28,11 @@ import {
   teamMemberSchema,
   trialSchema,
 } from "@/lib/validation";
-import { SERVICE_AREAS, type PromptLevel, type ServiceArea } from "@/lib/constants";
+import { ROLE_LABELS, SERVICE_AREAS, type PromptLevel, type ServiceArea } from "@/lib/constants";
 import { isSsoConfigured } from "@/lib/sso";
+import { sendFamilyMessageMail, sendTeamInviteMail } from "@/lib/mail";
+import { decryptSecret, encryptSecret, generateTotpSecret, verifyTotp } from "@/lib/totp";
+import { runRetentionSweep } from "@/lib/retention-sweep";
 
 /** Auth.js prefixes relative redirectTo with AUTH_URL; use the request host instead. */
 async function signInRedirect() {
@@ -460,6 +463,28 @@ export async function sendMessageAction(formData: FormData): Promise<void> {
   revalidatePath(`/students/${parsed.data.studentId}`);
   revalidatePath("/parent");
   revalidatePath("/messages");
+
+  if (parsed.data.visibility === "FAMILY") {
+    const student = await prisma.student.findFirst({
+      where: { id: parsed.data.studentId },
+      include: {
+        caseManager: { select: { email: true, id: true } },
+        guardians: { include: { user: { select: { email: true, id: true } } } },
+      },
+    });
+    const recipients = new Set<string>();
+    if (user.role === "PARENT") {
+      if (student?.caseManager.email) recipients.add(student.caseManager.email);
+    } else {
+      for (const guardian of student?.guardians ?? []) {
+        if (guardian.user?.email && guardian.user.id !== user.id) {
+          recipients.add(guardian.user.email);
+        }
+      }
+    }
+    await Promise.all([...recipients].map((email) => sendFamilyMessageMail(email)));
+  }
+
   redirect(`${returnTo}?saved=1`);
 }
 
@@ -542,6 +567,7 @@ export async function createTeamMemberAction(formData: FormData): Promise<void> 
     resourceType: "user",
     resourceId: created.id,
   });
+  await sendTeamInviteMail(created.email, ROLE_LABELS[parsed.data.role]);
   revalidatePath("/team");
   redirect("/team?saved=1");
 }
@@ -639,6 +665,13 @@ export async function deleteStudentDataAction(formData: FormData): Promise<void>
   if (confirm !== student.preferredName) {
     fail("/privacy", "Type the preferred name exactly to confirm deletion.");
   }
+  const evidence = await prisma.progressEntry.findMany({
+    where: { goal: { studentId }, evidencePath: { not: null } },
+    select: { evidencePath: true },
+  });
+  for (const entry of evidence) {
+    if (entry.evidencePath) await deleteEvidenceFile(entry.evidencePath);
+  }
   await prisma.student.delete({ where: { id: studentId } });
   await writeAudit({
     organizationId: user.organizationId,
@@ -686,26 +719,127 @@ export async function changePasswordAction(formData: FormData): Promise<void> {
 
 export async function recordConsentAction(formData: FormData): Promise<void> {
   const user = await requireUser();
+  if (user.role !== "PARENT") fail("/privacy", "Only a linked parent or guardian can acknowledge this notice.");
   const studentId = formString(formData, "studentId");
   await assertStudentAccess(user, studentId);
   const org = await prisma.organization.findUnique({ where: { id: user.organizationId } });
-  await prisma.consentRecord.create({
-    data: {
+  const noticeVersion = org?.noticeVersion ?? "2026-08";
+  const existing = await prisma.consentRecord.findFirst({
+    where: {
       studentId,
       guardianName: user.name,
-      noticeVersion: org?.noticeVersion ?? "2026-08",
-      grantedAt: new Date(),
+      noticeVersion,
+      withdrawnAt: null,
     },
+  });
+  if (!existing) {
+    await prisma.consentRecord.create({
+      data: {
+        studentId,
+        guardianName: user.name,
+        noticeVersion,
+        grantedAt: new Date(),
+      },
+    });
+    await writeAudit({
+      organizationId: user.organizationId,
+      userId: user.id,
+      action: "privacy.consent",
+      resourceType: "consent",
+      resourceId: studentId,
+      studentId,
+    });
+  }
+  revalidatePath("/privacy");
+  revalidatePath("/parent");
+  redirect("/privacy?saved=1");
+}
+
+export async function beginMfaAction(): Promise<void> {
+  const user = await requireUser();
+  const record = await prisma.user.findUnique({ where: { id: user.id } });
+  if (!record?.passwordHash) fail("/setup", "School SSO accounts do not use an authenticator code.");
+  if (record.totpEnabledAt) fail("/setup", "Authenticator is already enabled.");
+  const secret = generateTotpSecret();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { totpSecret: encryptSecret(secret), totpEnabledAt: null },
   });
   await writeAudit({
     organizationId: user.organizationId,
     userId: user.id,
-    action: "privacy.consent",
-    resourceType: "consent",
-    resourceId: studentId,
-    studentId,
+    action: "auth.mfa_begin",
+    resourceType: "user",
+    resourceId: user.id,
+  });
+  redirect("/setup?mfa=enroll");
+}
+
+export async function confirmMfaAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const code = formString(formData, "totp");
+  const record = await prisma.user.findUnique({ where: { id: user.id } });
+  if (!record?.totpSecret) fail("/setup", "Start authenticator setup first.");
+  let secret = "";
+  try {
+    secret = decryptSecret(record.totpSecret);
+  } catch {
+    fail("/setup", "Authenticator setup could not be read. Start again.");
+  }
+  if (!verifyTotp(secret, code)) fail("/setup", "That authenticator code is not correct.");
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { totpEnabledAt: new Date() },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "auth.mfa_enable",
+    resourceType: "user",
+    resourceId: user.id,
+  });
+  redirect("/setup?updated=mfa");
+}
+
+export async function disableMfaAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const password = formString(formData, "currentPassword");
+  const code = formString(formData, "totp");
+  const record = await prisma.user.findUnique({ where: { id: user.id } });
+  if (!record?.passwordHash || !record.totpSecret || !record.totpEnabledAt) {
+    fail("/setup", "Authenticator is not enabled.");
+  }
+  const valid = await compare(password, record.passwordHash);
+  if (!valid) fail("/setup", "Current password is not correct.");
+  try {
+    if (!verifyTotp(decryptSecret(record.totpSecret), code)) {
+      fail("/setup", "That authenticator code is not correct.");
+    }
+  } catch {
+    fail("/setup", "That authenticator code is not correct.");
+  }
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { totpSecret: null, totpEnabledAt: null },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "auth.mfa_disable",
+    resourceType: "user",
+    resourceId: user.id,
+  });
+  redirect("/setup?updated=mfa-off");
+}
+
+export async function runRetentionAction(formData: FormData): Promise<void> {
+  const user = await requirePermission("privacy.manage");
+  const dryRun = formString(formData, "dryRun") === "true";
+  await runRetentionSweep({
+    organizationId: user.organizationId,
+    actorUserId: user.id,
+    dryRun,
   });
   revalidatePath("/privacy");
-  revalidatePath("/parent");
-  redirect("/privacy?saved=1");
+  redirect(dryRun ? "/privacy?saved=retention-preview" : "/privacy?saved=retention");
 }

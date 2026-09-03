@@ -7,6 +7,7 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/sign-in") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/health") ||
+    pathname.startsWith("/api/cron") ||
     pathname === "/privacy-notice";
   const session =
     request.cookies.get("authjs.session-token") ??

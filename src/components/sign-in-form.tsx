@@ -21,6 +21,8 @@ export function SignInForm({
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [totp, setTotp] = useState("");
+  const [mfa, setMfa] = useState(false);
   const [error, setError] = useState(signInErrorMessage(params.get("error")));
   const [pending, setPending] = useState<"credentials" | string | null>(null);
   const showDemo = credentialsEnabled && process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
@@ -32,11 +34,21 @@ export function SignInForm({
     const result = await signIn("credentials", {
       email,
       password,
+      totp,
       redirect: false,
     });
     setPending(null);
+    if (result?.code === "mfa_required" || result?.error === "mfa_required") {
+      setMfa(true);
+      setError("Enter the 6-digit code from your authenticator app.");
+      return;
+    }
     if (result?.error) {
-      setError("Email or password is not correct, or the account is temporarily locked.");
+      setError(
+        mfa
+          ? "Authenticator code is not correct."
+          : "Email or password is not correct, or the account is temporarily locked.",
+      );
       return;
     }
     router.push("/");
@@ -103,6 +115,20 @@ export function SignInForm({
                 onChange={(event) => setPassword(event.target.value)}
               />
             </div>
+            {mfa ? (
+              <div>
+                <Label htmlFor="totp">Authenticator code</Label>
+                <Input
+                  id="totp"
+                  name="totp"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  required
+                  value={totp}
+                  onChange={(event) => setTotp(event.target.value)}
+                />
+              </div>
+            ) : null}
             <FieldError>{error}</FieldError>
             <Button type="submit" disabled={Boolean(pending)} className="w-full">
               {pending === "credentials" ? "Signing in…" : "Sign in"}

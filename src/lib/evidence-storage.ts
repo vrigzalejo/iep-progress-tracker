@@ -1,3 +1,5 @@
+import { requiresObjectStorage } from "@/lib/runtime";
+
 const BLOB_PREFIX = "blob:";
 const SUPABASE_PREFIX = "supabase:";
 const DEFAULT_SUPABASE_BUCKET = "iep-evidence";
@@ -115,6 +117,11 @@ async function storeBlobFile(safeName: string, file: File) {
 
 export async function storeEvidenceFile(safeName: string, file: File) {
   const backend = evidenceBackend();
+  if (backend === "disk" && requiresObjectStorage()) {
+    throw new Error(
+      "Object storage is required when demonstration mode is off. Configure Supabase Storage or a private Blob store.",
+    );
+  }
   if (backend === "supabase") return storeSupabaseFile(safeName, file);
   if (backend === "blob") return storeBlobFile(safeName, file);
 
@@ -147,6 +154,29 @@ export async function readEvidenceFile(evidencePath: string) {
   const path = await import("node:path");
   const filePath = path.join(process.cwd(), "data", "uploads", evidencePath);
   return readFile(filePath).catch(() => null);
+}
+
+export async function deleteEvidenceFile(evidencePath: string) {
+  try {
+    if (isSupabaseEvidencePath(evidencePath)) {
+      const client = await supabaseAdmin();
+      const removed = await client.storage
+        .from(evidenceBucket())
+        .remove([supabaseObjectPath(evidencePath)]);
+      return !removed.error;
+    }
+    if (isBlobEvidencePath(evidencePath)) {
+      const { del } = await import("@vercel/blob");
+      await del(blobPathname(evidencePath));
+      return true;
+    }
+    const { unlink } = await import("node:fs/promises");
+    const path = await import("node:path");
+    await unlink(path.join(process.cwd(), "data", "uploads", evidencePath));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function evidenceSizeLimitBytes(

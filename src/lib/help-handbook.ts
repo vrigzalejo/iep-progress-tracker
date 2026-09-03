@@ -116,7 +116,7 @@ The gold banner means demonstration data is fictional. Do not enter real records
       ],
       body: `Open [Sign in](/sign-in). Demo emails are listed there and share one passphrase. After sign-in, change the demo password on [Account setup](/setup) before any real deployment. SSO-only accounts have no password and use Microsoft, Google, or district OIDC; an administrator can add a temporary password if needed.
 
-Sessions use HTTP-only cookies and expire after eight hours. Unknown SSO emails are rejected unless the school explicitly enables JIT (not for parents). Roles live in this app; the identity provider only proves who the person is.`,
+Sessions use HTTP-only cookies, expire after eight hours, and sign out after 20 minutes idle (set NEXT_PUBLIC_IDLE_MINUTES=0 to disable). Password accounts can enroll an authenticator on [Account setup](/setup). Unknown SSO emails are rejected unless the school explicitly enables JIT (not for parents). Roles live in this app; the identity provider only proves who the person is. When demonstration mode is off and SSO is configured, password sign-in stays off unless AUTH_CREDENTIALS_ENABLED=true.`,
     },
     {
       id: "roles",
@@ -377,7 +377,7 @@ Write a message from this page or [Messages](/messages). If no student appears, 
       keywords: ["team", "invite", "deactivate", "people", "staff", "permissions", "matrix", "password"],
       body: `[Team](/team) is for administrators. Read the capability matrix, then add a person: name, email, role (administrator, educator, related-service provider, or parent/guardian). Password is optional once school SSO is on; SSO-only people show “school SSO.” Change someone’s role or **Deactivate** so they cannot sign in.
 
-Parents see a student when their email is a guardian contact on that profile. Providers must be checked on the profile. Use the same email as the district account for SSO. Educators cannot open Team—ask an administrator.`,
+Parents see a student when their email is a guardian contact on that profile. Providers must be checked on the profile. Use the same email as the district account for SSO. If SMTP is configured, the new person gets an invite email with no student records. Educators cannot open Team—ask an administrator.`,
     },
     {
       id: "privacy",
@@ -397,15 +397,15 @@ Parents see a student when their email is a guardian contact on that profile. Pr
       ],
       body: `[Privacy](/privacy) holds the notice: preferred name, school, grade, assigned staff, guardian contacts, IEP goal text, progress scores, session notes, optional evidence, and messages. Sessions use HTTP-only cookies (eight hours). Passwords are hashed. Views and changes go to an audit log. Production should use HTTPS. There is also a public [privacy notice](/privacy-notice) page.
 
-Parents tap **I acknowledge this notice for my student**. Administrators set retention days (default 2,555, about seven years; 30–3650), download CSV, archive a profile (leaves the active caseload, stays in audit until deletion), or permanently delete by selecting the student and typing the preferred name. Educators and providers with export permission see **Download CSV** for their caseload only. Only administrators see the full audit history. ${APP_NAME} does not send student records to generative AI to train models. FERPA-oriented practice is not a legal certification.`,
+Parents acknowledge **for each linked student**. If the school bumps the notice version, they acknowledge again. Administrators set retention days (default 2,555, about seven years; 30–3650), run a retention dry-run or purge of archived records past that window, download CSV, download one student’s ZIP file for a records request, archive a profile (leaves the active caseload, stays in audit until deletion), or permanently delete by selecting the student and typing the preferred name. Educators and providers with export permission see **Download CSV** for their caseload only. Only administrators see the full audit history and student-file ZIP. ${APP_NAME} does not send student records to generative AI to train models. FERPA-oriented practice is not a legal certification.`,
     },
     {
       id: "export",
-      title: "CSV export",
+      title: "CSV and student-file export",
       hrefs: ["/privacy"],
       roles: ["ADMINISTRATOR", "EDUCATOR", "PROVIDER"],
-      keywords: ["export", "csv", "download", "spreadsheet"],
-      body: `Authorized staff open [Privacy](/privacy) and choose **Download CSV export** (or /api/export). The file includes preferred name, grade, school, goal summaries, and progress for students you are allowed to see. Administrators export the school; educators export their caseload; providers export assigned students. Parents have no export. Do not email the file to personal accounts.`,
+      keywords: ["export", "csv", "download", "spreadsheet", "ferpa", "records request", "zip"],
+      body: `Authorized staff open [Privacy](/privacy) and choose **Download CSV export** (or /api/export). The file includes preferred name, grade, school, goal summaries, and progress for students you are allowed to see. Administrators also download a **student education record ZIP** for one student (profile, goals, progress, messages, consents, audit). Educators export their caseload CSV; providers export assigned students. Parents have no export. Do not email the file to personal accounts.`,
     },
     {
       id: "evidence",
@@ -413,7 +413,7 @@ Parents tap **I acknowledge this notice for my student**. Administrators set ret
       hrefs: ["/students"],
       roles: ["ADMINISTRATOR", "EDUCATOR", "PROVIDER"],
       keywords: ["evidence", "upload", "file", "attachment", "work sample", "photo"],
-      body: `When logging a present session you may attach one evidence file (about 5 MB) and a short label such as “weekly probe 4.” Hosted deploys store files in private object storage. Keep one app replica until storage is private. Evidence stays with the progress entry; it is not training data for AI.`,
+      body: `When logging a present session you may attach one evidence file (about 5 MB) and a short label such as “weekly probe 4.” Hosted deploys store files in private object storage. When demonstration mode is off, disk uploads are refused—configure Supabase Storage or a private Blob store first. Keep one app replica until storage is private. Evidence stays with the progress entry; it is not training data for AI.`,
     },
     {
       id: "navigation",
@@ -431,7 +431,7 @@ Parents tap **I acknowledge this notice for my student**. Administrators set ret
         "chrome",
         "header",
       ],
-      body: `A gold banner at the top reminds you this site uses fictional demonstration data. Skip to main content is the first focusable link.
+      body: `A gold banner at the top appears only in demonstration mode and reminds you this site uses fictional data. Skip to main content is the first focusable link.
 
 The dark sidebar lists only screens your role can open: staff see Dashboard, Students, Reports, Messages, Privacy, and Setup guide; administrators also see Team; parents see Family home instead of Dashboard and Students. On a phone, open the menu with the button next to the header. Staff have a search field in the header. Your name and role sit at the bottom of the sidebar with **Sign out**.
 

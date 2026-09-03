@@ -1,14 +1,15 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import type { Provider } from "next-auth/providers";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/db";
-import { seedDemoData } from "@/lib/seed";
 import { signInSchema } from "@/lib/validation";
 import type { Role } from "@/lib/constants";
 import { writeAudit } from "@/lib/audit";
+import { isDemoMode } from "@/lib/runtime";
+import { decryptSecret, verifyTotp } from "@/lib/totp";
 import {
   googleHostedDomain,
   isAllowedSsoEmail,
@@ -20,14 +21,18 @@ import {
 const MAX_FAILED = 8;
 const LOCK_MINUTES = 15;
 
+class MfaRequiredError extends CredentialsSignin {
+  code = "mfa_required";
+}
+
 const credentialsProvider = Credentials({
   name: "Email and password",
   credentials: {
     email: { label: "Email", type: "email" },
     password: { label: "Password", type: "password" },
+    totp: { label: "Authenticator code", type: "text" },
   },
   async authorize(raw) {
-    await seedDemoData();
     const parsed = signInSchema.safeParse(raw);
     if (!parsed.success) return null;
     const email = parsed.data.email.toLowerCase().trim();
@@ -50,6 +55,17 @@ const credentialsProvider = Credentials({
         },
       });
       return null;
+    }
+
+    if (user.totpEnabledAt && user.totpSecret) {
+      const totp = typeof raw?.totp === "string" ? raw.totp.replace(/\s/g, "") : "";
+      if (!totp) throw new MfaRequiredError();
+      try {
+        const secret = decryptSecret(user.totpSecret);
+        if (!verifyTotp(secret, totp)) return null;
+      } catch {
+        return null;
+      }
     }
 
     await prisma.user.update({
@@ -167,7 +183,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async signIn({ user, account, profile }) {
       if (!account || account.provider === "credentials") return true;
-      await seedDemoData();
       const email = user.email?.toLowerCase().trim();
       if (!email || !isAllowedSsoEmail(email)) return false;
       if (
@@ -213,6 +228,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = record.id;
         token.role = record.role as Role;
         token.organizationId = record.organizationId;
+        token.mfaEnrollRequired =
+          !isDemoMode() && Boolean(record.passwordHash) && !record.totpEnabledAt;
       }
       return token;
     },
@@ -221,6 +238,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
         session.user.organizationId = token.organizationId as string;
+        session.user.mfaEnrollRequired = Boolean(token.mfaEnrollRequired);
       }
       return session;
     },
