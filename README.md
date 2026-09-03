@@ -31,8 +31,6 @@ The product does **not** generate IEP goals, recommend services, or make educati
 - Prisma ORM with Postgres (local Docker, or hosted Supabase / Neon)
 - Zod validation, server-side authorization, Vitest
 
-
-
 ## Local setup
 
 Requirements: Node.js 22+, npm, and Docker (or another Postgres 16 instance). The app no longer uses SQLite.
@@ -69,14 +67,12 @@ All demonstration accounts share the passphrase `Iep-progress-tracker!Demo26`.
 
 Addresses follow `NEXT_PUBLIC_APP_SLUG`. With the default slug they are:
 
-
-| Role              | Name           | Email                                                                                                     |
-| ----------------- | -------------- | --------------------------------------------------------------------------------------------------------- |
-| Administrator     | Crisanto Reyes | [crisanto.reyes@demo.iep-progress-tracker.school](mailto:crisanto.reyes@demo.iep-progress-tracker.school) |
-| Educator          | Maricel Santos | [maricel.santos@demo.iep-progress-tracker.school](mailto:maricel.santos@demo.iep-progress-tracker.school) |
-| Provider          | Patricia Cruz  | [patricia.cruz@demo.iep-progress-tracker.school](mailto:patricia.cruz@demo.iep-progress-tracker.school)   |
-| Parent / guardian | Diana Santos   | [diana.santos@demo.iep-progress-tracker.school](mailto:diana.santos@demo.iep-progress-tracker.school)     |
-
+| Role | Name | Email |
+| --- | --- | --- |
+| Administrator | Crisanto Reyes | crisanto.reyes@demo.iep-progress-tracker.school |
+| Educator | Maricel Santos | maricel.santos@demo.iep-progress-tracker.school |
+| Provider | Patricia Cruz | patricia.cruz@demo.iep-progress-tracker.school |
+| Parent / guardian | Diana Santos | diana.santos@demo.iep-progress-tracker.school |
 
 All students (Jaime Santos, Carla Santos, Samuel Villanueva, Andrea Tan, Rafael Bautista) are fictional. Diana Santos is linked to both Jaime and Carla so the family portal can switch children.
 
@@ -86,9 +82,9 @@ SSO is opt-in and disabled until you set provider credentials. Demo password acc
 
 1. Add staff (and parents) in **Team and permissions** with the same email their identity provider uses. Leave the password blank once SSO is configured.
 2. Register the callback URL `{AUTH_URL}/api/auth/callback/{provider}` with the identity provider:
-  - Microsoft Entra ID: `/api/auth/callback/microsoft-entra-id`
-  - Google: `/api/auth/callback/google`
-  - Generic OIDC (Okta, ClassLink, Auth0, and similar): `/api/auth/callback/oidc`
+   - Microsoft Entra ID: `/api/auth/callback/microsoft-entra-id`
+   - Google: `/api/auth/callback/google`
+   - Generic OIDC (Okta, ClassLink, Auth0, and similar): `/api/auth/callback/oidc`
 3. Set the matching `AUTH_*` variables below. Use your **tenant** issuer for Microsoft (`https://login.microsoftonline.com/{tenant-id}/v2.0`), not `common`.
 4. Restrict sign-in with `AUTH_SSO_ALLOWED_DOMAINS=district.edu`.
 5. In production, set `AUTH_CREDENTIALS_ENABLED=false` after SSO works so password login is off.
@@ -99,52 +95,50 @@ Roles stay in this app. The identity provider only proves who the person is.
 
 ## Environment variables
 
-
-| Variable                                                                | Required   | Purpose                                                                                                                                                                                             |
-| ----------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POSTGRES_USER`                                                         | No         | Database user. Default: `iep`                                                                                                                                                                       |
-| `POSTGRES_PASSWORD`                                                     | No         | Database password. Default: `iep` (change this)                                                                                                                                                     |
-| `POSTGRES_DB`                                                           | No         | Database name. Default: `iep`. Vercel also sets `POSTGRES_DATABASE`                                                                                                                                 |
-| `POSTGRES_HOST`                                                         | No         | Hostname. Default: `127.0.0.1` (Compose app uses `db`)                                                                                                                                              |
-| `POSTGRES_PORT`                                                         | No         | Port. Default: `5432`                                                                                                                                                                               |
-| `DATABASE_URL`                                                          | No         | Full Postgres URL. When set, it overrides the `POSTGRES_*` variables. Use this for RDS, Cloud SQL, Azure Database, Neon, or the Supabase pooler                                                     |
-| `POSTGRES_URL`                                                          | No         | Vercel/Neon/Supabase pooled URL. Used when `DATABASE_URL` is unset                                                                                                                                  |
-| `POSTGRES_PRISMA_URL`                                                   | No         | Vercel pooled URL (`pgbouncer=true`). Preferred over `POSTGRES_URL` at runtime                                                                                                                      |
-| `POSTGRES_URL_NON_POOLING` / `DIRECT_URL`                               | No         | Direct Postgres URL for `prisma migrate deploy` (required for the Supabase pooler)                                                                                                                  |
-| `SUPABASE_URL`                                                          | Supabase   | Project URL (`https://PROJECT.supabase.co`). `NEXT_PUBLIC_SUPABASE_URL` is also accepted                                                                                                            |
-| `SUPABASE_SERVICE_ROLE_KEY`                                             | Supabase   | Server-only key for private evidence Storage. Never expose as `NEXT_PUBLIC_*`                                                                                                                       |
-| `SUPABASE_EVIDENCE_BUCKET`                                              | No         | Private Storage bucket for evidence. Default: `iep-evidence`                                                                                                                                        |
-| `BLOB_READ_WRITE_TOKEN`                                                 | Vercel     | Private Blob store token if you are not using Supabase Storage                                                                                                                                      |
-| `AUTH_SECRET`                                                           | Yes        | Auth.js session signing secret (`openssl rand -base64 32`)                                                                                                                                          |
-| `AUTH_URL`                                                              | Production | Public origin, for example `https://iep-progress-tracker.example.edu`                                                                                                                               |
-| `NEXT_PUBLIC_DEMO_MODE`                                                 | No         | Keep `true` until you remove seed data                                                                                                                                                              |
-| `NEXT_PUBLIC_APP_NAME`                                                  | No         | Product name shown in the UI. Default: `IEP Progress Tracker`                                                                                                                                       |
-| `NEXT_PUBLIC_APP_SLUG`                                                  | No         | URL-safe id for demo emails and export files. Derived from the name if omitted                                                                                                                      |
-| `NEXT_PUBLIC_DEMO_EMAIL_DOMAIN`                                         | No         | Domain for demo accounts. Default: `demo.{slug}.school`                                                                                                                                             |
-| `NEXT_PUBLIC_DEMO_PASSPHRASE`                                           | No         | Shared demo sign-in passphrase                                                                                                                                                                      |
-| `SENTRY_DSN`                                                            | No         | Optional error monitoring. Do not send student payloads                                                                                                                                             |
-| `HF_TOKEN`                                                              | No         | Optional Hugging Face token for the how-to chatbot (`HUGGINGFACE_HUB_TOKEN` also works). Monthly free credits on Inference Providers. Unset = in-app guide answers only. Never send student records |
-| `HF_CHAT_MODEL`                                                         | No         | Chat model id. Default: `Qwen/Qwen2.5-3B-Instruct:cheapest`                                                                                                                                         |
-| `HF_CHAT_BASE_URL`                                                      | No         | OpenAI-compatible HF router. Default: `https://router.huggingface.co/v1`                                                                                                                            |
-| `AUTH_MICROSOFT_ENTRA_ID_ID`                                            | SSO        | Entra ID application (client) ID                                                                                                                                                                    |
-| `AUTH_MICROSOFT_ENTRA_ID_SECRET`                                        | SSO        | Entra ID client secret                                                                                                                                                                              |
-| `AUTH_MICROSOFT_ENTRA_ID_ISSUER`                                        | SSO        | `https://login.microsoftonline.com/{tenant-id}/v2.0`                                                                                                                                                |
-| `AUTH_GOOGLE_ID`                                                        | SSO        | Google OAuth client ID                                                                                                                                                                              |
-| `AUTH_GOOGLE_SECRET`                                                    | SSO        | Google OAuth client secret                                                                                                                                                                          |
-| `AUTH_GOOGLE_HOSTED_DOMAIN`                                             | No         | Optional Google Workspace domain (`hd`)                                                                                                                                                             |
-| `AUTH_OIDC_ISSUER`                                                      | SSO        | OIDC issuer URL for Okta, ClassLink, Auth0, and similar                                                                                                                                             |
-| `AUTH_OIDC_ID`                                                          | SSO        | OIDC client ID                                                                                                                                                                                      |
-| `AUTH_OIDC_SECRET`                                                      | SSO        | OIDC client secret                                                                                                                                                                                  |
-| `AUTH_OIDC_NAME`                                                        | No         | Button label, for example `ClassLink`                                                                                                                                                               |
-| `AUTH_SSO_ALLOWED_DOMAINS`                                              | No         | Comma-separated email domains allowed to use SSO                                                                                                                                                    |
-| `AUTH_SSO_JIT_PROVISION`                                                | No         | `true` to create unknown users on first SSO sign-in. Default: off                                                                                                                                   |
-| `AUTH_SSO_JIT_ROLE`                                                     | No         | Role for JIT users. Default: `EDUCATOR`                                                                                                                                                             |
-| `AUTH_SSO_ORGANIZATION_ID`                                              | No         | Organization to attach JIT users to. Defaults to the first org                                                                                                                                      |
-| `AUTH_CREDENTIALS_ENABLED`                                              | No         | Set `false` in production after SSO is live. When demonstration mode is off and SSO is configured, password sign-in is off unless this is explicitly `true`                                         |
-| `NEXT_PUBLIC_IDLE_MINUTES`                                              | No         | Idle sign-out in minutes. Default `20`. `0` disables (used in Playwright)                                                                                                                           |
-| `CRON_SECRET`                                                           | Cron       | Bearer token for `GET/POST /api/cron/daily` (retention sweep + reporting-window notices). Vercel Cron sends this automatically when the env var is set                                              |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `MAIL_FROM` | Email      | Optional district SMTP. Unset = no mail. Used for team invites, family-message pings, and reporting-window notices. Subjects never include goal text                                                |
-
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `POSTGRES_USER` | No | Database user. Default: `iep` |
+| `POSTGRES_PASSWORD` | No | Database password. Default: `iep` (change this) |
+| `POSTGRES_DB` | No | Database name. Default: `iep`. Vercel also sets `POSTGRES_DATABASE` |
+| `POSTGRES_HOST` | No | Hostname. Default: `127.0.0.1` (Compose app uses `db`) |
+| `POSTGRES_PORT` | No | Port. Default: `5432` |
+| `DATABASE_URL` | No | Full Postgres URL. When set, it overrides the `POSTGRES_*` variables. Use this for RDS, Cloud SQL, Azure Database, Neon, or the Supabase pooler |
+| `POSTGRES_URL` | No | Vercel/Neon/Supabase pooled URL. Used when `DATABASE_URL` is unset |
+| `POSTGRES_PRISMA_URL` | No | Vercel pooled URL (`pgbouncer=true`). Preferred over `POSTGRES_URL` at runtime |
+| `POSTGRES_URL_NON_POOLING` / `DIRECT_URL` | No | Direct Postgres URL for `prisma migrate deploy` (required for the Supabase pooler) |
+| `SUPABASE_URL` | Supabase | Project URL (`https://PROJECT.supabase.co`). `NEXT_PUBLIC_SUPABASE_URL` is also accepted |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase | Server-only key for private evidence Storage. Never expose as `NEXT_PUBLIC_*` |
+| `SUPABASE_EVIDENCE_BUCKET` | No | Private Storage bucket for evidence. Default: `iep-evidence` |
+| `BLOB_READ_WRITE_TOKEN` | Vercel | Private Blob store token if you are not using Supabase Storage |
+| `AUTH_SECRET` | Yes | Auth.js session signing secret (`openssl rand -base64 32`) |
+| `AUTH_URL` | Production | Public origin, for example `https://iep-progress-tracker.example.edu` |
+| `NEXT_PUBLIC_DEMO_MODE` | No | Keep `true` until you remove seed data |
+| `NEXT_PUBLIC_APP_NAME` | No | Product name shown in the UI. Default: `IEP Progress Tracker` |
+| `NEXT_PUBLIC_APP_SLUG` | No | URL-safe id for demo emails and export files. Derived from the name if omitted |
+| `NEXT_PUBLIC_DEMO_EMAIL_DOMAIN` | No | Domain for demo accounts. Default: `demo.{slug}.school` |
+| `NEXT_PUBLIC_DEMO_PASSPHRASE` | No | Shared demo sign-in passphrase |
+| `SENTRY_DSN` | No | Optional error monitoring. Do not send student payloads |
+| `HF_TOKEN` | No | Optional Hugging Face token for the how-to chatbot (`HUGGINGFACE_HUB_TOKEN` also works). Monthly free credits on Inference Providers. Unset = in-app guide answers only. Never send student records |
+| `HF_CHAT_MODEL` | No | Chat model id. Default: `Qwen/Qwen2.5-3B-Instruct:cheapest` |
+| `HF_CHAT_BASE_URL` | No | OpenAI-compatible HF router. Default: `https://router.huggingface.co/v1` |
+| `AUTH_MICROSOFT_ENTRA_ID_ID` | SSO | Entra ID application (client) ID |
+| `AUTH_MICROSOFT_ENTRA_ID_SECRET` | SSO | Entra ID client secret |
+| `AUTH_MICROSOFT_ENTRA_ID_ISSUER` | SSO | `https://login.microsoftonline.com/{tenant-id}/v2.0` |
+| `AUTH_GOOGLE_ID` | SSO | Google OAuth client ID |
+| `AUTH_GOOGLE_SECRET` | SSO | Google OAuth client secret |
+| `AUTH_GOOGLE_HOSTED_DOMAIN` | No | Optional Google Workspace domain (`hd`) |
+| `AUTH_OIDC_ISSUER` | SSO | OIDC issuer URL for Okta, ClassLink, Auth0, and similar |
+| `AUTH_OIDC_ID` | SSO | OIDC client ID |
+| `AUTH_OIDC_SECRET` | SSO | OIDC client secret |
+| `AUTH_OIDC_NAME` | No | Button label, for example `ClassLink` |
+| `AUTH_SSO_ALLOWED_DOMAINS` | No | Comma-separated email domains allowed to use SSO |
+| `AUTH_SSO_JIT_PROVISION` | No | `true` to create unknown users on first SSO sign-in. Default: off |
+| `AUTH_SSO_JIT_ROLE` | No | Role for JIT users. Default: `EDUCATOR` |
+| `AUTH_SSO_ORGANIZATION_ID` | No | Organization to attach JIT users to. Defaults to the first org |
+| `AUTH_CREDENTIALS_ENABLED` | No | Set `false` in production after SSO is live. When demonstration mode is off and SSO is configured, password sign-in is off unless this is explicitly `true` |
+| `NEXT_PUBLIC_IDLE_MINUTES` | No | Idle sign-out in minutes. Default `20`. `0` disables (used in Playwright) |
+| `CRON_SECRET` | Cron | Bearer token for `GET/POST /api/cron/daily` (retention sweep + reporting-window notices). Vercel Cron sends this automatically when the env var is set |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `MAIL_FROM` | Email | Optional district SMTP. Unset = no mail. Used for team invites, family-message pings, and reporting-window notices. Subjects never include goal text |
 
 `.env*` files are gitignored except `.env.example`.
 
@@ -174,15 +168,15 @@ Automated tests cover authorization rules, progress-signal calculation, input va
 
 The hosted setup this repo is aimed at: **Next.js on Vercel**, **Postgres and private evidence files on Supabase**. Create the Supabase project in a **US region**. School SSO stays in this app (Auth.js); do not turn on Supabase Auth for staff or parents.
 
-Connect the GitHub repo (`vrigzalejo/iep-progress-tracker`) in Vercel. Set the **production branch to** `main`. Preview deploys should use a separate Supabase project or branch so `prisma migrate deploy` during build does not change production.
+Connect the GitHub repo (`vrigzalejo/iep-progress-tracker`) in Vercel. Set the **production branch to `main`**. Preview deploys should use a separate Supabase project or branch so `prisma migrate deploy` during build does not change production.
 
 1. In Supabase, copy the **transaction pooler** URI into `DATABASE_URL` (port `6543`, add `pgbouncer=true`) and the **direct / session** URI into `DIRECT_URL` (port `5432`).
 2. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Keep the service role key on the server only. The app creates a private `iep-evidence` bucket on first upload if it is missing.
 3. In Vercel, set:
-  - `AUTH_SECRET` (long random string)
-  - `AUTH_URL` (the deployment origin, for example `https://your-project.vercel.app`)
-  - `DATABASE_URL`, `DIRECT_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
-  - `NEXT_PUBLIC_DEMO_MODE=true` only for a fictional demo; `false` before real students
+   - `AUTH_SECRET` (long random string)
+   - `AUTH_URL` (the deployment origin, for example `https://your-project.vercel.app`)
+   - `DATABASE_URL`, `DIRECT_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+   - `NEXT_PUBLIC_DEMO_MODE=true` only for a fictional demo; `false` before real students
 4. Deploy. The `vercel-build` script runs `prisma migrate deploy` then `next build`. Functions stay in `iad1` (US East).
 5. Confirm `GET /api/health` returns `{"ok":true}`.
 
@@ -258,38 +252,32 @@ Replace the placeholders in `deploy/k8s/secret.yaml` before any real student dat
 - **AuditLog** — who viewed or changed which record
 - **ConsentRecord** — notice version acknowledged by a guardian
 
-
-
 ## Role / permission matrix
 
-
-| Capability           | Administrator | Educator        | Provider        | Parent         |
-| -------------------- | ------------- | --------------- | --------------- | -------------- |
-| View student profile | School        | Caseload        | Assigned        | Linked student |
-| Create / edit goals  | Yes           | Yes             | View            | Shared goals   |
-| Record progress      | Yes           | Yes             | Assigned        | No             |
-| Reports              | Yes           | Yes             | Assigned        | Shared only    |
-| Team management      | Yes           | No              | No              | No             |
-| Retention / deletion | Yes           | No              | No              | Consent only   |
-| Audit / export       | Yes           | Caseload export | Assigned export | No             |
-
+| Capability | Administrator | Educator | Provider | Parent |
+| --- | --- | --- | --- | --- |
+| View student profile | School | Caseload | Assigned | Linked student |
+| Create / edit goals | Yes | Yes | View | Shared goals |
+| Record progress | Yes | Yes | Assigned | No |
+| Reports | Yes | Yes | Assigned | Shared only |
+| Team management | Yes | No | No | No |
+| Retention / deletion | Yes | No | No | Consent only |
+| Audit / export | Yes | Caseload export | Assigned export | No |
 
 Unauthorized record access returns “not found” to avoid leaking whether a student exists.
 
 ## Threat-model notes
 
-
-| Threat                              | Mitigation in this MVP                                                                                                                                                      |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Account takeover                    | Password hashing (bcrypt), complexity rules, lockout after 8 failures, 8-hour sessions, HTTP-only cookies; SSO matches pre-provisioned emails and optional domain allowlist |
-| Privilege escalation                | Server-side permission checks on every query and mutation; parents cannot mint staff roles                                                                                  |
-| Record enumeration                  | `notFound()` for unauthorized student/goal access                                                                                                                           |
-| Sensitive data in logs / telemetry  | Audit entries avoid goal text and notes; error UI does not echo student content                                                                                             |
-| XSS / clickjacking                  | CSP, `X-Frame-Options: DENY`, nosniff                                                                                                                                       |
-| Insecure uploads                    | Authenticated download route, 5 MB cap, files stored outside `/public`                                                                                                      |
-| Demo data mistaken for real records | Gold banner only while `NEXT_PUBLIC_DEMO_MODE` is not `false`; seed refuses to run when demo is off; auth never seeds                                                       |
-| AI leakage                          | No generative features; documented ban on using student data for model training                                                                                             |
-
+| Threat | Mitigation in this MVP |
+| --- | --- |
+| Account takeover | Password hashing (bcrypt), complexity rules, lockout after 8 failures, 8-hour sessions, HTTP-only cookies; SSO matches pre-provisioned emails and optional domain allowlist |
+| Privilege escalation | Server-side permission checks on every query and mutation; parents cannot mint staff roles |
+| Record enumeration | `notFound()` for unauthorized student/goal access |
+| Sensitive data in logs / telemetry | Audit entries avoid goal text and notes; error UI does not echo student content |
+| XSS / clickjacking | CSP, `X-Frame-Options: DENY`, nosniff |
+| Insecure uploads | Authenticated download route, 5 MB cap, files stored outside `/public` |
+| Demo data mistaken for real records | Gold banner only while `NEXT_PUBLIC_DEMO_MODE` is not `false`; seed refuses to run when demo is off; auth never seeds |
+| AI leakage | No generative features; documented ban on using student data for model training |
 
 Residual risks: point production Postgres at encrypted volumes and backups; this demo Compose stack uses a local passphrase; evidence files stay on a PVC in Docker/Kubernetes until you wire object storage. Hosted deploys use private Supabase Storage (or a private Vercel Blob store) for evidence.
 
@@ -310,8 +298,6 @@ Residual risks: point production Postgres at encrypted volumes and backups; this
 - [ ] Incident response contact posted for staff
 - [ ] Data processing agreement if any subprocessors are added (including Vercel, Supabase, Neon, and Blob storage)
 
-
-
 ## Architecture notes
 
 Authorization lives in `src/lib/permissions.ts` and is enforced in `src/lib/queries.ts` plus server actions in `src/app/actions.ts`. Progress indicators are calculated in `src/lib/progress.ts` and labeled as data snapshots, not IEP team decisions.
@@ -322,10 +308,8 @@ Primary flows:
 2. Parent signs in → family portal (switch children if linked) → shared goals, home carryover, report, family messages
 3. Administrator → team roles, retention, audit, deletion
 
-
-
 ## Contributing
 
-Work starts as a GitHub issue, then a branch off `development`, then a pull request **into** `development`. `main` is production and only receives release PRs from `development`.
+Work starts as a GitHub issue, then a branch off `development`, then a pull request **into `development`**. `main` is production and only receives release PRs from `development`.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for labels, branch names, `Fixes #` linking, and the release steps. Product intent for v0.5–v1.0 (gaps, in-bounds features, roadmap) is in [docs/prd.md](docs/prd.md). GitHub issues remain the backlog.
