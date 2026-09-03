@@ -44,7 +44,7 @@ cp .env.example .env.local
 npm run docker:db
 npm install
 npx prisma migrate deploy
-npx prisma db seed
+npx prisma db seed   # only when NEXT_PUBLIC_DEMO_MODE is not false; never on a production database
 npm run dev -- --port 43147 --hostname 127.0.0.1
 ```
 
@@ -135,7 +135,10 @@ Roles stay in this app. The identity provider only proves who the person is.
 | `AUTH_SSO_JIT_PROVISION` | No | `true` to create unknown users on first SSO sign-in. Default: off |
 | `AUTH_SSO_JIT_ROLE` | No | Role for JIT users. Default: `EDUCATOR` |
 | `AUTH_SSO_ORGANIZATION_ID` | No | Organization to attach JIT users to. Defaults to the first org |
-| `AUTH_CREDENTIALS_ENABLED` | No | Set `false` in production after SSO is live |
+| `AUTH_CREDENTIALS_ENABLED` | No | Set `false` in production after SSO is live. When demonstration mode is off and SSO is configured, password sign-in is off unless this is explicitly `true` |
+| `NEXT_PUBLIC_IDLE_MINUTES` | No | Idle sign-out in minutes. Default `20`. `0` disables (used in Playwright) |
+| `CRON_SECRET` | Cron | Bearer token for `GET/POST /api/cron/daily` (retention sweep + reporting-window notices). Vercel Cron sends this automatically when the env var is set |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `MAIL_FROM` | Email | Optional district SMTP. Unset = no mail. Used for team invites, family-message pings, and reporting-window notices. Subjects never include goal text |
 
 `.env*` files are gitignored except `.env.example`.
 
@@ -143,11 +146,12 @@ Roles stay in this app. The identity provider only proves who the person is.
 
 ```bash
 npm test
+npm run test:e2e
 npm run lint
 npm run build
 ```
 
-Automated tests cover authorization rules, progress-signal calculation, and input validation. Pull requests to `development` and `main` run these checks and a Docker image build. Merges to `main` publish `ghcr.io/vrigzalejo/iep-progress-tracker`.
+Automated tests cover authorization rules, progress-signal calculation, input validation, and the v0.5 production-safety helpers. Playwright covers sign-in → log a session → period comment → parent portal. Pull requests to `development` and `main` run unit tests, lint, Playwright (with Postgres), and a Docker image build. Merges to `main` publish `ghcr.io/vrigzalejo/iep-progress-tracker`.
 
 ## Deployment
 
@@ -210,7 +214,7 @@ npx prisma migrate deploy
 npm run dev
 ```
 
-`GET /api/health` returns `{ "ok": true }` after Postgres is reachable. It does not require a session.
+`GET /api/health` returns `{ "ok": true, "demo": true, "evidence": "disk", "credentials": true }` after Postgres is reachable (field values follow env). It does not require a session. When demonstration mode is off, `demo` is `false`.
 
 The app still stores evidence files on disk, so keep **one app replica** until you move uploads to object storage. Postgres itself is a separate service and can use a PVC.
 
@@ -272,7 +276,7 @@ Unauthorized record access returns “not found” to avoid leaking whether a st
 | Sensitive data in logs / telemetry | Audit entries avoid goal text and notes; error UI does not echo student content |
 | XSS / clickjacking | CSP, `X-Frame-Options: DENY`, nosniff |
 | Insecure uploads | Authenticated download route, 5 MB cap, files stored outside `/public` |
-| Demo data mistaken for real records | Persistent demonstration banner; fictional names and emails |
+| Demo data mistaken for real records | Gold banner only while `NEXT_PUBLIC_DEMO_MODE` is not `false`; seed refuses to run when demo is off; auth never seeds |
 | AI leakage | No generative features; documented ban on using student data for model training |
 
 Residual risks: point production Postgres at encrypted volumes and backups; this demo Compose stack uses a local passphrase; evidence files stay on a PVC in Docker/Kubernetes until you wire object storage. Hosted deploys use private Supabase Storage (or a private Vercel Blob store) for evidence.
@@ -280,14 +284,15 @@ Residual risks: point production Postgres at encrypted volumes and backups; this
 ## Production-launch checklist
 
 - [ ] Qualified FERPA / privacy review completed
-- [ ] Demo seed disabled; no fictional students in the production database
+- [ ] Demo seed disabled (`NEXT_PUBLIC_DEMO_MODE=false`); no fictional students in the production database; `/api/health` reports `"demo": false`
 - [ ] Unique `AUTH_SECRET`; demo passphrase removed
-- [ ] SSO configured (Microsoft, Google, or OIDC) with tenant issuer and domain allowlist; credentials sign-in disabled in production
+- [ ] SSO configured (Microsoft, Google, or OIDC) with tenant issuer and domain allowlist; credentials sign-in off (or MFA enrolled on remaining password accounts)
 - [ ] HTTPS only; HSTS at the load balancer
 - [ ] Postgres (or equivalent) on encrypted volumes; backups encrypted
-- [ ] Evidence files in private, encrypted storage with access logging
-- [ ] District retention schedule entered
-- [ ] Parent consent workflow confirmed with your legal team
+- [ ] Evidence files in private, encrypted storage with access logging (required when demo mode is off)
+- [ ] District retention schedule entered; `CRON_SECRET` set so the daily sweep can run
+- [ ] Parent consent workflow confirmed with your legal team (per linked student; re-ack on notice-version change)
+- [ ] Optional SMTP configured for invites and family-message pings
 - [ ] Error monitoring configured **without** student payloads
 - [ ] Accessibility review (WCAG 2.2 AA) with keyboard and screen-reader testing
 - [ ] Incident response contact posted for staff

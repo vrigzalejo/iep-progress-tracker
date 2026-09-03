@@ -16,8 +16,8 @@ Push to the `github` remote (`vrigzalejo/iep-progress-tracker`), not `origin` (C
 - The how-to chatbot may only explain in-app screens from the product handbook. Optional `HF_TOKEN` rephrases those answers via Hugging Face Inference Providers. Never send student records to a model.
 - Do not use student data to train models. Keep PII out of logs and error UI.
 - Database is Postgres. Credentials come from `POSTGRES_*` or `DATABASE_URL` (Vercel/Supabase/Neon also accept `POSTGRES_URL`). Never commit `.env.local`.
-- Keep **one app replica** until evidence uploads use object storage. On Vercel, use private Supabase Storage (or a private Blob store).
+- Keep **one app replica** until evidence uploads use object storage. On Vercel, use private Supabase Storage (or a private Blob store). When `NEXT_PUBLIC_DEMO_MODE=false`, disk uploads are refused.
 
 ## Checks
 
-Run `npm test` for logic changes. For Docker/K8s work, `npm run docker:up` must build and `/api/health` must return `{"ok":true}`. For Vercel, a production deploy must build and `/api/health` must return `{"ok":true}`.
+Run `npm test` for logic changes. Playwright (`npm run test:e2e`) needs a seeded local database. For Docker/K8s work, `npm run docker:up` must build and `/api/health` must return `"ok": true`. For Vercel, a production deploy must build and `/api/health` must return `"ok": true` with `"demo": false` before real students.

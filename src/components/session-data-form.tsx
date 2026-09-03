@@ -84,7 +84,7 @@ export function SessionDataForm({
         .
       </p>
       <FormError error={error} />
-      <form action={createProgressAction} className="mt-4 space-y-5" encType="multipart/form-data">
+      <form action={createProgressAction} className="mt-4 space-y-5">
         <input type="hidden" name="goalId" value={goal.id} />
         <input type="hidden" name="returnTo" value={`/goals/${goal.id}/progress/new`} />
         <input type="hidden" name="measurementType" value={goal.measurementMethod} />
