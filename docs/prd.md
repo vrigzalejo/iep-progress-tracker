@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Status** | Draft for discussion |
-| **Current product** | Polished MVP (`0.4.0`), fictional demo data |
+| **Current product** | Polished MVP (`0.5.0`), fictional demo data |
 | **Audience** | Educators, related-service providers, school admins, parents/guardians |
 | **North star** | The fastest, most defensible way to log IEP progress in the moment and send home a report a family can actually read — without the product making IEP decisions. |
 
