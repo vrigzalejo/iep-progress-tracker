@@ -13,6 +13,7 @@ test("health reports ok and demo", async ({ request }) => {
 
 test("staff can log a session and write a period comment; parent cannot open Team", async ({
   page,
+  context,
 }) => {
   await page.goto("/sign-in");
   await page.getByLabel("Email").fill(demoEmail("maricel.santos"));
@@ -46,7 +47,7 @@ test("staff can log a session and write a period comment; parent cannot open Tea
   await page.getByRole("button", { name: "Save comment" }).first().click();
   await expect(page).toHaveURL(/saved=1/, { timeout: 20_000 });
 
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await context.clearCookies();
   await page.goto("/sign-in");
   await page.getByLabel("Email").fill(demoEmail("diana.santos"));
   await page.getByLabel("Password").fill(DEMO_PASSPHRASE);
