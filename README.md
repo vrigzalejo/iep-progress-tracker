@@ -307,4 +307,4 @@ Primary flows:
 
 Work starts as a GitHub issue, then a branch off `development`, then a pull request **into `development`**. `main` is production and only receives release PRs from `development`.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for labels, branch names, `Fixes #` linking, and the release steps.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for labels, branch names, `Fixes #` linking, and the release steps. Product intent for v0.5–v1.0 (gaps, in-bounds features, roadmap) is in [docs/prd.md](docs/prd.md). GitHub issues remain the backlog.
