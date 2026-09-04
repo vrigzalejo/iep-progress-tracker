@@ -15,20 +15,23 @@ import {
   requireStaff,
   requireUser,
 } from "@/lib/queries";
-import { scoreFromTrials } from "@/lib/progress";
+import { recordProgressEntry } from "@/lib/record-progress";
+import { goalWordingChanged, versionActiveAt } from "@/lib/workflow";
 import {
+  accommodationSchema,
   goalSchema,
   messageSchema,
   objectiveSchema,
   periodStatementSchema,
   progressSchema,
+  reportSnippetSchema,
   retentionSchema,
   setupPasswordSchema,
   studentSchema,
   teamMemberSchema,
   trialSchema,
 } from "@/lib/validation";
-import { ROLE_LABELS, SERVICE_AREAS, type PromptLevel, type ServiceArea } from "@/lib/constants";
+import { ROLE_LABELS, SERVICE_AREAS, type ServiceArea } from "@/lib/constants";
 import { isSsoConfigured } from "@/lib/sso";
 import { sendFamilyMessageMail, sendTeamInviteMail } from "@/lib/mail";
 import { decryptSecret, encryptSecret, generateTotpSecret, verifyTotp } from "@/lib/totp";
@@ -100,41 +103,30 @@ export async function createProgressAction(formData: FormData): Promise<void> {
     sessionOutcome: formString(formData, "sessionOutcome") || "PRESENT",
     setting: formString(formData, "setting") || "CLASSROOM",
     conditionTag: formString(formData, "conditionTag"),
-    accommodations: formString(formData, "accommodations"),
+    accommodations:
+      formString(formData, "accommodations") ||
+      formData.getAll("standingAccommodation").map(String).filter(Boolean).join(", "),
     minutesDelivered: formString(formData, "minutesDelivered"),
     groupSize: formString(formData, "groupSize"),
     homeCarryover: formString(formData, "homeCarryover"),
     objectiveId: formString(formData, "objectiveId"),
     trialsJson: formString(formData, "trialsJson"),
     maxPromptForMastery: formString(formData, "maxPromptForMastery") || undefined,
+    makeupScheduledFor: formString(formData, "makeupScheduledFor"),
+    makeupLocation: formString(formData, "makeupLocation"),
   });
   if (!parsed.success) {
     fail(returnTo, parsed.error.issues[0]?.message ?? "Check the form and try again.");
   }
 
-  const goal = await prisma.iepGoal.findUnique({
+  const goalLookup = await prisma.iepGoal.findUnique({
     where: { id: parsed.data.goalId },
     select: { id: true, studentId: true, maxPromptForMastery: true },
   });
-  if (!goal) fail(returnTo, "Goal not found.");
-  await assertStudentAccess(user, goal.studentId);
+  if (!goalLookup) fail(returnTo, "Goal not found.");
+  await assertStudentAccess(user, goalLookup.studentId);
 
   const trials = parseTrials(parsed.data.trialsJson);
-  const computed = scoreFromTrials(
-    trials,
-    parsed.data.maxPromptForMastery ?? goal.maxPromptForMastery ?? "INDEPENDENT",
-  );
-  const score =
-    computed ??
-    parsed.data.score ??
-    (parsed.data.sessionOutcome === "PRESENT" ? 0 : 0);
-
-  let notes = parsed.data.notes?.trim() ?? "";
-  if (!notes && parsed.data.sessionOutcome === "ABSENT") notes = "Student was absent.";
-  if (!notes && parsed.data.sessionOutcome === "REFUSED") notes = "Student declined the session.";
-  if (!notes && parsed.data.sessionOutcome === "MAKEUP_SCHEDULED") notes = "Makeup session scheduled.";
-  if (!notes && trials.length) notes = `Recorded ${trials.length} trial${trials.length === 1 ? "" : "s"}.`;
-
   const evidence = formData.get("evidence");
   let evidencePath: string | undefined;
   let evidenceLabel = parsed.data.evidenceLabel || undefined;
@@ -146,7 +138,7 @@ export async function createProgressAction(formData: FormData): Promise<void> {
         `Evidence files must be ${Math.floor(maxBytes / (1024 * 1024))} MB or smaller.`,
       );
     }
-    const safeName = `${goal.id}-${Date.now()}-${evidence.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const safeName = `${goalLookup.id}-${Date.now()}-${evidence.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
     try {
       evidencePath = await storeEvidenceFile(safeName, evidence);
     } catch {
@@ -158,49 +150,29 @@ export async function createProgressAction(formData: FormData): Promise<void> {
     evidenceLabel = evidenceLabel || evidence.name;
   }
 
-  const entry = await prisma.progressEntry.create({
-    data: {
-      goalId: parsed.data.goalId,
-      recordedAt: new Date(parsed.data.recordedAt),
-      score,
-      measurementType: parsed.data.measurementType,
-      notes,
-      evidenceLabel,
-      evidencePath,
-      authorId: user.id,
-      sessionOutcome: parsed.data.sessionOutcome,
-      setting: parsed.data.setting,
-      conditionTag: parsed.data.conditionTag || null,
-      accommodations: parsed.data.accommodations || null,
-      minutesDelivered: optionalInt(parsed.data.minutesDelivered ?? ""),
-      groupSize: optionalInt(parsed.data.groupSize ?? ""),
-      homeCarryover: parsed.data.homeCarryover || null,
-      objectiveId: parsed.data.objectiveId || null,
-      trials: trials.length
-        ? {
-            create: trials.map((trial, index) => ({
-              result: trial.result,
-              promptLevel: trial.promptLevel as PromptLevel,
-              sortOrder: index,
-            })),
-          }
-        : undefined,
-    },
+  const saved = await recordProgressEntry({
+    user,
+    data: parsed.data,
+    trials,
+    evidenceLabel,
+    evidencePath,
   });
+  const savedGoal = "goal" in saved ? saved.goal : null;
+  if (!savedGoal) {
+    fail(returnTo, ("error" in saved && saved.error) || "Could not save the session.");
+  }
 
-  await writeAudit({
-    organizationId: user.organizationId,
-    userId: user.id,
-    action: "progress.create",
-    resourceType: "progress",
-    resourceId: entry.id,
-    studentId: goal.studentId,
-  });
-
-  revalidatePath(`/goals/${goal.id}`);
-  revalidatePath(`/students/${goal.studentId}`);
+  revalidatePath(`/goals/${savedGoal.id}`);
+  revalidatePath(`/students/${savedGoal.studentId}`);
   revalidatePath("/dashboard");
-  redirect(`/goals/${goal.id}?saved=1`);
+  revalidatePath("/today");
+  revalidatePath("/minutes");
+  const nextHref = formString(formData, "nextHref");
+  redirect(withSaved(nextHref || `/goals/${savedGoal.id}`));
+}
+
+function withSaved(path: string) {
+  return path.includes("?") ? `${path}&saved=1` : `${path}?saved=1`;
 }
 
 export async function createGoalAction(formData: FormData): Promise<void> {
@@ -293,6 +265,48 @@ export async function updateGoalAction(formData: FormData): Promise<void> {
   const nextReportDue = formString(formData, "nextReportDue");
   const consecutive = optionalInt(formString(formData, "consecutiveSessionsNeeded"));
   const maxPrompt = formString(formData, "maxPromptForMastery");
+  const nextSnapshot = {
+    officialWording: formString(formData, "officialWording") || existing.officialWording,
+    plainLanguageSummary:
+      formString(formData, "plainLanguageSummary") || existing.plainLanguageSummary,
+    baseline: formString(formData, "baseline") || existing.baseline,
+    measurableTarget: formString(formData, "measurableTarget") || existing.measurableTarget,
+    targetValue: (() => {
+      const raw = formString(formData, "targetValue");
+      if (!raw.trim()) return existing.targetValue;
+      const parsed = Number(raw);
+      return Number.isFinite(parsed) ? parsed : existing.targetValue;
+    })(),
+    unit: formString(formData, "unit") || existing.unit,
+    measurementMethod: existing.measurementMethod,
+    presentLevelsSnapshot: existing.presentLevelsSnapshot,
+    consecutiveSessionsNeeded: consecutive ?? existing.consecutiveSessionsNeeded,
+    maxPromptForMastery: maxPrompt || existing.maxPromptForMastery,
+  };
+  const wordingChanged = goalWordingChanged(existing, nextSnapshot);
+  const changeReason = formString(formData, "changeReason");
+  if (wordingChanged && changeReason.trim().length < 3) {
+    fail(returnTo, "Add a short reason when official wording, baseline, target, or mastery changes.");
+  }
+  if (wordingChanged) {
+    await prisma.goalVersion.create({
+      data: {
+        goalId,
+        officialWording: existing.officialWording,
+        plainLanguageSummary: existing.plainLanguageSummary,
+        baseline: existing.baseline,
+        measurableTarget: existing.measurableTarget,
+        targetValue: existing.targetValue,
+        unit: existing.unit,
+        measurementMethod: existing.measurementMethod,
+        presentLevelsSnapshot: existing.presentLevelsSnapshot,
+        consecutiveSessionsNeeded: existing.consecutiveSessionsNeeded,
+        maxPromptForMastery: existing.maxPromptForMastery,
+        changeReason: changeReason.trim(),
+        createdById: user.id,
+      },
+    });
+  }
 
   await prisma.iepGoal.update({
     where: { id: goalId },
@@ -300,10 +314,14 @@ export async function updateGoalAction(formData: FormData): Promise<void> {
       status: status || existing.status,
       sharedWithGuardians: shared,
       nextReportDue: nextReportDue ? new Date(nextReportDue) : existing.nextReportDue,
-      plainLanguageSummary:
-        formString(formData, "plainLanguageSummary") || existing.plainLanguageSummary,
-      consecutiveSessionsNeeded: consecutive ?? existing.consecutiveSessionsNeeded,
-      maxPromptForMastery: maxPrompt || existing.maxPromptForMastery,
+      officialWording: nextSnapshot.officialWording,
+      plainLanguageSummary: nextSnapshot.plainLanguageSummary,
+      baseline: nextSnapshot.baseline,
+      measurableTarget: nextSnapshot.measurableTarget,
+      targetValue: nextSnapshot.targetValue,
+      unit: nextSnapshot.unit,
+      consecutiveSessionsNeeded: nextSnapshot.consecutiveSessionsNeeded,
+      maxPromptForMastery: nextSnapshot.maxPromptForMastery,
     },
   });
 
@@ -314,6 +332,7 @@ export async function updateGoalAction(formData: FormData): Promise<void> {
     resourceType: "goal",
     resourceId: goalId,
     studentId: existing.studentId,
+    details: wordingChanged ? "amendment" : undefined,
   });
 
   revalidatePath(`/goals/${goalId}`);
@@ -464,6 +483,7 @@ export async function sendMessageAction(formData: FormData): Promise<void> {
   revalidatePath(`/students/${parsed.data.studentId}`);
   revalidatePath("/parent");
   revalidatePath("/messages");
+  revalidatePath(`/messages/${parsed.data.studentId}`);
 
   if (parsed.data.visibility === "FAMILY") {
     const student = await prisma.student.findFirst({
@@ -476,6 +496,13 @@ export async function sendMessageAction(formData: FormData): Promise<void> {
     const recipients = new Set<string>();
     if (user.role === "PARENT") {
       if (student?.caseManager.email) recipients.add(student.caseManager.email);
+      const providers = await prisma.studentProvider.findMany({
+        where: { studentId: parsed.data.studentId },
+        include: { user: { select: { email: true } } },
+      });
+      for (const link of providers) {
+        if (link.user.email) recipients.add(link.user.email);
+      }
     } else {
       for (const guardian of student?.guardians ?? []) {
         if (guardian.user?.email && guardian.user.id !== user.id) {
@@ -505,20 +532,29 @@ export async function savePeriodStatementAction(formData: FormData): Promise<voi
   if (!parsed.success) {
     fail(returnTo, parsed.error.issues[0]?.message ?? "Check the period comment.");
   }
-  const goal = await prisma.iepGoal.findUnique({ where: { id: parsed.data.goalId } });
+  const goal = await prisma.iepGoal.findUnique({
+    where: { id: parsed.data.goalId },
+    include: { versions: { orderBy: { createdAt: "desc" } } },
+  });
   if (!goal) fail(returnTo, "Goal not found.");
   await assertStudentAccess(user, goal.studentId);
+  const period = await prisma.reportingPeriodWindow.findUnique({
+    where: { id: parsed.data.periodId },
+  });
+  const pinned = period ? versionActiveAt(goal.versions, period.endsAt) : null;
 
   await prisma.goalPeriodStatement.upsert({
     where: { goalId_periodId: { goalId: parsed.data.goalId, periodId: parsed.data.periodId } },
     create: {
       ...parsed.data,
       authorId: user.id,
+      goalVersionId: pinned?.id,
     },
     update: {
       progressCode: parsed.data.progressCode,
       narrative: parsed.data.narrative,
       authorId: user.id,
+      goalVersionId: pinned?.id,
     },
   });
 
@@ -843,4 +879,111 @@ export async function runRetentionAction(formData: FormData): Promise<void> {
   });
   revalidatePath("/privacy");
   redirect(dryRun ? "/privacy?saved=retention-preview" : "/privacy?saved=retention");
+}
+
+export async function addAccommodationAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const parsed = accommodationSchema.safeParse({
+    studentId: formString(formData, "studentId"),
+    label: formString(formData, "label"),
+  });
+  const returnTo = `/students/${formString(formData, "studentId")}`;
+  if (!parsed.success) fail(returnTo, parsed.error.issues[0]?.message ?? "Name the accommodation.");
+  await assertStudentAccess(user, parsed.data.studentId);
+  const count = await prisma.studentAccommodation.count({
+    where: { studentId: parsed.data.studentId, archivedAt: null },
+  });
+  await prisma.studentAccommodation.create({
+    data: { studentId: parsed.data.studentId, label: parsed.data.label, sortOrder: count },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "student.accommodation",
+    resourceType: "student",
+    resourceId: parsed.data.studentId,
+    studentId: parsed.data.studentId,
+  });
+  revalidatePath(returnTo);
+  redirect(`${returnTo}?saved=1`);
+}
+
+export async function archiveAccommodationAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const id = formString(formData, "accommodationId");
+  const studentId = formString(formData, "studentId");
+  await assertStudentAccess(user, studentId);
+  await prisma.studentAccommodation.update({
+    where: { id },
+    data: { archivedAt: new Date() },
+  });
+  revalidatePath(`/students/${studentId}`);
+  redirect(`/students/${studentId}?saved=1`);
+}
+
+export async function addReportSnippetAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const parsed = reportSnippetSchema.safeParse({
+    label: formString(formData, "label"),
+    body: formString(formData, "body"),
+  });
+  const returnTo = formString(formData, "returnTo") || "/reports/studio";
+  if (!parsed.success) fail(returnTo, parsed.error.issues[0]?.message ?? "Check the snippet.");
+  await prisma.reportSnippet.create({
+    data: {
+      organizationId: user.organizationId,
+      createdById: user.id,
+      label: parsed.data.label,
+      body: parsed.data.body,
+    },
+  });
+  revalidatePath(returnTo);
+  redirect(`${returnTo.split("?")[0]}?saved=snippet`);
+}
+
+export async function bulkNotIntroducedAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  if (!can(user.role, "progress.create")) fail("/reports/studio", "You cannot write period comments.");
+  const periodId = formString(formData, "periodId");
+  const confirm = formString(formData, "confirm");
+  if (confirm !== "NOT_INTRODUCED") {
+    fail("/reports/studio", "Type NOT_INTRODUCED to confirm the bulk update.");
+  }
+  const pairs = formData
+    .getAll("goalId")
+    .map(String)
+    .filter(Boolean);
+  const period = await prisma.reportingPeriodWindow.findUnique({ where: { id: periodId } });
+  if (!period) fail("/reports/studio", "Reporting period not found.");
+  for (const goalId of pairs) {
+    const goal = await prisma.iepGoal.findUnique({
+      where: { id: goalId },
+      include: { versions: true },
+    });
+    if (!goal) continue;
+    await assertStudentAccess(user, goal.studentId);
+    const pinned = versionActiveAt(goal.versions, period.endsAt);
+    await prisma.goalPeriodStatement.upsert({
+      where: { goalId_periodId: { goalId, periodId } },
+      create: {
+        goalId,
+        periodId,
+        progressCode: "NOT_INTRODUCED",
+        narrative: "Staff marked this goal as not yet introduced during this reporting period.",
+        authorId: user.id,
+        goalVersionId: pinned?.id,
+      },
+      update: {},
+    });
+  }
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "report.bulk_not_introduced",
+    resourceType: "period",
+    resourceId: periodId,
+    details: `count=${pairs.length}`,
+  });
+  revalidatePath("/reports/studio");
+  redirect(`/reports/studio?periodId=${periodId}&saved=bulk`);
 }

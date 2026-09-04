@@ -27,9 +27,14 @@ export default async function DashboardPage() {
             goals waiting for a present-session note. It does not make IEP decisions.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/students">Open caseload</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild>
+            <Link href="/today">Today’s worklist</Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link href="/students">Open caseload</Link>
+          </Button>
+        </div>
       </header>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

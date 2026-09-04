@@ -22,6 +22,7 @@ export const metadata: Metadata = {
   },
   description: APP_TAGLINE,
   robots: { index: false, follow: false },
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

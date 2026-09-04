@@ -80,11 +80,16 @@ export default async function ReportsPage({
                 </Link>
               </Button>
               {isStaff(user.role) && period ? (
-                <Button asChild variant="secondary">
-                  <Link href={`/reports/${selected.id}/period?periodId=${period.id}`}>
-                    Write period comments
-                  </Link>
-                </Button>
+                <>
+                  <Button asChild variant="secondary">
+                    <Link href={`/reports/studio?periodId=${period.id}`}>Open report studio</Link>
+                  </Button>
+                  <Button asChild variant="secondary">
+                    <Link href={`/reports/${selected.id}/period?periodId=${period.id}`}>
+                      Write period comments
+                    </Link>
+                  </Button>
+                </>
               ) : null}
               <Button asChild variant="secondary">
                 <Link href={`/reports/${selected.id}/meeting`}>Meeting packet</Link>

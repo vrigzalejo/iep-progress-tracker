@@ -15,7 +15,7 @@ export function helpArticles(): HelpArticle[] {
     {
       id: "catalog",
       title: `Everything ${APP_NAME} can do`,
-      hrefs: ["/guide", "/dashboard", "/students", "/reports", "/messages", "/privacy"],
+      hrefs: ["/guide", "/dashboard", "/today", "/students", "/reports", "/messages", "/privacy"],
       roles: ["ADMINISTRATOR", "EDUCATOR", "PROVIDER"],
       keywords: [
         "features",
@@ -37,7 +37,7 @@ Ask about any staff screen:
 
 **Chrome** — gold demo banner; sidebar (Dashboard, Students, Reports, Messages, Team if you are an administrator, Privacy, Setup guide); header [Search](/search); Sign out at the bottom of the sidebar; **How to use this site** in the corner
 
-**Work list** — [Dashboard](/dashboard): reports due in 14 days, goals needing a present-session note, annual IEP reviews in 30 days, services below this week’s prescribed minutes
+**Work list** — [Today](/today): remaining sessions this week, one tap into [Hallway](/hallway). [Dashboard](/dashboard) still shows reports due, stale goals, IEP reviews, and minutes. [Minutes](/minutes) is the week ledger.
 
 **Caseload** — [Students](/students): filter by preferred name, school, or grade; add a minimum profile; IEP calendar; present levels; providers and minutes; guardian contacts; consent
 
@@ -45,9 +45,9 @@ Ask about any staff screen:
 
 **Sessions** — Present / Absent / Declined / Makeup; trial pad (Independent, Prompted, Incorrect) or frequency/score; setting, minutes, accommodations, home carryover, optional evidence file
 
-**Reports** — [Reports](/reports): pick student and period → print preview or period comments (progress code + narrative you write). Meeting packet from the student profile. Browser Print hides the menu
+**Reports** — [Report studio](/reports/studio) is the caseload × period grid. [Reports](/reports) still opens one student. Staff write the progress code and narrative. Snippets are district phrases you paste.
 
-**Find and talk** — header search across your caseload’s names and goal text · [Messages](/messages) or the profile thread (Family vs Staff only)
+**Find and talk** — header search · [Messages](/messages) threads with unread badges · profile thread (Family vs Staff only)
 
 **School ops** — [Team](/team) (administrators: invite, change role, deactivate) · [Privacy](/privacy) (notice, parent acknowledgment, retention, CSV, archive, deletion, audit)
 
@@ -246,17 +246,19 @@ Demo profiles already include guardian contacts. Parent accounts see a student w
 
 **Mastery rule** must match the IEP: consecutive sessions needed (1–10) and the maximum prompt that still counts (independent, gesture, verbal, model, or physical). Optional present levels at goal start. Optional first short-term objective: official wording, summary, and target value. Check **Share this goal with linked parents** so families can see it (on by default).
 
-On an open goal you can edit those fields, add more objectives, see the trend chart and session history, and **Log a session**. Providers view goals; they do not create them. This app never invents goal text.`,
+On an open goal you can edit those fields, add more objectives, see the trend chart, prompt-level chart, session history, and **Log a session**. Changing official wording, baseline, target, or mastery creates a dated version—add a short reason. Reports pin to the version that was current at the period end. Providers view goals; they do not create them. This app never invents goal text.`,
     },
     {
       id: "sessions",
       title: "Logging a session",
-      hrefs: ["/students", "/dashboard"],
+      hrefs: ["/today", "/hallway", "/students", "/dashboard"],
       roles: ["ADMINISTRATOR", "EDUCATOR", "PROVIDER"],
       keywords: [
         "session",
         "log",
         "progress",
+        "hallway",
+        "today",
         "trial",
         "independent",
         "prompted",
@@ -271,7 +273,7 @@ On an open goal you can edit those fields, add more objectives, see the trend ch
         "setting",
         "probe",
       ],
-      body: `Open a goal, then **Log a session** (also from the student profile). Choose outcome: Present, Absent, Declined/refused, or Makeup scheduled. Only **Present** sessions count toward the consecutive mastery streak.
+      body: `From [Today](/today), tap **Log in hallway** for huge trial buttons and the next student after save. You can also open a goal and **Log a session**, or **Hallway** on the profile. Choose outcome: Present, Absent, Declined/refused, or Makeup scheduled (date and place). Only **Present** sessions count toward the consecutive mastery streak. Offline hallway saves stay on this device until Wi‑Fi returns—they are never dropped silently.
 
 For trial-based goals (percent accuracy or independent trials), set prompt level first, then tap Independent, Prompted, or Incorrect. Undo last if needed. Frequency and duration goals use +/− counts. Rubric and rate enter a numeric score. Same form: date, setting (classroom, pull-out, group, telehealth, home), minutes delivered, group size, condition (typical supports, without extras, 1:1, small group), and accommodations.
 
@@ -300,15 +302,18 @@ Optional: session notes, home carryover (families can see this), evidence label,
 **Needs attention** — scores slowed/declined or a report date is close; review with the IEP team.
 **Needs recent data** — no fresh present-session note.
 
+The goal page also stacks **prompt levels over time** (independent, gesture, verbal, model, physical). That chart is share of trials, not a recommendation to change the prompt hierarchy.
+
 These labels never choose an IEP progress code. Staff pick that code on the period report.`,
     },
     {
       id: "reports",
       title: "Progress reports and period comments",
-      hrefs: ["/reports"],
+      hrefs: ["/reports", "/reports/studio"],
       keywords: [
         "report",
         "reports",
+        "studio",
         "period",
         "progress",
         "code",
@@ -318,7 +323,7 @@ These labels never choose an IEP progress code. Staff pick that code on the peri
         "insufficient",
         "comment",
       ],
-      body: `Open [Reports](/reports) (or **Build report** on a student profile). Pick the student and reporting period, then **Load goals**. **Open print preview** shows the family-facing report. Staff continue to **period comments** to choose the IEP progress code: making sufficient progress, not making sufficient progress, goal met this period, or not yet introduced. Write the narrative yourself. ${APP_NAME} formats scores you already logged; it does not invent comments.
+      body: `Open [Report studio](/reports/studio) for the whole caseload × period grid (missing vs written). Click **Write** to enter the IEP progress code and narrative. The data-status badge is reference only. You can bulk-mark remaining goals **not yet introduced** (type NOT_INTRODUCED). Save staff-authored snippets to paste—never generated per student. [Reports](/reports) still opens one student: print preview or period comments.
 
 Parents open the same report from [Family home](/parent). Use **Print** in the browser—the gold banner, sidebar, and this assistant hide. Codes are professional judgment, not chatbot output.`,
     },
@@ -344,9 +349,9 @@ On [Students](/students) you can also filter by school and grade. Results never 
       title: "Messages",
       hrefs: ["/messages"],
       keywords: ["message", "messages", "thread", "family", "staff", "note", "contact", "inbox"],
-      body: `[Messages](/messages) lists threads attached to a student. Staff can post a **family** note (parents see it) or a **staff-only** note (never in the family portal). Choose that radio on the student profile before **Send message**. Parents only see family messages for linked students.
+      body: `[Messages](/messages) lists one thread per student with an unread badge. Open a thread to mark it read. Staff can post a **family** note (parents see it) or a **staff-only** note. Family messages can email assigned staff (no student records in the mail). Parents only see family messages for linked students.
 
-Send a new note from the student profile, [Family home](/parent), or Messages. Keep extra identifiers and other families’ information out of the thread.`,
+Send a new note from the thread, the student profile, or [Family home](/parent). Keep extra identifiers and other families’ information out of the thread.`,
     },
     {
       id: "family",
@@ -433,14 +438,14 @@ Parents acknowledge **for each linked student**. If the school bumps the notice 
       ],
       body: `A gold banner at the top appears only in demonstration mode and reminds you this site uses fictional data. Skip to main content is the first focusable link.
 
-The dark sidebar lists only screens your role can open: staff see Dashboard, Students, Reports, Messages, Privacy, and Setup guide; administrators also see Team; parents see Family home instead of Dashboard and Students. On a phone, open the menu with the button next to the header. Staff have a search field in the header. Your name and role sit at the bottom of the sidebar with **Sign out**.
+The dark sidebar lists only screens your role can open: staff see Dashboard, Today, Students, Minutes, Reports, Messages, Privacy, and Setup guide; administrators also see Team; parents see Family home instead of Dashboard and Students. On a phone, open the menu with the button next to the header. Staff have a search field in the header. Your name and role sit at the bottom of the sidebar with **Sign out**.
 
 **How to use this site** (this assistant) stays in the lower-right corner. Browser **Print** hides the banner, sidebar, and assistant so reports and meeting packets print cleanly.`,
     },
     {
       id: "minutes",
       title: "Service minutes on the dashboard",
-      hrefs: ["/dashboard", "/students"],
+      hrefs: ["/minutes", "/dashboard", "/students"],
       roles: ["ADMINISTRATOR", "EDUCATOR", "PROVIDER"],
       keywords: [
         "minutes",
@@ -451,10 +456,12 @@ The dark sidebar lists only screens your role can open: staff see Dashboard, Stu
         "minutes gap",
         "uncovered",
         "dashboard",
+        "ledger",
+        "makeup",
       ],
-      body: `Each assigned provider on a student profile can have weekly prescribed minutes. The profile shows this week’s delivered minutes (from present-session logs in that service area) versus the prescription.
+      body: `[Minutes](/minutes) is the week ledger: prescribed vs delivered, plus absent, declined, and makeup scheduled. Color is descriptive (“12 of 30 minutes”). It does not say a service should change. Use **Schedule makeup** to open hallway and mark Makeup scheduled with a date and place.
 
-[Dashboard](/dashboard) **Minutes gap** counts services below this week’s prescribed minutes. Open a row to the student. The dashboard does not decide whether minutes were missed as a legal matter—it only compares logged time to the number on the profile.`,
+Each provider line on a student profile can have weekly prescribed minutes. [Dashboard](/dashboard) **Minutes gap** counts services still below this week’s prescription.`,
     },
     {
       id: "objectives",
@@ -465,6 +472,16 @@ The dark sidebar lists only screens your role can open: staff see Dashboard, Stu
       body: `When you add an IEP goal you may include a first short-term objective (official wording, plain-language summary, target value). On the open goal page, administrators and educators can add more objectives.
 
 When you **Log a session**, you can attach the entry to one objective or to the whole annual goal. Charts still use the scores you save. This app does not write objective text.`,
+    },
+    {
+      id: "today",
+      title: "Today and hallway",
+      hrefs: ["/today", "/hallway"],
+      roles: ["ADMINISTRATOR", "EDUCATOR", "PROVIDER"],
+      keywords: ["today", "hallway", "worklist", "offline", "pwa", "ipad", "queue"],
+      body: `[Today](/today) lists students still owed a session or minutes this week. **Log in hallway** opens huge trial buttons. After save, hallway opens the next student. Install the app from the browser if you want a home-screen icon; the start page is Today.
+
+If the hallway Wi‑Fi drops, the session stays in a queue on this device and syncs when you are back online. A failed sync stays visible. Optional device PIN is only for a shared cart—it does not replace sign-in.`,
     },
     {
       id: "assistant",

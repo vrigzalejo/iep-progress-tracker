@@ -5,8 +5,10 @@ import { can, canAccessStudent, isStaff, type Permission } from "@/lib/permissio
 import type { Role } from "@/lib/constants";
 import { isDemoMode } from "@/lib/runtime";
 import { computeDataSignal, deliveredMinutesInRange } from "@/lib/progress";
+import { buildMinutesLedger, buildTodayCaseload, type TodayServiceInput } from "@/lib/workflow";
 import { writeAudit } from "@/lib/audit";
 import { ilike } from "@/lib/search-filter";
+import { endOfUtcWeek, startOfUtcWeek } from "@/lib/utils";
 
 export type SessionUser = {
   id: string;
@@ -35,6 +37,10 @@ const goalDetailInclude = {
     orderBy: { createdAt: "desc" as const },
   },
   createdBy: { select: { id: true, name: true } },
+  versions: {
+    include: { createdBy: { select: { name: true } } },
+    orderBy: { createdAt: "desc" as const },
+  },
 };
 
 export async function requireUser(): Promise<SessionUser> {
@@ -168,6 +174,7 @@ export async function getStudentDetail(user: SessionUser, studentId: string) {
         orderBy: { createdAt: "asc" },
       },
       consents: { orderBy: { grantedAt: "desc" } },
+      accommodations: { where: { archivedAt: null }, orderBy: { sortOrder: "asc" } },
     },
   });
   if (!student) notFound();
@@ -254,11 +261,48 @@ export function currentReportingPeriod<T extends { startsAt: Date; endsAt: Date 
   );
 }
 
+function serviceInputs(
+  students: Awaited<ReturnType<typeof listVisibleStudents>>,
+  userId?: string,
+): TodayServiceInput[] {
+  return students.flatMap((student) =>
+    student.providers
+      .filter((link) => (userId ? link.userId === userId : true))
+      .filter((link) => link.minutesPerWeek > 0 || link.sessionsPerWeek > 0)
+      .map((link) => {
+        const matchingGoals = student.goals.filter((goal) => goal.serviceArea === link.serviceArea);
+        const primary = matchingGoals.find((goal) => goal.status === "ACTIVE") ?? matchingGoals[0];
+        return {
+          studentId: student.id,
+          studentName: student.preferredName,
+          serviceArea: link.serviceArea,
+          providerUserId: link.userId,
+          providerName: link.user.name,
+          minutesPerWeek: link.minutesPerWeek,
+          sessionsPerWeek: link.sessionsPerWeek,
+          goalId: primary?.id ?? student.goals.find((goal) => goal.status === "ACTIVE")?.id ?? null,
+          goalSummary:
+            primary?.plainLanguageSummary ??
+            student.goals.find((goal) => goal.status === "ACTIVE")?.plainLanguageSummary ??
+            null,
+          entries: matchingGoals.flatMap((goal) =>
+            goal.entries.map((entry) => ({
+              recordedAt: entry.recordedAt,
+              sessionOutcome: entry.sessionOutcome,
+              minutesDelivered: entry.minutesDelivered,
+            })),
+          ),
+        };
+      }),
+  );
+}
+
 export function summarizeServiceMinutes(
   students: Awaited<ReturnType<typeof listVisibleStudents>>,
   now = new Date(),
 ) {
-  const weekStart = new Date(now.getTime() - 7 * 86_400_000);
+  const weekStart = startOfUtcWeek(now);
+  const weekEnd = endOfUtcWeek(now);
   return students.flatMap((student) =>
     student.providers
       .filter((link) => link.minutesPerWeek > 0)
@@ -266,7 +310,7 @@ export function summarizeServiceMinutes(
         const entries = student.goals
           .filter((goal) => goal.serviceArea === link.serviceArea)
           .flatMap((goal) => goal.entries);
-        const delivered = deliveredMinutesInRange(entries, weekStart, now);
+        const delivered = deliveredMinutesInRange(entries, weekStart, weekEnd);
         return {
           studentId: student.id,
           studentName: student.preferredName,
@@ -275,10 +319,131 @@ export function summarizeServiceMinutes(
           prescribed: link.minutesPerWeek,
           sessionsPerWeek: link.sessionsPerWeek,
           delivered,
-          gap: link.minutesPerWeek - delivered,
+          gap: Math.max(0, link.minutesPerWeek - delivered),
         };
       }),
   );
+}
+
+export async function getTodayCaseload(user: SessionUser, now = new Date()) {
+  const students = await listVisibleStudents(user);
+  const scoped = user.role === "PROVIDER" ? serviceInputs(students, user.id) : serviceInputs(students);
+  const due = buildTodayCaseload(scoped, now);
+  return { students, due, weekStart: startOfUtcWeek(now), weekEnd: endOfUtcWeek(now) };
+}
+
+export async function getMinutesLedger(user: SessionUser, now = new Date()) {
+  const students = await listVisibleStudents(user);
+  const scoped = user.role === "PROVIDER" ? serviceInputs(students, user.id) : serviceInputs(students);
+  return {
+    rows: buildMinutesLedger(scoped, now),
+    weekStart: startOfUtcWeek(now),
+    weekEnd: endOfUtcWeek(now),
+  };
+}
+
+export async function getReportStudio(user: SessionUser, periodId?: string) {
+  const students = await listVisibleStudents(user);
+  const periods = await listReportingPeriods(user);
+  const period = periods.find((item) => item.id === periodId) ?? currentReportingPeriod(periods);
+  const snippets = await prisma.reportSnippet.findMany({
+    where: { organizationId: user.organizationId },
+    orderBy: { createdAt: "desc" },
+    take: 40,
+  });
+  const rows = students.flatMap((student) =>
+    student.goals
+      .filter((goal) => (user.role === "PARENT" ? goal.sharedWithGuardians : true))
+      .map((goal) => {
+        const statement = period
+          ? goal.periodStatements.find((item) => item.periodId === period.id)
+          : undefined;
+        return {
+          studentId: student.id,
+          studentName: student.preferredName,
+          goalId: goal.id,
+          goalSummary: goal.plainLanguageSummary,
+          serviceArea: goal.serviceArea,
+          signal: computeDataSignal(goal),
+          written: Boolean(statement),
+          progressCode: statement?.progressCode ?? null,
+        };
+      }),
+  );
+  return { students, periods, period, snippets, rows };
+}
+
+export async function countUnreadMessages(user: SessionUser) {
+  const students = await listVisibleStudents(user);
+  const ids = students.map((student) => student.id);
+  if (ids.length === 0) return 0;
+  return prisma.message.count({
+    where: {
+      studentId: { in: ids },
+      fromUserId: { not: user.id },
+      ...(user.role === "PARENT" ? { visibility: "FAMILY" } : {}),
+      reads: { none: { userId: user.id } },
+    },
+  });
+}
+
+export async function listMessageThreads(user: SessionUser) {
+  const students = await listVisibleStudents(user);
+  const ids = students.map((student) => student.id);
+  if (ids.length === 0) return [];
+  const messages = await prisma.message.findMany({
+    where: {
+      studentId: { in: ids },
+      ...(user.role === "PARENT" ? { visibility: "FAMILY" } : {}),
+    },
+    include: {
+      fromUser: { select: { id: true, name: true } },
+      student: { select: { id: true, preferredName: true } },
+      reads: { where: { userId: user.id }, select: { readAt: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  const byStudent = new Map<
+    string,
+    {
+      studentId: string;
+      studentName: string;
+      latest: (typeof messages)[number];
+      unread: number;
+    }
+  >();
+  for (const message of messages) {
+    const existing = byStudent.get(message.studentId);
+    const unread =
+      message.fromUserId !== user.id && message.reads.length === 0 ? 1 : 0;
+    if (!existing) {
+      byStudent.set(message.studentId, {
+        studentId: message.studentId,
+        studentName: message.student.preferredName,
+        latest: message,
+        unread,
+      });
+    } else {
+      existing.unread += unread;
+    }
+  }
+  return [...byStudent.values()];
+}
+
+export async function markStudentMessagesRead(user: SessionUser, studentId: string) {
+  const messages = await prisma.message.findMany({
+    where: {
+      studentId,
+      fromUserId: { not: user.id },
+      ...(user.role === "PARENT" ? { visibility: "FAMILY" } : {}),
+    },
+    select: { id: true },
+  });
+  if (messages.length === 0) return;
+  await prisma.messageRead.createMany({
+    data: messages.map((message) => ({ messageId: message.id, userId: user.id })),
+    skipDuplicates: true,
+  });
 }
 
 export async function getDashboardData(user: SessionUser) {

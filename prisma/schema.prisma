@@ -17,6 +17,7 @@ model Organization {
   students          Student[]
   auditLogs         AuditLog[]
   reportingPeriods  ReportingPeriodWindow[]
+  reportSnippets    ReportSnippet[]
 }
 
 model User {
@@ -44,6 +45,9 @@ model User {
   auditLogs         AuditLog[]
   createdGoals      IepGoal[]              @relation("GoalAuthor")
   periodStatements  GoalPeriodStatement[]
+  goalVersions      GoalVersion[]
+  reportSnippets    ReportSnippet[]
+  messageReads      MessageRead[]
 
   @@index([organizationId, role])
 }
@@ -66,8 +70,9 @@ model Student {
   providers  StudentProvider[]
   guardians  GuardianContact[]
   goals      IepGoal[]
-  messages   Message[]
-  consents   ConsentRecord[]
+  messages       Message[]
+  consents       ConsentRecord[]
+  accommodations StudentAccommodation[]
 
   @@index([organizationId])
   @@index([caseManagerId])
@@ -125,6 +130,7 @@ model IepGoal {
   entries                    ProgressEntry[]
   objectives                 GoalObjective[]
   periodStatements           GoalPeriodStatement[]
+  versions                   GoalVersion[]
 
   @@index([studentId])
   @@index([nextReportDue])
@@ -166,9 +172,11 @@ model ProgressEntry {
   minutesDelivered Int?
   groupSize        Int?
   homeCarryover    String?
-  objectiveId      String?
-  objective        GoalObjective? @relation(fields: [objectiveId], references: [id], onDelete: SetNull)
-  trials           ProgressTrial[]
+  objectiveId          String?
+  objective            GoalObjective? @relation(fields: [objectiveId], references: [id], onDelete: SetNull)
+  trials               ProgressTrial[]
+  makeupScheduledFor   DateTime?
+  makeupLocation       String?
 
   @@index([goalId, recordedAt])
 }
@@ -202,10 +210,12 @@ model GoalPeriodStatement {
   period       ReportingPeriodWindow  @relation(fields: [periodId], references: [id], onDelete: Cascade)
   progressCode String
   narrative    String
-  authorId     String
-  author       User                   @relation(fields: [authorId], references: [id])
-  createdAt    DateTime               @default(now())
-  updatedAt    DateTime               @updatedAt
+  authorId      String
+  author        User                   @relation(fields: [authorId], references: [id])
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  goalVersionId String?
+  goalVersion   GoalVersion?           @relation(fields: [goalVersionId], references: [id], onDelete: SetNull)
 
   @@unique([goalId, periodId])
 }
@@ -219,6 +229,7 @@ model Message {
   body       String
   createdAt  DateTime @default(now())
   visibility String   @default("FAMILY")
+  reads      MessageRead[]
 
   @@index([studentId, createdAt])
 }
@@ -248,4 +259,62 @@ model ConsentRecord {
   noticeVersion String
   grantedAt     DateTime
   withdrawnAt   DateTime?
+}
+
+model StudentAccommodation {
+  id         String    @id @default(cuid())
+  studentId  String
+  student    Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  label      String
+  sortOrder  Int       @default(0)
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([studentId])
+}
+
+model GoalVersion {
+  id                        String   @id @default(cuid())
+  goalId                    String
+  goal                      IepGoal  @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  officialWording           String
+  plainLanguageSummary      String
+  baseline                  String
+  measurableTarget          String
+  targetValue               Float
+  unit                      String
+  measurementMethod         String
+  presentLevelsSnapshot     String?
+  consecutiveSessionsNeeded Int
+  maxPromptForMastery       String
+  changeReason              String
+  createdById               String
+  createdBy                 User     @relation(fields: [createdById], references: [id])
+  createdAt                 DateTime @default(now())
+  periodStatements          GoalPeriodStatement[]
+
+  @@index([goalId, createdAt])
+}
+
+model ReportSnippet {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  label          String
+  body           String
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId])
+}
+
+model MessageRead {
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
 }
