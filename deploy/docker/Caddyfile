@@ -1,0 +1,11 @@
+{
+	auto_https off
+	admin off
+}
+
+:443 {
+	tls /certs/local.pem /certs/local-key.pem
+	reverse_proxy app:43147 {
+		header_up X-Forwarded-Proto https
+	}
+}

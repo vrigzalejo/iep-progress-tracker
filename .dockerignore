@@ -1,3 +1,4 @@
+.certs
 .vercel
 node_modules
 .next
