@@ -95,6 +95,8 @@ export const progressSchema = z
     objectiveId: z.string().optional().or(z.literal("")),
     trialsJson: z.string().optional().or(z.literal("")),
     maxPromptForMastery: z.enum(PROMPT_LEVELS).optional(),
+    makeupScheduledFor: z.string().optional().or(z.literal("")),
+    makeupLocation: z.string().trim().max(120).optional().or(z.literal("")),
   })
   .superRefine((value, ctx) => {
     let trials: z.infer<typeof trialSchema>[] = [];
@@ -144,6 +146,26 @@ export const periodStatementSchema = z.object({
   periodId: z.string().min(1),
   progressCode: z.enum(PROGRESS_CODES),
   narrative: z.string().trim().min(10, "Write a short period comment.").max(2000),
+});
+
+export const reportSnippetSchema = z.object({
+  label: z.string().trim().min(2, "Name this snippet.").max(80),
+  body: z.string().trim().min(10, "Write the phrase you want to paste.").max(2000),
+});
+
+export const accommodationSchema = z.object({
+  studentId: z.string().min(1),
+  label: z.string().trim().min(2, "Name the accommodation.").max(120),
+});
+
+export const goalAmendmentSchema = z.object({
+  officialWording: z.string().trim().min(10).max(2000).optional().or(z.literal("")),
+  plainLanguageSummary: z.string().trim().min(10).max(1000).optional().or(z.literal("")),
+  baseline: z.string().trim().min(1).max(500).optional().or(z.literal("")),
+  measurableTarget: z.string().trim().min(1).max(500).optional().or(z.literal("")),
+  targetValue: z.string().optional().or(z.literal("")),
+  unit: z.string().trim().max(40).optional().or(z.literal("")),
+  changeReason: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
 export const teamMemberSchema = z.object({

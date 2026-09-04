@@ -26,10 +26,10 @@ services:
         NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-IEP Progress Tracker}
         NEXT_PUBLIC_APP_SLUG: ${NEXT_PUBLIC_APP_SLUG:-iep-progress-tracker}
         NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-true}
-    image: iep-progress-tracker:0.5.0
+    image: iep-progress-tracker:0.6.0
     user: "0:0"
-    ports:
-      - "43147:43147"
+    expose:
+      - "43147"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-iep}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-iep}
@@ -37,7 +37,8 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
       DATABASE_URL: ""
-      AUTH_URL: ${AUTH_URL:-http://127.0.0.1:43147}
+      AUTH_URL: https://127.0.0.1:43147
+      AUTH_TRUST_HOST: "true"
       NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-true}
       NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-IEP Progress Tracker}
       NEXT_PUBLIC_APP_SLUG: ${NEXT_PUBLIC_APP_SLUG:-iep-progress-tracker}
@@ -61,6 +62,65 @@ services:
       timeout: 5s
       retries: 3
       start_period: 40s
+
+  # TLS terminator. Next.js stays HTTP on the Compose network.
+  # The proxy writes .certs/local.pem on first start if the files are missing.
+  proxy:
+    image: caddy:2-alpine
+    expose:
+      - "443"
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    volumes:
+      - ./.certs:/certs
+      - ./deploy/docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploy/docker/proxy-entrypoint.sh:/entrypoint.sh:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "--no-check-certificate",
+          "https://127.0.0.1:443/api/health",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Same host port for http:// and https:// — plaintext gets 308, TLS goes to Caddy.
+  mux:
+    image: node:22-bookworm-slim
+    command: ["node", "/mux.mjs"]
+    ports:
+      - "43147:43147"
+    volumes:
+      - ./deploy/docker/http-https-mux.mjs:/mux.mjs:ro
+    environment:
+      LISTEN_PORT: "43147"
+      TLS_UPSTREAM: proxy
+      TLS_PORT: "443"
+      HTTPS_HOST: 127.0.0.1:43147
+    depends_on:
+      proxy:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:43147/api/health',{redirect:'manual'}).then((r)=>process.exit(r.status===308?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
 volumes:
   pg-data:

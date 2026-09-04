@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createObjectiveAction, updateGoalAction } from "@/app/actions";
 import { ProgressChart } from "@/components/progress-chart";
+import { PromptLevelChart } from "@/components/prompt-level-chart";
+import { promptLevelShares } from "@/lib/workflow";
 import { ProgressCodeBadge } from "@/components/progress-code-badge";
 import { StatusIndicator } from "@/components/status-indicator";
 import { Alert, FormError } from "@/components/ui/alert";
@@ -174,6 +176,17 @@ export default async function GoalDetailPage({
       </Card>
 
       <Card>
+        <CardTitle>Prompt levels over time</CardTitle>
+        <p className="mt-1 text-sm text-muted">
+          Share of trials by prompt level. This is not a recommendation to change the prompt
+          hierarchy.
+        </p>
+        <div className="mt-4">
+          <PromptLevelChart points={promptLevelShares(goal.entries)} />
+        </div>
+      </Card>
+
+      <Card>
         <CardTitle>Session history</CardTitle>
         {goal.entries.length === 0 ? (
           <p className="mt-3 text-sm text-muted">No entries yet.</p>
@@ -284,11 +297,39 @@ export default async function GoalDetailPage({
               </Select>
             </div>
             <div className="sm:col-span-2">
+              <Label htmlFor="officialWording">Official wording</Label>
+              <Textarea id="officialWording" name="officialWording" defaultValue={goal.officialWording} />
+            </div>
+            <div>
+              <Label htmlFor="baseline">Baseline</Label>
+              <Textarea id="baseline" name="baseline" defaultValue={goal.baseline} />
+            </div>
+            <div>
+              <Label htmlFor="measurableTarget">Measurable target</Label>
+              <Textarea id="measurableTarget" name="measurableTarget" defaultValue={goal.measurableTarget} />
+            </div>
+            <div>
+              <Label htmlFor="targetValue">Target value</Label>
+              <Input id="targetValue" name="targetValue" type="number" step="0.1" defaultValue={goal.targetValue} />
+            </div>
+            <div>
+              <Label htmlFor="unit">Unit</Label>
+              <Input id="unit" name="unit" defaultValue={goal.unit} />
+            </div>
+            <div className="sm:col-span-2">
               <Label htmlFor="plainLanguageSummary">Plain-language summary</Label>
               <Textarea
                 id="plainLanguageSummary"
                 name="plainLanguageSummary"
                 defaultValue={goal.plainLanguageSummary}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="changeReason">Reason if wording or mastery changes</Label>
+              <Input
+                id="changeReason"
+                name="changeReason"
+                placeholder="IEP amendment 9/3 — team updated the target"
               />
             </div>
             <label className="flex min-h-11 items-center gap-2 sm:col-span-2">
@@ -309,6 +350,22 @@ export default async function GoalDetailPage({
               <Button type="submit">Save changes</Button>
             </div>
           </form>
+          {goal.versions.length > 0 ? (
+            <div className="mt-6">
+              <h3 className="font-semibold">Previous versions</h3>
+              <ol className="mt-2 space-y-2 text-sm">
+                {goal.versions.map((version) => (
+                  <li key={version.id} className="rounded-lg border border-border p-3">
+                    <p className="font-semibold">
+                      {formatDate(version.createdAt)} · {version.createdBy.name}
+                    </p>
+                    <p className="text-muted">{version.changeReason}</p>
+                    <p className="mt-1">{version.officialWording}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
         </Card>
       ) : null}
     </div>

@@ -37,3 +37,20 @@ export function daysUntil(value: Date | string) {
 export function isoDate(value: Date) {
   return value.toISOString().slice(0, 10);
 }
+
+/** Monday 00:00 UTC of the week that contains `now`. */
+export function startOfUtcWeek(now = new Date()) {
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const day = start.getUTCDay();
+  start.setUTCDate(start.getUTCDate() + (day === 0 ? -6 : 1 - day));
+  return start;
+}
+
+/** Exclusive end of the UTC week (next Monday 00:00). */
+export function endOfUtcWeek(now = new Date()) {
+  return new Date(startOfUtcWeek(now).getTime() + 7 * 86_400_000);
+}
+
+export function addUtcDays(value: Date, days: number) {
+  return new Date(value.getTime() + days * 86_400_000);
+}

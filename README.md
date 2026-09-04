@@ -50,6 +50,17 @@ npm run dev -- --port 43147 --hostname 127.0.0.1
 
 Open [http://127.0.0.1:43147](http://127.0.0.1:43147).
 
+### Local HTTPS
+
+PWA install and secure cookies need TLS. Create a trusted local cert (once), set `AUTH_URL="https://127.0.0.1:43147"` in `.env.local`, then:
+
+```bash
+brew install mkcert && mkcert -install
+npm run dev:https
+```
+
+Open [https://127.0.0.1:43147](https://127.0.0.1:43147). Compose generates the same `.certs/` files inside the proxy container on first start. `npm run dev` and Playwright stay on HTTP. Certificates are not committed.
+
 ### Rename the product
 
 Set these in `.env.local`, then restart the dev server. The UI, page titles, demo emails, and export filename all follow this config.
@@ -188,14 +199,16 @@ SSO callback URLs must use the Vercel `AUTH_URL`: `{AUTH_URL}/api/auth/callback/
 
 ### Docker
 
-The Compose file starts **Postgres** and the app. The app image runs migrations on start, then listens on port **43147**. Evidence uploads live in `/app/data`.
+The Compose file starts **Postgres**, the app, a **Caddy** proxy, and a small port mux. The app image runs migrations on start and listens on HTTP inside the Compose network. Caddy terminates TLS. The mux publishes port **43147** so `http://127.0.0.1:43147` redirects to `https://127.0.0.1:43147`. On first start the proxy writes gitignored certs to `.certs/` if they are missing. Evidence uploads live in `/app/data`.
 
 ```bash
 # AUTH_SECRET and POSTGRES_* must be set in .env.local
 npm run docker:up
 ```
 
-Open [http://127.0.0.1:43147](http://127.0.0.1:43147). Stop with `npm run docker:down`. Volumes keep Postgres data (`pg-data`) and uploads (`app-uploads`).
+Optional: `brew install mkcert && mkcert -install`, then put those certs in `.certs/` (or run `npm run dev:https` once) to avoid a browser warning.
+
+Open [https://127.0.0.1:43147](https://127.0.0.1:43147) or [http://127.0.0.1:43147](http://127.0.0.1:43147) (redirects to HTTPS). Stop with `npm run docker:down`. Volumes keep Postgres data (`pg-data`) and uploads (`app-uploads`).
 
 Compose reads `.env.local` (`--env-file`) so the database user, password, and name match Next.js. After the first start, Postgres keeps the original credentials on the volume; changing them in `.env.local` does not rewrite an existing database.
 
@@ -223,9 +236,9 @@ The app still stores evidence files on disk, so keep **one app replica** until y
 Manifests are in `deploy/k8s` (namespace, config, secret, PVCs, Postgres StatefulSet, app Deployment, Service, Ingress).
 
 ```bash
-docker build -t iep-progress-tracker:0.5.0 .
-# Kind: kind load docker-image iep-progress-tracker:0.5.0
-# Minikube: minikube image load iep-progress-tracker:0.5.0
+docker build -t iep-progress-tracker:0.6.0 .
+# Kind: kind load docker-image iep-progress-tracker:0.6.0
+# Minikube: minikube image load iep-progress-tracker:0.6.0
 # Production: use ghcr.io/vrigzalejo/iep-progress-tracker:latest (published on merge to main)
 
 # Edit deploy/k8s/secret.yaml (AUTH_SECRET, POSTGRES_PASSWORD)

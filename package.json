@@ -1,12 +1,13 @@
 {
   "name": "iep-progress-tracker",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "engines": {
     "node": ">=22"
   },
   "scripts": {
     "dev": "next dev --port 43147 --hostname 127.0.0.1",
+    "dev:https": "bash scripts/dev-https.sh",
     "build": "next build",
     "start": "next start --port 43147 --hostname 0.0.0.0",
     "lint": "eslint",

@@ -19,8 +19,10 @@ export async function buildStudentFileZip(organizationId: string, studentId: str
         select: { name: true, relationship: true, email: true, phone: true },
       },
       consents: { orderBy: { grantedAt: "asc" } },
+      accommodations: { where: { archivedAt: null }, orderBy: { sortOrder: "asc" } },
       goals: {
         include: {
+          versions: { orderBy: { createdAt: "asc" } },
           objectives: { orderBy: { sortOrder: "asc" } },
           entries: {
             include: {
@@ -83,6 +85,7 @@ export async function buildStudentFileZip(organizationId: string, studentId: str
         staff: link.user,
       })),
       guardians: student.guardians,
+      accommodations: student.accommodations.map((item) => item.label),
     },
   };
 
@@ -109,6 +112,7 @@ export async function buildStudentFileZip(organizationId: string, studentId: str
           maxPromptForMastery: goal.maxPromptForMastery,
           objectives: goal.objectives,
           periodStatements: goal.periodStatements,
+          versions: goal.versions,
         })),
       ),
     },
@@ -123,6 +127,8 @@ export async function buildStudentFileZip(organizationId: string, studentId: str
             sessionOutcome: entry.sessionOutcome,
             setting: entry.setting,
             minutesDelivered: entry.minutesDelivered,
+            makeupScheduledFor: entry.makeupScheduledFor,
+            makeupLocation: entry.makeupLocation,
             accommodations: entry.accommodations,
             homeCarryover: entry.homeCarryover,
             notes: entry.notes,
@@ -133,6 +139,28 @@ export async function buildStudentFileZip(organizationId: string, studentId: str
             objective: entry.objective?.plainLanguageSummary ?? null,
           })),
         ),
+      ),
+    },
+    {
+      name: "minutes-ledger.json",
+      content: json(
+        student.providers.map((link) => ({
+          serviceArea: link.serviceArea,
+          prescribedMinutesPerWeek: link.minutesPerWeek,
+          sessionsPerWeek: link.sessionsPerWeek,
+          staff: link.user,
+          thisWeekEntries: student.goals
+            .filter((goal) => goal.serviceArea === link.serviceArea)
+            .flatMap((goal) =>
+              goal.entries.map((entry) => ({
+                recordedAt: entry.recordedAt,
+                sessionOutcome: entry.sessionOutcome,
+                minutesDelivered: entry.minutesDelivered,
+                makeupScheduledFor: entry.makeupScheduledFor,
+                makeupLocation: entry.makeupLocation,
+              })),
+            ),
+        })),
       ),
     },
     { name: "messages.json", content: json(student.messages) },
@@ -151,7 +179,8 @@ function studentFileReadme(exportedAt: string) {
     `Exported at ${exportedAt} (UTC).`,
     "",
     "This zip is the school's copy of one student record for a records request.",
-    "It includes profile fields, goals, progress entries, family and staff messages,",
+    "It includes profile fields, standing accommodations, goals and wording versions,",
+    "progress entries, a service-minutes ledger, family and staff messages,",
     "consent acknowledgments, and audit actions scoped to this student.",
     "Evidence binaries are not copied here; progress.json notes whether a file exists.",
     "Do not email this archive to a personal account.",

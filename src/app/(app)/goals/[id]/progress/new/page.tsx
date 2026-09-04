@@ -1,6 +1,6 @@
 import { SessionDataForm } from "@/components/session-data-form";
 import { Alert } from "@/components/ui/alert";
-import { requireStaff, getGoalDetail } from "@/lib/queries";
+import { requireStaff, getGoalDetail, getStudentDetail } from "@/lib/queries";
 
 export const metadata = { title: "Add progress" };
 
@@ -15,6 +15,7 @@ export default async function NewProgressPage({
   const { id } = await params;
   const { error } = await searchParams;
   const goal = await getGoalDetail(user, id);
+  const student = await getStudentDetail(user, goal.studentId);
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
@@ -30,6 +31,7 @@ export default async function NewProgressPage({
         on the chart are data snapshots, not IEP decisions.
       </Alert>
       <SessionDataForm
+        standingAccommodations={student.accommodations}
         goal={{
           id: goal.id,
           plainLanguageSummary: goal.plainLanguageSummary,

@@ -31,6 +31,10 @@ type Trial = { result: TrialResult; promptLevel: PromptLevel };
 export function SessionDataForm({
   goal,
   error,
+  standingAccommodations = [],
+  nextHref,
+  returnTo,
+  compact = false,
 }: {
   goal: {
     id: string;
@@ -44,6 +48,10 @@ export function SessionDataForm({
     objectives: { id: string; plainLanguageSummary: string }[];
   };
   error?: string;
+  standingAccommodations?: { id: string; label: string }[];
+  nextHref?: string;
+  returnTo?: string;
+  compact?: boolean;
 }) {
   const [outcome, setOutcome] = useState<SessionOutcome>("PRESENT");
   const [promptLevel, setPromptLevel] = useState<PromptLevel>("VERBAL");
@@ -86,7 +94,8 @@ export function SessionDataForm({
       <FormError error={error} />
       <form action={createProgressAction} className="mt-4 space-y-5">
         <input type="hidden" name="goalId" value={goal.id} />
-        <input type="hidden" name="returnTo" value={`/goals/${goal.id}/progress/new`} />
+        <input type="hidden" name="returnTo" value={returnTo ?? `/goals/${goal.id}/progress/new`} />
+        {nextHref ? <input type="hidden" name="nextHref" value={nextHref} /> : null}
         <input type="hidden" name="measurementType" value={goal.measurementMethod} />
         <input type="hidden" name="maxPromptForMastery" value={goal.maxPromptForMastery} />
         <input type="hidden" name="sessionOutcome" value={outcome} />
@@ -158,7 +167,7 @@ export function SessionDataForm({
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <Button type="button" className="min-h-16 text-base" onClick={() => addTrial("INDEPENDENT")}>
+              <Button type="button" className="min-h-16 text-base sm:min-h-20" onClick={() => addTrial("INDEPENDENT")}>
                 Independent
               </Button>
               <Button
@@ -263,15 +272,49 @@ export function SessionDataForm({
               ))}
             </Select>
           </div>
+          {outcome === "MAKEUP_SCHEDULED" ? (
+            <>
+              <div>
+                <Label htmlFor="makeupScheduledFor">Makeup date</Label>
+                <Input id="makeupScheduledFor" name="makeupScheduledFor" type="date" />
+              </div>
+              <div>
+                <Label htmlFor="makeupLocation">Makeup place</Label>
+                <Input id="makeupLocation" name="makeupLocation" placeholder="Room 12, speech office" />
+              </div>
+            </>
+          ) : null}
+        </div>
+        {standingAccommodations.length > 0 ? (
+          <fieldset>
+            <legend className="mb-2 text-sm font-semibold">Standing accommodations used</legend>
+            <p className="mb-2 text-sm text-muted">Uncheck anything that was not used today.</p>
+            <div className="space-y-2">
+              {standingAccommodations.map((item) => (
+                <label key={item.id} className="flex min-h-11 items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="standingAccommodation"
+                    value={item.label}
+                    defaultChecked
+                    className="h-4 w-4"
+                  />
+                  {item.label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
+        {!compact ? (
           <div>
-            <Label htmlFor="accommodations">Accommodations provided</Label>
+            <Label htmlFor="accommodations">Other accommodations</Label>
             <Input
               id="accommodations"
               name="accommodations"
               placeholder="Extra time, visual schedule, scribe"
             />
           </div>
-        </div>
+        ) : null}
 
         <div>
           <Label htmlFor="notes">Session notes {present && !trialMode ? "" : "(optional)"}</Label>
@@ -295,11 +338,13 @@ export function SessionDataForm({
           <Label htmlFor="evidenceLabel">Evidence label (optional)</Label>
           <Input id="evidenceLabel" name="evidenceLabel" placeholder="Weekly probe 4, work sample, session log" />
         </div>
-        <div>
-          <Label htmlFor="evidence">Attach evidence (optional, 5 MB max)</Label>
-          <Input id="evidence" name="evidence" type="file" />
-        </div>
-        <Button type="submit" className="w-full">
+        {compact ? null : (
+          <div>
+            <Label htmlFor="evidence">Attach evidence (optional, 5 MB max)</Label>
+            <Input id="evidence" name="evidence" type="file" />
+          </div>
+        )}
+        <Button type="submit" className="w-full min-h-12">
           Save progress
         </Button>
       </form>

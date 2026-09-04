@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  CalendarClock,
   ClipboardList,
   FileText,
   Home,
@@ -12,6 +13,7 @@ import {
   MessageSquare,
   Search,
   Shield,
+  Timer,
   Users,
   X,
 } from "lucide-react";
@@ -36,8 +38,10 @@ const LINKS: {
   staffOnly?: boolean;
 }[] = [
   { href: "/dashboard", label: "Dashboard", icon: Home, staffOnly: true },
+  { href: "/today", label: "Today", icon: CalendarClock, staffOnly: true },
   { href: "/parent", label: "Family home", icon: Home, parentOnly: true },
   { href: "/students", label: "Students", icon: Users, permission: "student.list" },
+  { href: "/minutes", label: "Minutes", icon: Timer, staffOnly: true },
   { href: "/reports", label: "Reports", icon: FileText, permission: "report.create" },
   { href: "/messages", label: "Messages", icon: MessageSquare, permission: "message.send" },
   { href: "/team", label: "Team", icon: ClipboardList, permission: "team.manage" },
@@ -47,9 +51,11 @@ const LINKS: {
 
 export function AppShell({
   user,
+  unreadMessages = 0,
   children,
 }: {
   user: { name: string; email: string; role: Role; mfaEnrollRequired?: boolean };
+  unreadMessages?: number;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -107,6 +113,11 @@ export function AppShell({
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
                   {link.label}
+                  {link.href === "/messages" && unreadMessages > 0 ? (
+                    <span className="ml-auto rounded-full bg-gold px-2 py-0.5 text-xs text-forest-deep">
+                      {unreadMessages}
+                    </span>
+                  ) : null}
                 </Link>
               );
             })}

@@ -38,7 +38,19 @@ test("staff can log a session and write a period comment; parent cannot open Tea
   await page.getByRole("button", { name: "Save progress" }).click();
   await expect(page).toHaveURL(/saved=1/, { timeout: 20_000 });
 
-  await page.getByRole("link", { name: "Reports" }).click();
+  await page.getByRole("link", { name: "Today", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
+  const openHallway = page.getByRole("link", { name: "Open hallway" });
+  if (await openHallway.count()) {
+    await openHallway.click();
+    await expect(page).toHaveURL(/\/hallway/, { timeout: 20_000 });
+    await expect(page.getByRole("button", { name: "Save progress" })).toBeVisible();
+  }
+
+  await page.getByLabel("Primary").getByRole("link", { name: "Reports" }).click();
+  await page.getByRole("link", { name: "Open report studio" }).click();
+  await expect(page.getByRole("heading", { name: "Progress report studio" })).toBeVisible();
+  await page.getByLabel("Primary").getByRole("link", { name: "Reports" }).click();
   await page.getByRole("link", { name: "Write period comments" }).click();
   await expect(page.getByRole("heading", { name: /Period comments/ })).toBeVisible();
   await page.getByLabel(/Period narrative/).first().fill(
