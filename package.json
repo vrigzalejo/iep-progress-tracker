@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "next dev --port 43147 --hostname 127.0.0.1",
+    "dev:https": "bash scripts/dev-https.sh",
     "build": "next build",
     "start": "next start --port 43147 --hostname 0.0.0.0",
     "lint": "eslint",

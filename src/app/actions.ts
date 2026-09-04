@@ -41,6 +41,7 @@ async function signInRedirect() {
   if (!host) return "/sign-in";
   const proto =
     h.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+    (process.env.AUTH_URL?.startsWith("https://") ? "https" : null) ||
     (host.startsWith("127.") || host.startsWith("localhost") ? "http" : "https");
   return `${proto}://${host}/sign-in`;
 }
