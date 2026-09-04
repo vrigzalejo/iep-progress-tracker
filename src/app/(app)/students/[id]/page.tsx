@@ -8,7 +8,12 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { requireUser, getStudentDetail } from "@/lib/queries";
 import { can, isStaff } from "@/lib/permissions";
-import { sendMessageAction, updateStudentDatesAction } from "@/app/actions";
+import {
+  addAccommodationAction,
+  archiveAccommodationAction,
+  sendMessageAction,
+  updateStudentDatesAction,
+} from "@/app/actions";
 import {
   MESSAGE_VISIBILITY_LABELS,
   SERVICE_AREA_LABELS,
@@ -16,7 +21,7 @@ import {
   type ServiceArea,
 } from "@/lib/constants";
 import { deliveredMinutesInRange } from "@/lib/progress";
-import { formatDate, isoDate } from "@/lib/utils";
+import { endOfUtcWeek, formatDate, isoDate, startOfUtcWeek } from "@/lib/utils";
 
 export const metadata = { title: "Student profile" };
 
@@ -32,7 +37,8 @@ export default async function StudentPage({
   await searchParams;
   const student = await getStudentDetail(user, id);
   if (!student) notFound();
-  const weekStart = new Date(new Date().getTime() - 7 * 86_400_000);
+  const weekStart = startOfUtcWeek();
+  const weekEnd = endOfUtcWeek();
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -74,7 +80,7 @@ export default async function StudentPage({
                   .filter((goal) => goal.serviceArea === link.serviceArea)
                   .flatMap((goal) => goal.entries),
                 weekStart,
-                new Date(),
+                weekEnd,
               );
               return (
                 <li key={link.userId}>
@@ -184,9 +190,16 @@ export default async function StudentPage({
                       <Link href={`/goals/${goal.id}`}>Open goal and chart</Link>
                     </Button>
                     {can(user.role, "progress.create") ? (
-                      <Button asChild>
-                        <Link href={`/goals/${goal.id}/progress/new`}>Log a session</Link>
-                      </Button>
+                      <>
+                        <Button asChild>
+                          <Link href={`/goals/${goal.id}/progress/new`}>Log a session</Link>
+                        </Button>
+                        <Button asChild variant="secondary">
+                          <Link href={`/hallway?studentId=${student.id}&goalId=${goal.id}`}>
+                            Hallway
+                          </Link>
+                        </Button>
+                      </>
                     ) : null}
                   </div>
                 </Card>
@@ -195,6 +208,42 @@ export default async function StudentPage({
           </ul>
         )}
       </section>
+
+      {isStaff(user.role) ? (
+        <Card>
+          <CardTitle>Standing accommodations</CardTitle>
+          <p className="mt-2 text-sm text-muted">
+            Session forms start with this list checked. Uncheck what was not used that day.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {student.accommodations.map((item) => (
+              <li key={item.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+                <span>{item.label}</span>
+                <form action={archiveAccommodationAction}>
+                  <input type="hidden" name="accommodationId" value={item.id} />
+                  <input type="hidden" name="studentId" value={student.id} />
+                  <Button type="submit" variant="ghost" size="sm">
+                    Remove
+                  </Button>
+                </form>
+              </li>
+            ))}
+            {student.accommodations.length === 0 ? (
+              <li className="text-sm text-muted">None on file yet.</li>
+            ) : null}
+          </ul>
+          <form action={addAccommodationAction} className="mt-4 flex flex-wrap items-end gap-3">
+            <input type="hidden" name="studentId" value={student.id} />
+            <div className="min-w-56 flex-1">
+              <Label htmlFor="label">Add accommodation</Label>
+              <Input id="label" name="label" required minLength={2} placeholder="Visual schedule" />
+            </div>
+            <Button type="submit" variant="secondary">
+              Add
+            </Button>
+          </form>
+        </Card>
+      ) : null}
 
       <section className="grid gap-4 lg:grid-cols-2">
         <Card>

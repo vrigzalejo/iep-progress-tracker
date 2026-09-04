@@ -220,6 +220,17 @@ async function backfillDemoPracticeData() {
     });
   }
 
+  if ((await prisma.studentAccommodation.count()) === 0) {
+    const carla = await prisma.student.findFirst({ where: { preferredName: "Carla Santos" } });
+    const rows = [
+      jordan ? { studentId: jordan.id, label: "Whisper-phone", sortOrder: 0 } : null,
+      jordan ? { studentId: jordan.id, label: "Cue card for break request", sortOrder: 1 } : null,
+      sam ? { studentId: sam.id, label: "Highlighted writing strip", sortOrder: 0 } : null,
+      carla ? { studentId: carla.id, label: "Two-step visual schedule", sortOrder: 0 } : null,
+    ].filter((row): row is { studentId: string; label: string; sortOrder: number } => Boolean(row));
+    if (rows.length) await prisma.studentAccommodation.createMany({ data: rows });
+  }
+
   const goals = await prisma.iepGoal.findMany({ include: { student: true, entries: true } });
   for (const goal of goals) {
     const consecutive =
@@ -1310,6 +1321,24 @@ export async function seedDemoData() {
         authorId: educator.id,
       },
     ],
+  });
+
+  await prisma.studentAccommodation.createMany({
+    data: [
+      { studentId: jordan.id, label: "Whisper-phone", sortOrder: 0 },
+      { studentId: jordan.id, label: "Cue card for break request", sortOrder: 1 },
+      { studentId: sam.id, label: "Highlighted writing strip", sortOrder: 0 },
+      { studentId: casey.id, label: "Two-step visual schedule", sortOrder: 0 },
+    ],
+  });
+
+  await prisma.reportSnippet.create({
+    data: {
+      organizationId: org.id,
+      createdById: educator.id,
+      label: "Fading a visual cue",
+      body: "This period we practiced with the visual support in place, then faded it after the first opportunity.",
+    },
   });
 
   await prisma.message.createMany({
