@@ -18,6 +18,34 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
+const queueListeners = new Set<() => void>();
+let queuedCount = 0;
+
+export function subscribeQueuedCount(listener: () => void) {
+  queueListeners.add(listener);
+  return () => {
+    queueListeners.delete(listener);
+  };
+}
+
+export function getQueuedCountSnapshot() {
+  return queuedCount;
+}
+
+export function getQueuedCountServerSnapshot() {
+  return 0;
+}
+
+async function refreshQueuedCount() {
+  if (typeof indexedDB === "undefined") {
+    queuedCount = 0;
+  } else {
+    queuedCount = (await listQueuedSessions()).length;
+  }
+  queueListeners.forEach((listener) => listener());
+  return queuedCount;
+}
+
 export async function enqueueSession(payload: Record<string, unknown>) {
   const db = await openDb();
   const item: QueuedSession = {
@@ -31,6 +59,7 @@ export async function enqueueSession(payload: Record<string, unknown>) {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+  await refreshQueuedCount();
   return item;
 }
 
@@ -73,5 +102,8 @@ export async function flushQueuedSessions() {
       failed.push(item);
     }
   }
+  await refreshQueuedCount();
   return { flushed: items.length - failed.length, failed };
 }
+
+export { refreshQueuedCount };

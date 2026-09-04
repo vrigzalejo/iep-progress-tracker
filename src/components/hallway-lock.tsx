@@ -1,11 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 
 const PIN_KEY = "iep-hallway-pin";
 const UNLOCK_KEY = "iep-hallway-unlocked";
+
+const listeners = new Set<() => void>();
+
+function subscribeLock(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function notifyLock() {
+  listeners.forEach((listener) => listener());
+}
+
+function hasStoredPin() {
+  return Boolean(localStorage.getItem(PIN_KEY));
+}
+
+function isLocked() {
+  return hasStoredPin() && sessionStorage.getItem(UNLOCK_KEY) !== "1";
+}
 
 async function digest(value: string) {
   const bytes = new TextEncoder().encode(value);
@@ -16,16 +37,10 @@ async function digest(value: string) {
 }
 
 export function HallwayLock() {
-  const [hasPin, setHasPin] = useState(false);
-  const [locked, setLocked] = useState(false);
+  const hasPin = useSyncExternalStore(subscribeLock, hasStoredPin, () => false);
+  const locked = useSyncExternalStore(subscribeLock, isLocked, () => false);
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(PIN_KEY);
-    setHasPin(Boolean(stored));
-    setLocked(Boolean(stored) && sessionStorage.getItem(UNLOCK_KEY) !== "1");
-  }, []);
 
   async function setNewPin() {
     if (pin.length < 4) {
@@ -34,8 +49,7 @@ export function HallwayLock() {
     }
     localStorage.setItem(PIN_KEY, await digest(pin));
     sessionStorage.setItem(UNLOCK_KEY, "1");
-    setHasPin(true);
-    setLocked(false);
+    notifyLock();
     setPin("");
     setError(null);
   }
@@ -47,7 +61,7 @@ export function HallwayLock() {
       return;
     }
     sessionStorage.setItem(UNLOCK_KEY, "1");
-    setLocked(false);
+    notifyLock();
     setPin("");
     setError(null);
   }
@@ -55,8 +69,7 @@ export function HallwayLock() {
   function clearPin() {
     localStorage.removeItem(PIN_KEY);
     sessionStorage.removeItem(UNLOCK_KEY);
-    setHasPin(false);
-    setLocked(false);
+    notifyLock();
     setPin("");
   }
 

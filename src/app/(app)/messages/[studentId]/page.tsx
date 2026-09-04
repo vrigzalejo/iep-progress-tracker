@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { sendMessageAction } from "@/app/actions";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Label, Textarea } from "@/components/ui/input";

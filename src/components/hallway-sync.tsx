@@ -1,22 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { flushQueuedSessions, listQueuedSessions } from "@/lib/hallway-queue";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import {
+  flushQueuedSessions,
+  getQueuedCountServerSnapshot,
+  getQueuedCountSnapshot,
+  refreshQueuedCount,
+  subscribeQueuedCount,
+} from "@/lib/hallway-queue";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
 export function HallwaySync() {
-  const [pending, setPending] = useState(0);
+  const pending = useSyncExternalStore(
+    subscribeQueuedCount,
+    getQueuedCountSnapshot,
+    getQueuedCountServerSnapshot,
+  );
   const [status, setStatus] = useState<string | null>(null);
 
-  async function refresh() {
-    if (typeof indexedDB === "undefined") return;
-    const items = await listQueuedSessions();
-    setPending(items.length);
-  }
-
   useEffect(() => {
-    void refresh();
     const onOnline = () => {
       void flushQueuedSessions().then((result) => {
         setStatus(
@@ -26,11 +29,12 @@ export function HallwaySync() {
               ? `Synced ${result.flushed} queued session${result.flushed === 1 ? "" : "s"}.`
               : null,
         );
-        void refresh();
       });
     };
     window.addEventListener("online", onOnline);
-    if (navigator.onLine) onOnline();
+    void refreshQueuedCount().then(() => {
+      if (navigator.onLine) onOnline();
+    });
     return () => window.removeEventListener("online", onOnline);
   }, []);
 
@@ -41,7 +45,13 @@ export function HallwaySync() {
       {status ??
         `${pending} session${pending === 1 ? "" : "s"} saved on this device. They will upload when the hallway Wi‑Fi returns.`}
       {pending > 0 ? (
-        <Button type="button" variant="secondary" size="sm" className="mt-3" onClick={() => void flushQueuedSessions().then(refresh)}>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="mt-3"
+          onClick={() => void flushQueuedSessions()}
+        >
           Try sync now
         </Button>
       ) : null}
