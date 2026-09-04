@@ -1,11 +1,11 @@
 # Product Requirements Document
 
-**IEP Progress Tracker — after 0.5.0 through v1.0**
+**IEP Progress Tracker — after 0.6.0 through v1.0**
 
 | | |
 | --- | --- |
-| **Status** | Living roadmap (`0.5.0` shipped 2026-09-03) |
-| **Current product** | Production-safety MVP (`0.5.0`), fictional demo data until a district turns demo off |
+| **Status** | Living roadmap (`0.6.0` shipped 2026-09-03) |
+| **Current product** | Daily-workflow MVP (`0.6.0`), fictional demo data until a district turns demo off |
 | **Audience** | Educators, related-service providers, school admins, parents/guardians |
 | **North star** | The fastest, most defensible way to log IEP progress in the moment and send home a report a family can actually read — without the product making IEP decisions. |
 
@@ -233,7 +233,7 @@ Consent per child · seed never runs in production · object storage required wh
 
 **Shipped when:** `/api/health` reports `ok`, `demo`, `evidence`, and `credentials`. Hosted demo stays `demo: true`. A district still turns demo off, points evidence at private object storage, and completes their own launch checklist.
 
-### v0.6 — “Log it before the bell” (in working tree)
+### v0.6 — “Log it before the bell” (shipped 2026-09-03 as `0.6.0`)
 
 Today caseload · hallway PWA / offline queue · service-minutes ledger + makeup · unread messages + notify · report studio · prompt-level chart · standing accommodations · goal versions.
 
@@ -270,7 +270,7 @@ Do **not** metric “% of goals marked on track.” That would pressure staff to
 
 ## 8. Suggested issue cut (when you want to land work)
 
-Smallest useful slices, in the repo’s `{issue}-{slug}` style. v0.5 safety and the v0.6 daily-workflow screens are in the working tree.
+Smallest useful slices, in the repo’s `{issue}-{slug}` style. v0.5 safety and v0.6 daily-workflow screens have shipped.
 
 1. **Family digest** — the kitchen-table heartbeat (v0.7)
 2. **Meeting room mode** — projector view
@@ -283,7 +283,7 @@ Smallest useful slices, in the repo’s `{issue}-{slug}` style. v0.5 safety and 
 
 ## 9. Recommendation
 
-P0 safety shipped in 0.5.0. Today, hallway, minutes ledger, unread threads, report studio, prompt-level chart, standing accommodations, and goal versions are in the working tree as v0.6. If you only build **three** things next (v0.7):
+P0 safety shipped in 0.5.0. Today, hallway, minutes ledger, unread threads, report studio, prompt-level chart, standing accommodations, and goal versions shipped in 0.6.0. If you only build **three** things next (v0.7):
 
 1. **Family digest** — this is the product families actually notice.
 2. **Meeting room mode** — this is the conference-room “wow.”
