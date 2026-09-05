@@ -34,6 +34,8 @@ import {
 import { ROLE_LABELS, SERVICE_AREAS, type ServiceArea } from "@/lib/constants";
 import { isSsoConfigured } from "@/lib/sso";
 import { sendFamilyMessageMail, sendTeamInviteMail } from "@/lib/mail";
+import { utcMeetingOn } from "@/lib/meeting";
+import { encodeSimplePdf, packetFromStudent } from "@/lib/packet-pdf";
 import { decryptSecret, encryptSecret, generateTotpSecret, verifyTotp } from "@/lib/totp";
 import { runRetentionSweep } from "@/lib/retention-sweep";
 
@@ -986,4 +988,124 @@ export async function bulkNotIntroducedAction(formData: FormData): Promise<void>
   });
   revalidatePath("/reports/studio");
   redirect(`/reports/studio?periodId=${periodId}&saved=bulk`);
+}
+
+export async function setDigestOptInAction(formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== "PARENT") fail("/parent", "Only a linked guardian can change this.");
+  const studentId = formString(formData, "studentId");
+  await assertStudentAccess(user, studentId);
+  const optIn = formBool(formData, "digestOptIn");
+  const contact = await prisma.guardianContact.findFirst({
+    where: { studentId, userId: user.id },
+  });
+  if (!contact) fail("/parent", "This account is not linked to that student.");
+  await prisma.guardianContact.update({
+    where: { id: contact.id },
+    data: {
+      digestOptIn: optIn,
+      digestUnsubscribedAt: optIn ? null : new Date(),
+    },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: optIn ? "digest.opt_in" : "digest.opt_out",
+    resourceType: "student",
+    resourceId: studentId,
+    studentId,
+  });
+  revalidatePath("/parent");
+  redirect(`/parent?studentId=${studentId}&saved=digest`);
+}
+
+export async function saveMeetingAttendanceAction(formData: FormData) {
+  const user = await requireStaff();
+  const studentId = formString(formData, "studentId");
+  const returnTo = formString(formData, "returnTo") || `/reports/${studentId}/meeting/room`;
+  await assertStudentAccess(user, studentId);
+  const meetingOn = utcMeetingOn(formString(formData, "meetingOn"));
+  const names = formData.getAll("attendeeName").map(String).map((name) => name.trim()).filter(Boolean);
+  const presentNames = new Set(formData.getAll("present").map(String));
+  for (const name of names) {
+    await prisma.meetingAttendance.upsert({
+      where: {
+        studentId_meetingOn_attendeeName: { studentId, meetingOn, attendeeName: name },
+      },
+      create: {
+        studentId,
+        meetingOn,
+        attendeeName: name,
+        present: presentNames.has(name),
+        createdById: user.id,
+      },
+      update: { present: presentNames.has(name) },
+    });
+  }
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "meeting.attendance",
+    resourceType: "student",
+    resourceId: studentId,
+    studentId,
+    details: `count=${names.length}`,
+  });
+  revalidatePath(returnTo);
+  redirect(`${returnTo}?saved=attendance`);
+}
+
+export async function fileStudentPdfAction(formData: FormData) {
+  const user = await requireStaff();
+  const studentId = formString(formData, "studentId");
+  const kind = formString(formData, "kind") === "REPORT" ? "REPORT" : "PACKET";
+  const returnTo = formString(formData, "returnTo") || `/reports/${studentId}`;
+  await assertStudentAccess(user, studentId);
+  const student = await prisma.student.findFirst({
+    where: { id: studentId, organizationId: user.organizationId },
+    include: {
+      goals: {
+        include: {
+          entries: { orderBy: { recordedAt: "asc" } },
+          periodStatements: { orderBy: { createdAt: "desc" }, take: 1 },
+        },
+      },
+    },
+  });
+  if (!student) fail(returnTo, "Student not found.");
+  const periodLabel = formString(formData, "periodLabel") || null;
+  const lines = packetFromStudent({
+    kind,
+    studentName: student.preferredName,
+    grade: student.grade,
+    school: student.school,
+    periodLabel,
+    goals: student.goals,
+  });
+  const pdf = encodeSimplePdf(lines);
+  const safeName = `${kind.toLowerCase()}-${student.id}-${Date.now()}.pdf`;
+  const storagePath = await storeEvidenceFile(
+    safeName,
+    new File([new Uint8Array(pdf)], safeName, { type: "application/pdf" }),
+  );
+  const filed = await prisma.filedDocument.create({
+    data: {
+      studentId: student.id,
+      organizationId: user.organizationId,
+      kind,
+      periodLabel,
+      storagePath,
+      createdById: user.id,
+    },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "document.file",
+    resourceType: "filedDocument",
+    resourceId: filed.id,
+    studentId: student.id,
+    details: kind,
+  });
+  redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}filed=${filed.id}`);
 }

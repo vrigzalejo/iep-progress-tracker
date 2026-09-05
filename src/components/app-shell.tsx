@@ -59,6 +59,7 @@ export function AppShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const meetingRoom = pathname.includes("/meeting/room");
   const [open, setOpen] = useState(false);
   const items = LINKS.filter((link) => {
     if (link.parentOnly && user.role !== "PARENT") return false;
@@ -67,6 +68,19 @@ export function AppShell({
     if (link.href === "/students" && user.role === "PARENT") return false;
     return true;
   });
+
+  if (meetingRoom) {
+    return (
+      <div className="min-h-screen bg-[#10241c] text-[#f4f0e6]">
+        <MfaEnrollGuard required={Boolean(user.mfaEnrollRequired)} />
+        <IdleTimeout />
+        <a href="#main" className="skip-link">
+          Skip to main content
+        </a>
+        <main id="main">{children}</main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

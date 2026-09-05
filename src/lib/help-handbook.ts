@@ -45,7 +45,7 @@ Ask about any staff screen:
 
 **Sessions** — Present / Absent / Declined / Makeup; trial pad (Independent, Prompted, Incorrect) or frequency/score; setting, minutes, accommodations, home carryover, optional evidence file
 
-**Reports** — [Report studio](/reports/studio) is the caseload × period grid. [Reports](/reports) still opens one student. Staff write the progress code and narrative. Snippets are district phrases you paste.
+**Reports** — [Report studio](/reports/studio) is the caseload × period grid. [Reports](/reports) still opens one student. Staff write the progress code and narrative. Snippets are district phrases you paste. **Meeting room** is the projector view. **File PDF** stores a packet or report as an evidence-class file.
 
 **Find and talk** — header search · [Messages](/messages) threads with unread badges · profile thread (Family vs Staff only)
 
@@ -75,9 +75,11 @@ Charts and on-track badges are **data snapshots**, not IEP team votes.`,
 
 **Family home** — [Family home](/parent) is your landing page. If more than one child is linked, use the name tabs at the top.
 
-**On that page** — shared goals with everyday-language progress and data-status badges; Open progress report; Meeting packet; Privacy and consent; a message box to the team
+**On that page** — shared goals with everyday-language progress and data-status badges; Open progress report; Meeting packet; optional **Weekly email** opt-in; Privacy and consent; a message box to the team
 
 **Reports** — [Reports](/reports) or the buttons on Family home. Print from the report or packet. Staff choose the IEP progress code; you read what they shared
+
+**Weekly email** — Off by default. If you opt in, Friday mail uses shared scores and staff-written home carryover only. Unsubscribe from the mail or turn it off here.
 
 **Messages** — [Messages](/messages) lists family threads. You can also write from Family home. Keep other children’s information out of the note
 
@@ -218,7 +220,7 @@ Lists under the cards repeat those items with names and dates. Status badges (on
 
 Administrators and educators can [Add student](/students/new). Required: preferred name, grade, school, case manager. Optional: annual IEP review date, triennial evaluation date, present-levels snapshot, checkboxes for service providers. Do not add diagnoses, Social Security numbers, or full educational history. Providers cannot add profiles.
 
-On a profile: case manager, providers with this week’s delivered vs prescribed minutes, guardian contacts, IEP calendar (admins/educators can **Save IEP dates** and present levels), **Add IEP goal**, **Build report**, **Meeting packet**, goals with **Open goal and chart** / **Log a session**, and a message thread (Family or Staff only). Staff also see the latest privacy-notice acknowledgment.
+On a profile: case manager, providers with this week’s delivered vs prescribed minutes, guardian contacts, IEP calendar (admins/educators can **Save IEP dates** and present levels), **Add IEP goal**, **Build report**, **Meeting packet**, **Meeting room**, goals with **Open goal and chart** / **Log a session**, and a message thread (Family or Staff only). Staff also see the latest privacy-notice acknowledgment.
 
 Demo profiles already include guardian contacts. Parent accounts see a student when that email is linked as a guardian; invite the parent on [Team](/team) using the same email.`,
     },
@@ -325,14 +327,25 @@ These labels never choose an IEP progress code. Staff pick that code on the peri
       ],
       body: `Open [Report studio](/reports/studio) for the whole caseload × period grid (missing vs written). Click **Write** to enter the IEP progress code and narrative. The data-status badge is reference only. You can bulk-mark remaining goals **not yet introduced** (type NOT_INTRODUCED). Save staff-authored snippets to paste—never generated per student. [Reports](/reports) still opens one student: print preview or period comments.
 
-Parents open the same report from [Family home](/parent). Use **Print** in the browser—the gold banner, sidebar, and this assistant hide. Codes are professional judgment, not chatbot output.`,
+Parents open the same report from [Family home](/parent). Use **Print** in the browser—the gold banner, sidebar, and this assistant hide. Staff can **File PDF** to store a report as an evidence-class file (authenticated download, not a public URL). Codes are professional judgment, not chatbot output.`,
     },
     {
       id: "meeting",
-      title: "IEP meeting packet",
+      title: "IEP meeting packet and meeting room",
       hrefs: ["/reports"],
-      keywords: ["meeting", "packet", "annual", "print", "iep meeting", "preview"],
-      body: `From a student profile (or Family home), open **Meeting packet**. It pulls session data, charts, progress codes, family-visible messages, and service-minute summaries into a printable packet for an IEP meeting. Use **Print** in the browser (chrome is hidden). It is a data packet, not a recommendation of services or placement.`,
+      keywords: [
+        "meeting",
+        "packet",
+        "annual",
+        "print",
+        "iep meeting",
+        "preview",
+        "projector",
+        "meeting room",
+        "attendance",
+        "pdf",
+      ],
+      body: `From a student profile (or Family home), open **Meeting packet**. It pulls session data, charts, progress codes, family-visible messages, and service-minute summaries into a printable packet. **Meeting room** is the projector view: large type, one goal per screen, last five present sessions, the staff-written period code, and family messages. Use **N** and **P** (or Next/Previous). Sidebar and this assistant hide. Staff can check attendance names only. **File PDF** stores the packet as an evidence-class file. The room does not suggest a progress code, services, or placement.`,
     },
     {
       id: "search",
@@ -370,7 +383,7 @@ Send a new note from the thread, the student profile, or [Family home](/parent).
         "shared",
         "tabs",
       ],
-      body: `[Family home](/parent) is the parent landing page. You see shared goals with everyday-language progress and data-status badges, recent family messages, **Open progress report**, **Meeting packet**, and **Privacy and consent**. If more than one child is linked, use the name tabs at the top. You cannot see other families or staff-only notes.
+      body: `[Family home](/parent) is the parent landing page. You see shared goals with everyday-language progress and data-status badges, recent family messages, **Open progress report**, **Meeting packet**, optional **Weekly email**, and **Privacy and consent**. If more than one child is linked, use the name tabs at the top. You cannot see other families or staff-only notes.
 
 Write a message from this page or [Messages](/messages). If no student appears, ask the school to connect this email as a guardian. Acknowledge the notice on [Privacy](/privacy). You do not log sessions, create goals, search the school, or manage Team.`,
     },
@@ -410,7 +423,7 @@ Parents acknowledge **for each linked student**. If the school bumps the notice 
       hrefs: ["/privacy"],
       roles: ["ADMINISTRATOR", "EDUCATOR", "PROVIDER"],
       keywords: ["export", "csv", "download", "spreadsheet", "ferpa", "records request", "zip"],
-      body: `Authorized staff open [Privacy](/privacy) and choose **Download CSV export** (or /api/export). The file includes preferred name, grade, school, goal summaries, and progress for students you are allowed to see. Administrators also download a **student education record ZIP** for one student (profile, goals, progress, messages, consents, audit). Educators export their caseload CSV; providers export assigned students. Parents have no export. Do not email the file to personal accounts.`,
+      body: `Authorized staff open [Privacy](/privacy) and choose **Download CSV export** (or /api/export). The file includes preferred name, grade, school, goal summaries, and progress for students you are allowed to see. Administrators also download a **student education record ZIP** for one student (profile, goals, progress, messages, meeting attendance names, filed-document metadata, consents, audit). Educators export their caseload CSV; providers export assigned students. Parents have no export. Do not email the file to personal accounts.`,
     },
     {
       id: "evidence",
@@ -440,7 +453,7 @@ Parents acknowledge **for each linked student**. If the school bumps the notice 
 
 The dark sidebar lists only screens your role can open: staff see Dashboard, Today, Students, Minutes, Reports, Messages, Privacy, and Setup guide; administrators also see Team; parents see Family home instead of Dashboard and Students. On a phone, open the menu with the button next to the header. Staff have a search field in the header. Your name and role sit at the bottom of the sidebar with **Sign out**.
 
-**How to use this site** (this assistant) stays in the lower-right corner. Browser **Print** hides the banner, sidebar, and assistant so reports and meeting packets print cleanly.`,
+**How to use this site** (this assistant) stays in the lower-right corner. Browser **Print** hides the banner, sidebar, and assistant so reports and meeting packets print cleanly. **Meeting room** hides the sidebar and assistant so the projector stays readable.`,
     },
     {
       id: "minutes",
@@ -482,6 +495,24 @@ When you **Log a session**, you can attach the entry to one objective or to the 
       body: `[Today](/today) lists students still owed a session or minutes this week. **Log in hallway** opens huge trial buttons. After save, hallway opens the next student. Install the app from the browser if you want a home-screen icon; the start page is Today.
 
 If the hallway Wi‑Fi drops, the session stays in a queue on this device and syncs when you are back online. A failed sync stays visible. Optional device PIN is only for a shared cart—it does not replace sign-in.`,
+    },
+    {
+      id: "digest",
+      title: "Family weekly email",
+      hrefs: ["/parent"],
+      keywords: [
+        "digest",
+        "weekly",
+        "email",
+        "friday",
+        "opt in",
+        "unsubscribe",
+        "kitchen",
+        "carryover",
+      ],
+      body: `On [Family home](/parent), a linked guardian can opt in to a Friday weekly email for that student. It is off by default. The mail lists shared goals, last week’s present-session scores, and home-carryover notes staff already typed. It does not rewrite the child’s data with a model and does not include official IEP wording or disability labels.
+
+The subject is “Weekly update for [preferred name]” only. Each mail says who can see it and includes an unsubscribe link. Staff do not send this by clicking a button—the daily cron sends it on Friday (or when DIGEST_SEND=1 for a test). SMTP must be configured.`,
     },
     {
       id: "assistant",

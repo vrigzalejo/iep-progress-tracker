@@ -40,6 +40,11 @@ describe("help chat", () => {
   it("explains CSV export and meeting packets", () => {
     expect(retrieveArticles("download csv export", "EDUCATOR")[0]?.id).toBe("export");
     expect(retrieveArticles("print the IEP meeting packet", "EDUCATOR")[0]?.id).toBe("meeting");
+    expect(retrieveArticles("open meeting room on the projector", "EDUCATOR")[0]?.id).toBe("meeting");
+  });
+
+  it("explains the family weekly email", () => {
+    expect(retrieveArticles("opt in to the weekly email digest", "PARENT")[0]?.id).toBe("digest");
   });
 
   it("describes adding a student profile in detail", () => {

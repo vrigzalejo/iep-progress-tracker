@@ -566,3 +566,21 @@ export async function searchRecords(user: SessionUser, query: string) {
         });
   return { students, goals };
 }
+
+export async function listFiledDocuments(user: SessionUser, studentId: string) {
+  await assertStudentAccess(user, studentId);
+  return prisma.filedDocument.findMany({
+    where: { studentId, organizationId: user.organizationId },
+    include: { createdBy: { select: { name: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+}
+
+export async function listMeetingAttendance(user: SessionUser, studentId: string, meetingOn: Date) {
+  await assertStudentAccess(user, studentId);
+  return prisma.meetingAttendance.findMany({
+    where: { studentId, meetingOn },
+    orderBy: { attendeeName: "asc" },
+  });
+}

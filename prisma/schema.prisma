@@ -48,6 +48,8 @@ model User {
   goalVersions      GoalVersion[]
   reportSnippets    ReportSnippet[]
   messageReads      MessageRead[]
+  meetingAttendances MeetingAttendance[]
+  filedDocuments     FiledDocument[]
 
   @@index([organizationId, role])
 }
@@ -73,6 +75,8 @@ model Student {
   messages       Message[]
   consents       ConsentRecord[]
   accommodations StudentAccommodation[]
+  attendances    MeetingAttendance[]
+  filedDocuments FiledDocument[]
 
   @@index([organizationId])
   @@index([caseManagerId])
@@ -91,15 +95,17 @@ model StudentProvider {
 }
 
 model GuardianContact {
-  id           String  @id @default(cuid())
-  studentId    String
-  student      Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  name         String
-  relationship String
-  email        String
-  phone        String?
-  userId       String?
-  user         User?   @relation(fields: [userId], references: [id])
+  id                    String    @id @default(cuid())
+  studentId             String
+  student               Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  name                  String
+  relationship          String
+  email                 String
+  phone                 String?
+  userId                String?
+  user                  User?     @relation(fields: [userId], references: [id])
+  digestOptIn           Boolean   @default(false)
+  digestUnsubscribedAt  DateTime?
 }
 
 model IepGoal {
@@ -317,4 +323,35 @@ model MessageRead {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([messageId, userId])
+}
+
+model MeetingAttendance {
+  id           String   @id @default(cuid())
+  studentId    String
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  meetingOn    DateTime
+  attendeeName String
+  present      Boolean  @default(true)
+  createdById  String
+  createdBy    User     @relation(fields: [createdById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@unique([studentId, meetingOn, attendeeName])
+  @@index([studentId, meetingOn])
+}
+
+model FiledDocument {
+  id             String   @id @default(cuid())
+  studentId      String
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  organizationId String
+  kind           String
+  periodLabel    String?
+  storagePath    String
+  createdById    String
+  createdBy      User     @relation(fields: [createdById], references: [id])
+  createdAt      DateTime @default(now())
+
+  @@index([studentId, createdAt])
+  @@index([organizationId])
 }

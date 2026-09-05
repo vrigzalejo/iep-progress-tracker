@@ -59,12 +59,19 @@ test("staff can log a session and write a period comment; parent cannot open Tea
   await page.getByRole("button", { name: "Save comment" }).first().click();
   await expect(page).toHaveURL(/saved=1/, { timeout: 20_000 });
 
+  await page.getByRole("link", { name: "Students" }).click();
+  await page.getByRole("link", { name: "Jaime Santos" }).first().click();
+  await page.getByRole("link", { name: "Meeting room" }).click();
+  await expect(page.getByRole("heading", { name: /Jaime/ })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(/does not suggest a progress code/i)).toBeVisible();
+
   await context.clearCookies();
   await page.goto("/sign-in");
   await page.getByLabel("Email").fill(demoEmail("diana.santos"));
   await page.getByLabel("Password").fill(DEMO_PASSPHRASE);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByText(/Jaime/)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: /Weekly email/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "Students" })).toHaveCount(0);
   await page.goto("/team");
   await expect(page).not.toHaveURL(/\/team$/);

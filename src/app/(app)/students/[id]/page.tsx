@@ -62,6 +62,9 @@ export default async function StudentPage({
           <Button asChild variant="secondary">
             <Link href={`/reports/${student.id}/meeting`}>Meeting packet</Link>
           </Button>
+          <Button asChild variant="secondary">
+            <Link href={`/reports/${student.id}/meeting/room`}>Meeting room</Link>
+          </Button>
         </div>
       </header>
 

@@ -42,6 +42,7 @@ cp .env.example .env.local
 # set AUTH_SECRET to a long random string
 # optional: change POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
 npm run docker:db
+# Mailpit inbox (local SMTP): http://127.0.0.1:8025
 npm install
 npx prisma migrate deploy
 npx prisma db seed   # only when NEXT_PUBLIC_DEMO_MODE is not false; never on a production database
@@ -148,8 +149,9 @@ Roles stay in this app. The identity provider only proves who the person is.
 | `AUTH_SSO_ORGANIZATION_ID` | No | Organization to attach JIT users to. Defaults to the first org |
 | `AUTH_CREDENTIALS_ENABLED` | No | Set `false` in production after SSO is live. When demonstration mode is off and SSO is configured, password sign-in is off unless this is explicitly `true` |
 | `NEXT_PUBLIC_IDLE_MINUTES` | No | Idle sign-out in minutes. Default `20`. `0` disables (used in Playwright) |
-| `CRON_SECRET` | Cron | Bearer token for `GET/POST /api/cron/daily` (retention sweep + reporting-window notices). Vercel Cron sends this automatically when the env var is set |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `MAIL_FROM` | Email | Optional district SMTP. Unset = no mail. Used for team invites, family-message pings, and reporting-window notices. Subjects never include goal text |
+| `CRON_SECRET` | Cron | Bearer token for `GET/POST /api/cron/daily` (retention sweep, reporting-window notices, Friday family digest). Vercel Cron sends this automatically when the env var is set |
+| `DIGEST_SEND` | Email | Set `1` to send opted-in family digests on a non-Friday (local tests). Production sends on Friday UTC |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `MAIL_FROM` | Email | Optional SMTP. Local Docker uses Mailpit (`127.0.0.1:1025`, inbox at `:8025`). Unset = no mail. Used for team invites, family-message pings, reporting-window notices, and opted-in weekly family digests. Subjects never include goal text |
 
 `.env*` files are gitignored except `.env.example`.
 
