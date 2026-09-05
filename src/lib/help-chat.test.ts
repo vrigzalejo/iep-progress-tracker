@@ -47,6 +47,14 @@ describe("help chat", () => {
     expect(retrieveArticles("add a school campus", "ADMINISTRATOR")[0]?.id).toBe("schools");
   });
 
+  it("maps the site tutorial to the setup guide", () => {
+    expect(retrieveArticles("first time walkthrough tutorial", "EDUCATOR")[0]?.id).toBe("guide");
+    const result = answerFromHandbook("what are the setup guide steps", "ADMINISTRATOR");
+    expect(result.text).toMatch(/Schools/);
+    expect(result.text).toMatch(/Hallway/);
+    expect(result.text).toMatch(/Meeting room/);
+  });
+
   it("explains the family weekly email", () => {
     expect(retrieveArticles("opt in to the weekly email digest", "PARENT")[0]?.id).toBe("digest");
   });

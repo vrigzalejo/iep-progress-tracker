@@ -33,7 +33,7 @@ export function helpArticles(): HelpArticle[] {
 
 Ask about any staff screen:
 
-**Start** — [Sign in](/sign-in) (demo passphrase or school SSO) · [Account setup](/setup) · six-step [Setup guide](/guide)
+**Start** — [Sign in](/sign-in) (demo passphrase or school SSO) · [Account setup](/setup) · six-step [Setup guide](/guide) (roles and campuses, Today/Hallway, reports and meeting room)
 
 **Chrome** — gold demo banner; sidebar (Dashboard, Students, Reports, Messages, Team and Schools if you are an administrator, Privacy, Setup guide); header [Search](/search); Sign out at the bottom of the sidebar; **How to use this site** in the corner
 
@@ -123,7 +123,7 @@ Sessions use HTTP-only cookies, expire after eight hours, and sign out after 20 
     {
       id: "roles",
       title: "Roles and who can see what",
-      hrefs: ["/team", "/privacy"],
+      hrefs: ["/team", "/schools", "/privacy"],
       keywords: [
         "role",
         "roles",
@@ -140,7 +140,7 @@ Sessions use HTTP-only cookies, expire after eight hours, and sign out after 20 
         "least privilege",
         "invite",
       ],
-      body: `**Administrator** — every student in the organization; invite people, change roles, deactivate accounts; retention, deletion, and the audit log.
+      body: `**Administrator** — every student in the organization; invite people, change roles, deactivate accounts; add and archive campus names on [Schools](/schools); retention, deletion, and the audit log.
 
 **Educator** — students they case-manage; add/edit profiles and goals; log sessions; reports and family messages; CSV of their caseload.
 
@@ -158,13 +158,13 @@ Open [Team](/team) to see the full capability matrix. Give each person the least
       body: `The [Setup guide](/guide) is six numbered cards:
 
 1. Review privacy and consent — [Privacy](/privacy)
-2. Confirm roles — administrators invite people on [Team](/team)
-3. Add a minimum student profile — [Add student](/students/new)
+2. Confirm roles and campuses — administrators invite people on [Team](/team) and add campus names on [Schools](/schools)
+3. Add a minimum student profile — [Add student](/students/new) (school is a pick from the campus list)
 4. Record IEP goals as written — from [Students](/students)
-5. Log progress during sessions — trial pad, absent, or declined
-6. Write a period report or print a meeting packet — [Reports](/reports)
+5. Log progress during sessions — [Today](/today) worklist or [Hallway](/hallway) trial pad; absent or declined when the service was not delivered
+6. Write a period report, open [Meeting room](/reports), or file a PDF — [Report studio](/reports/studio). Families may opt in to a Friday weekly email of scores and staff-written home carryover only.
 
-This demonstration school is already filled with fictional students so you can click every role. Use **How to use this site** for any one screen. I only explain the product. I do not fill in goals or interpret a student.`,
+This demonstration school is already filled with fictional students so you can click every role. Families can open the guide too; the numbered steps are for staff. Use **How to use this site** for any one screen. I only explain the product. I do not fill in goals or interpret a student.`,
     },
     {
       id: "setup",
@@ -459,7 +459,7 @@ Parents acknowledge **for each linked student**. If the school bumps the notice 
       ],
       body: `A gold banner at the top appears only in demonstration mode and reminds you this site uses fictional data. Skip to main content is the first focusable link.
 
-The dark sidebar lists only screens your role can open: staff see Dashboard, Today, Students, Minutes, Reports, Messages, Privacy, and Setup guide; administrators also see Team; parents see Family home instead of Dashboard and Students. On a phone, open the menu with the button next to the header. Staff have a search field in the header. Your name and role sit at the bottom of the sidebar with **Sign out**.
+The dark sidebar lists only screens your role can open: staff see Dashboard, Today, Students, Minutes, Reports, Messages, Privacy, and Setup guide; administrators also see Team and Schools; parents see Family home instead of Dashboard and Students. On a phone, open the menu with the button next to the header. Staff have a search field in the header. Your name and role sit at the bottom of the sidebar with **Sign out**.
 
 **How to use this site** (this assistant) stays in the lower-right corner. Browser **Print** hides the banner, sidebar, and assistant so reports and meeting packets print cleanly. **Meeting room** hides the sidebar and assistant so the projector stays readable.`,
     },
