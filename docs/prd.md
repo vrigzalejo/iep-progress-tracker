@@ -19,7 +19,7 @@ The app already covers the core loop:
 
 1. Staff sign in → Today worklist → Hallway trial pad (or student → goal) → save a session → report studio for period comments → print report or meeting packet
 2. Parent sees shared goals, home carryover, report, and a per-student message thread
-3. Admin manages team, retention, audit, deletion, and one-student file export
+3. Admin manages team, campus names, retention, audit, deletion, and one-student file export
 
 It is **not** a legal FERPA certification, **not** an IEP writer, and **not** a placement or services recommender. Charts and “on track / needs attention / goal met” badges describe **data against the written mastery rule**. That constraint stays.
 
@@ -75,7 +75,7 @@ P0 production-privacy work shipped in **0.5.0**. Daily-workflow P1 rows shipped 
 - **No paraeducator / intern role.** They log under supervision; they should not edit goals or export.
 - **Goal / present-levels version history.** **Shipped in 0.6.0.** Changing official wording creates a dated version; period statements can pin to the version active in that window.
 - **Student-level accommodations catalog.** **Shipped in 0.6.0.** Standing list on the student; session form can check what was used today.
-- **Single-organization deploy.** `Organization` exists, but there is no school-site tree or district → campus → caseload. Blocks a multi-school district.
+- **Single-organization deploy.** `Organization` exists. An admin **Schools** list (campus names students pick) is in this tree. Still no district → campus → caseload tree or staff assigned to a site. Blocks a multi-school district until v1.0.
 - **No SIS rostering.** SSO proves identity; someone still types every student. ClassLink/OneRoster is the obvious next step (SSO already mentions ClassLink).
 - **Monitoring is optional Sentry.** Need a privacy-safe error budget and an admin “last backup / last retention run” panel.
 - **Passkeys** for credentials accounts (TOTP shipped in 0.5.0).

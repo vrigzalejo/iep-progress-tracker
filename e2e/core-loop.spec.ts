@@ -75,4 +75,6 @@ test("staff can log a session and write a period comment; parent cannot open Tea
   await expect(page.getByRole("link", { name: "Students" })).toHaveCount(0);
   await page.goto("/team");
   await expect(page).not.toHaveURL(/\/team$/);
+  await page.goto("/schools");
+  await expect(page).not.toHaveURL(/\/schools$/);
 });

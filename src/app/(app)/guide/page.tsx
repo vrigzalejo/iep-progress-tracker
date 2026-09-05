@@ -13,12 +13,12 @@ const STEPS = [
   },
   {
     title: "Confirm roles",
-    body: "Administrators invite educators, related-service providers, and family accounts. Each person should have only the access their work requires.",
+    body: "Administrators invite educators, related-service providers, and family accounts. Add campus names on Schools so new profiles pick from a list. Each person should have only the access their work requires.",
     href: "/team",
   },
   {
     title: "Add student profiles",
-    body: `Enter preferred name, grade, school, case manager, providers, and guardian contacts. Stop there. Extra identifiers do not belong in ${APP_NAME}.`,
+    body: `Enter preferred name, grade, a school from the campus list, case manager, providers, and guardian contacts. Stop there. Extra identifiers do not belong in ${APP_NAME}.`,
     href: "/students/new",
   },
   {

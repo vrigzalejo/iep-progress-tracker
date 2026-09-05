@@ -43,6 +43,10 @@ describe("help chat", () => {
     expect(retrieveArticles("open meeting room on the projector", "EDUCATOR")[0]?.id).toBe("meeting");
   });
 
+  it("explains adding a campus", () => {
+    expect(retrieveArticles("add a school campus", "ADMINISTRATOR")[0]?.id).toBe("schools");
+  });
+
   it("explains the family weekly email", () => {
     expect(retrieveArticles("opt in to the weekly email digest", "PARENT")[0]?.id).toBe("digest");
   });

@@ -4,7 +4,7 @@ import { EmptyState } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Label, Select } from "@/components/ui/input";
-import { requireStaff, listVisibleStudents } from "@/lib/queries";
+import { requireStaff, listVisibleStudents, listSchools } from "@/lib/queries";
 import { can } from "@/lib/permissions";
 import { computeDataSignal } from "@/lib/progress";
 
@@ -23,7 +23,7 @@ export default async function StudentsPage({
     const grade = params.grade.trim().toLowerCase();
     students = students.filter((student) => student.grade.toLowerCase() === grade);
   }
-  const schools = [...new Set((await listVisibleStudents(user)).map((student) => student.school))];
+  const schoolOptions = await listSchools(user);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -52,8 +52,10 @@ export default async function StudentsPage({
             <Label htmlFor="school">School</Label>
             <Select id="school" name="school" defaultValue={params.school ?? ""}>
               <option value="">All schools</option>
-              {schools.map((school) => (
-                <option key={school}>{school}</option>
+              {schoolOptions.map((school) => (
+                <option key={school.id} value={school.name}>
+                  {school.name}
+                </option>
               ))}
             </Select>
           </div>

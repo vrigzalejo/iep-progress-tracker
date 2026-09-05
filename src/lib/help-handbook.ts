@@ -35,7 +35,7 @@ Ask about any staff screen:
 
 **Start** — [Sign in](/sign-in) (demo passphrase or school SSO) · [Account setup](/setup) · six-step [Setup guide](/guide)
 
-**Chrome** — gold demo banner; sidebar (Dashboard, Students, Reports, Messages, Team if you are an administrator, Privacy, Setup guide); header [Search](/search); Sign out at the bottom of the sidebar; **How to use this site** in the corner
+**Chrome** — gold demo banner; sidebar (Dashboard, Students, Reports, Messages, Team and Schools if you are an administrator, Privacy, Setup guide); header [Search](/search); Sign out at the bottom of the sidebar; **How to use this site** in the corner
 
 **Work list** — [Today](/today): remaining sessions this week, one tap into [Hallway](/hallway). [Dashboard](/dashboard) still shows reports due, stale goals, IEP reviews, and minutes. [Minutes](/minutes) is the week ledger.
 
@@ -49,7 +49,7 @@ Ask about any staff screen:
 
 **Find and talk** — header search · [Messages](/messages) threads with unread badges · profile thread (Family vs Staff only)
 
-**School ops** — [Team](/team) (administrators: invite, change role, deactivate) · [Privacy](/privacy) (notice, parent acknowledgment, retention, CSV, archive, deletion, audit)
+**School ops** — [Schools](/schools) (administrators add campus names) · [Team](/team) (invite, change role, deactivate) · [Privacy](/privacy) (notice, parent acknowledgment, retention, CSV, archive, deletion, audit)
 
 Charts and on-track badges are **data snapshots**, not IEP team votes.`,
     },
@@ -218,7 +218,7 @@ Lists under the cards repeat those items with names and dates. Status badges (on
       ],
       body: `Open [Students](/students) for your permitted caseload. Filter by preferred name, school, or grade (case-insensitive). Cards show goal count and a data-status badge.
 
-Administrators and educators can [Add student](/students/new). Required: preferred name, grade, school, case manager. Optional: annual IEP review date, triennial evaluation date, present-levels snapshot, checkboxes for service providers. Do not add diagnoses, Social Security numbers, or full educational history. Providers cannot add profiles.
+Administrators and educators can [Add student](/students/new). Required: preferred name, grade, a school from the campus list, case manager. Optional: annual IEP review date, triennial evaluation date, present-levels snapshot, checkboxes for service providers. Administrators add campuses on [Schools](/schools) — this is not a SIS import and does not create IEP goals. Do not add diagnoses, Social Security numbers, or full educational history. Providers cannot add profiles.
 
 On a profile: case manager, providers with this week’s delivered vs prescribed minutes, guardian contacts, IEP calendar (admins/educators can **Save IEP dates** and present levels), **Add IEP goal**, **Build report**, **Meeting packet**, **Meeting room**, goals with **Open goal and chart** / **Log a session**, and a message thread (Family or Staff only). Staff also see the latest privacy-notice acknowledgment.
 
@@ -390,12 +390,20 @@ Write a message from this page or [Messages](/messages). If no student appears, 
     {
       id: "team",
       title: "Team and permissions",
-      hrefs: ["/team"],
+      hrefs: ["/team", "/schools"],
       roles: ["ADMINISTRATOR"],
       keywords: ["team", "invite", "deactivate", "people", "staff", "permissions", "matrix", "password"],
       body: `[Team](/team) is for administrators. Read the capability matrix, then add a person: name, email, role (administrator, educator, related-service provider, or parent/guardian). Password is optional once school SSO is on; SSO-only people show “school SSO.” Change someone’s role or **Deactivate** so they cannot sign in.
 
 Parents see a student when their email is a guardian contact on that profile. Providers must be checked on the profile. Use the same email as the district account for SSO. If SMTP is configured, the new person gets an invite email with no student records. Educators cannot open Team—ask an administrator.`,
+    },
+    {
+      id: "schools",
+      title: "Schools and campuses",
+      hrefs: ["/schools", "/students/new"],
+      roles: ["ADMINISTRATOR", "EDUCATOR"],
+      keywords: ["school", "schools", "campus", "campuses", "site", "add school"],
+      body: `Administrators open [Schools](/schools) to add campus names this organization uses (optional short code). Students then pick a school on [Add student](/students/new). Archiving hides a campus from the picker; existing profiles keep the name. This is not ClassLink/OneRoster and does not import IEP goals or extra identifiers.`,
     },
     {
       id: "privacy",

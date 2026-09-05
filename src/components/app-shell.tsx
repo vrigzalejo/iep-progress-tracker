@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  Building2,
   CalendarClock,
   ClipboardList,
   FileText,
@@ -44,6 +45,7 @@ const LINKS: {
   { href: "/minutes", label: "Minutes", icon: Timer, staffOnly: true },
   { href: "/reports", label: "Reports", icon: FileText, permission: "report.create" },
   { href: "/messages", label: "Messages", icon: MessageSquare, permission: "message.send" },
+  { href: "/schools", label: "Schools", icon: Building2, permission: "team.manage" },
   { href: "/team", label: "Team", icon: ClipboardList, permission: "team.manage" },
   { href: "/privacy", label: "Privacy", icon: Shield },
   { href: "/guide", label: "Setup guide", icon: BookOpen },

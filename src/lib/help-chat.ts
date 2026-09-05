@@ -170,6 +170,7 @@ function hrefLabel(href: string) {
     "/search": "Search",
     "/messages": "Messages",
     "/team": "Team",
+    "/schools": "Schools",
     "/privacy": "Privacy",
     "/privacy-notice": "Privacy notice",
     "/parent": "Family home",

@@ -11,6 +11,7 @@ import { requirePermission, listTeam } from "@/lib/queries";
 import { PERMISSION_MATRIX } from "@/lib/permissions";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { formatDate } from "@/lib/utils";
+import Link from "next/link";
 import { ROLE_LABELS, ROLES } from "@/lib/constants";
 import { isSsoConfigured } from "@/lib/sso";
 
@@ -32,7 +33,11 @@ export default async function TeamPage({
         <h1 className="font-serif text-3xl">Team and permissions</h1>
         <p className="mt-2 text-muted">
           Least privilege is the default. Parents only see their linked student. Providers only see
-          assigned students.
+          assigned students. Add campus names on{" "}
+          <Link href="/schools" className="font-semibold text-forest underline">
+            Schools
+          </Link>{" "}
+          so new student profiles pick from a list.
         </p>
       </div>
       {saved ? (

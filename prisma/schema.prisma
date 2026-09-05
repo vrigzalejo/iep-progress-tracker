@@ -18,6 +18,7 @@ model Organization {
   auditLogs         AuditLog[]
   reportingPeriods  ReportingPeriodWindow[]
   reportSnippets    ReportSnippet[]
+  schools           School[]
 }
 
 model User {
@@ -59,6 +60,8 @@ model Student {
   preferredName     String
   grade             String
   school            String
+  schoolId          String?
+  schoolSite        School?  @relation(fields: [schoolId], references: [id], onDelete: SetNull)
   caseManagerId     String
   caseManager       User      @relation("CaseManager", fields: [caseManagerId], references: [id])
   organizationId    String
@@ -80,6 +83,21 @@ model Student {
 
   @@index([organizationId])
   @@index([caseManagerId])
+  @@index([schoolId])
+}
+
+model School {
+  id             String    @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  code           String?
+  archivedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  students       Student[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
 }
 
 model StudentProvider {
