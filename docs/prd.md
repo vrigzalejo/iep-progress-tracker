@@ -1,15 +1,15 @@
 # Product Requirements Document
 
-**IEP Progress Tracker — after 0.5.0 through v1.0**
+**IEP Progress Tracker — after 0.6.0 through v1.0**
 
 | | |
 | --- | --- |
-| **Status** | Living roadmap (`0.5.0` shipped 2026-09-03) |
-| **Current product** | Production-safety MVP (`0.5.0`), fictional demo data until a district turns demo off |
+| **Status** | Living roadmap (`0.6.0` shipped 2026-09-04) |
+| **Current product** | Daily-workflow MVP (`0.6.0`), fictional demo data until a district turns demo off |
 | **Audience** | Educators, related-service providers, school admins, parents/guardians |
 | **North star** | The fastest, most defensible way to log IEP progress in the moment and send home a report a family can actually read — without the product making IEP decisions. |
 
-This document is grounded in the current app: goals, trial-pad sessions, family reports, SSO, per-child consent, FERPA student-file export, retention/cron, optional SMTP, TOTP MFA, idle timeout, and a how-to chatbot that never sees student records.
+This document is grounded in the current app: Today / Hallway session logging, minutes ledger, unread message threads, report studio, standing accommodations, goal versions, family reports, SSO, per-child consent, FERPA student-file export, retention/cron, optional SMTP, TOTP MFA, idle timeout, local Docker HTTPS, and a how-to chatbot that never sees student records.
 
 ---
 
@@ -17,13 +17,13 @@ This document is grounded in the current app: goals, trial-pad sessions, family 
 
 The app already covers the core loop:
 
-1. Staff sign in → dashboard → student → goal → log a session → period comment → print report or meeting packet
-2. Parent sees shared goals, home carryover, report, family messages
+1. Staff sign in → Today worklist → Hallway trial pad (or student → goal) → save a session → report studio for period comments → print report or meeting packet
+2. Parent sees shared goals, home carryover, report, and a per-student message thread
 3. Admin manages team, retention, audit, deletion, and one-student file export
 
 It is **not** a legal FERPA certification, **not** an IEP writer, and **not** a placement or services recommender. Charts and “on track / needs attention / goal met” badges describe **data against the written mastery rule**. That constraint stays.
 
-**v0.5** closed the production-privacy blockers that kept demo from being turned off. What is still missing is not “more IEP features.” It is **speed at the point of service** and **family communication that does not depend on someone remembering to open the portal**.
+**v0.5** closed the production-privacy blockers that kept demo from being turned off. **v0.6** closed the “one goal, one form” bottleneck. What is still missing is not “more IEP features.” It is **family communication that does not depend on someone remembering to open the portal**, a **projector-safe meeting view**, and **filed PDFs** instead of browser print.
 
 ---
 
@@ -31,16 +31,16 @@ It is **not** a legal FERPA certification, **not** an IEP writer, and **not** a 
 
 | Persona | Job to be done | Current friction |
 | --- | --- | --- |
-| **Educator / case manager** | Log 8–15 sessions between bells; finish period comments in one sitting | One goal at a time, no “today’s caseload,” no reminders when a family writes |
-| **Related-service provider** | Hit prescribed weekly minutes; prove makeup when a student is absent | Minutes gap is a dashboard number, not a week calendar or makeup queue |
+| **Educator / case manager** | Log 8–15 sessions between bells; finish period comments in one sitting | Today + Hallway + report studio exist; leftover friction is attachments, next-student after save, and filed PDFs |
+| **Related-service provider** | Hit prescribed weekly minutes; prove makeup when a student is absent | Week ledger exists; makeup is still a session outcome, not a click-the-gap planner |
 | **Administrator** | Roster staff, prove access, answer a records request | Student ZIP + CSV + audit exist; still no school-site tree, SIS roster, or “last backup / last purge” ops panel |
-| **Parent / guardian** | Understand progress in everyday language; know what to practice at home | Per-child consent and the portal are solid; no weekly digest, no read receipts, no Spanish family UI |
+| **Parent / guardian** | Understand progress in everyday language; know what to practice at home | Per-child consent, portal, and unread threads exist; no weekly digest, no Spanish family UI |
 
 ---
 
 ## 3. What needs to improve (before new toys)
 
-P0 production-privacy work shipped in **0.5.0**. Remaining rows are daily-workflow and model debt. Cool features still should not outrun a district review (object storage, `demo: false`, MFA or SSO).
+P0 production-privacy work shipped in **0.5.0**. Daily-workflow P1 rows shipped in **0.6.0**. Remaining rows are family/meeting surfaces and model debt. Cool features still should not outrun a district review (object storage, `demo: false`, MFA or SSO).
 
 ### P0 — Production and privacy (shipped in 0.5.0)
 
@@ -54,32 +54,33 @@ P0 production-privacy work shipped in **0.5.0**. Remaining rows are daily-workfl
 | **MFA for staff** | Password + lockout was not enough for districts that still use credentials. | TOTP on Account setup. SSO remains the preferred path. Passkeys are still open. |
 | **No email at all** | Invites and family notes died in the tab. | Optional SMTP for guardian invite and family-message ping. Bodies stay generic; no goal text in subject lines. Report-window mail is still open. |
 | **8-hour cookie, no idle warning** | Shared classroom machines stayed signed in. | Idle timeout (`NEXT_PUBLIC_IDLE_MINUTES`, default 20; `0` disables). |
-| **Tests are unit-only** | No e2e of the session → report path. | Playwright: sign-in, log trials, period comment, parent sees shared goal only. axe/WCAG pass is still open. |
+| **Tests are unit-only** | No e2e of the session → report path. | Playwright: sign-in, log trials, Today/Hallway, report studio, parent cannot open Team. axe/WCAG pass is still open. |
 
 ### P1 — Daily workflow quality
 
-| Gap | Why it matters | Done when |
+| Gap | Why it matters | Status |
 | --- | --- | --- |
-| **Session log is one goal, one form** | Teachers will not open `/goals/[id]/progress/new` fifteen times. | “Today” view: caseload strip → student → goal chips → trial pad without leaving the page. |
-| **Messages are a flat list of 40** | No unread state, no notify, no attachments, no thread. Families think nobody saw the note. | Per-student thread, unread badge, email ping to assigned staff, optional image (same evidence rules). |
-| **Service minutes are a count, not a ledger** | Dashboard shows “below this week’s prescribed minutes.” No makeup planner, no “who was absent Tuesday.” | Week calendar: prescribed vs delivered vs absent/declined/makeup. Click a gap to schedule makeup. |
-| **Period comments are one student at a time** | Report windows are the painful week. | Caseload report studio: filter by period + “missing comment,” write all narratives in one sitting. |
-| **Print = browser print** | Meeting packets look fine; they are not a filed PDF. | Server-generated PDF (report + packet) stored as evidence-class files, not public URLs. |
-| **Search is `ILIKE` on names/goal text** | Fine at 5 demo students; noisy at 400. | Filters: school, grade, service area, data signal, report due. Keyboard-first. |
-| **WCAG 2.2 AA is on the launch checklist, not done** | Trial pad and sidebar need large targets, focus order, live-region for trial counts. Playwright covers the happy path only. | Keyboard + VoiceOver pass on session form, family portal, and print views. Plus axe smoke on those views. |
+| **Session log is one goal, one form** | Teachers will not open `/goals/[id]/progress/new` fifteen times. | **Shipped in 0.6.0.** Today worklist → Hallway trial pad. Next-student-after-save is still thin. |
+| **Messages are a flat list of 40** | No unread state, no notify, no attachments, no thread. Families think nobody saw the note. | **Mostly shipped in 0.6.0.** Per-student thread, unread badge, email ping. Attachments / images are still open. |
+| **Service minutes are a count, not a ledger** | Dashboard shows “below this week’s prescribed minutes.” No makeup planner, no “who was absent Tuesday.” | **Mostly shipped in 0.6.0.** Week ledger: prescribed vs delivered vs absent/makeup. Click-a-gap scheduler is still open. |
+| **Period comments are one student at a time** | Report windows are the painful week. | **Shipped in 0.6.0.** Report studio: period filter, missing-comment queue, staff snippet library, bulk “not yet introduced.” |
+| **Print = browser print** | Meeting packets look fine; they are not a filed PDF. | **Open (v0.7).** Studio print is still the browser. |
+| **Search is `ILIKE` on names/goal text** | Fine at 5 demo students; noisy at 400. | **Open.** Filters: school, grade, service area, data signal, report due. Keyboard-first. |
+| **WCAG 2.2 AA is on the launch checklist, not done** | Trial pad and sidebar need large targets, focus order, live-region for trial counts. | **Open (v1.0).** Keyboard + VoiceOver pass on session form, family portal, and print views. Plus axe smoke. |
 
 ### P2 — Model and ops debt
 
 - **One case manager per student.** Real teams share cases; need a secondary / coverage assignment with an end date (substitute mode).
 - **Providers cannot create or edit goals.** Correct for least privilege in many districts; wrong for OT/SLP-owned goals. Make this an org setting, not a hardcoded role matrix.
 - **No paraeducator / intern role.** They log under supervision; they should not edit goals or export.
-- **No goal / present-levels version history.** Amendments overwrite `officialWording`. Need dated versions so the meeting packet can show “as of.”
-- **Student-level accommodations catalog is missing.** Accommodations exist only on a session. Families and meeting packets should list the standing list, then what was used today.
+- **Goal / present-levels version history.** **Shipped in 0.6.0.** Changing official wording creates a dated version; period statements can pin to the version active in that window.
+- **Student-level accommodations catalog.** **Shipped in 0.6.0.** Standing list on the student; session form can check what was used today.
 - **Single-organization deploy.** `Organization` exists, but there is no school-site tree or district → campus → caseload. Blocks a multi-school district.
 - **No SIS rostering.** SSO proves identity; someone still types every student. ClassLink/OneRoster is the obvious next step (SSO already mentions ClassLink).
 - **Monitoring is optional Sentry.** Need a privacy-safe error budget and an admin “last backup / last retention run” panel.
 - **Passkeys** for credentials accounts (TOTP shipped in 0.5.0).
 - **Report-window transactional email** (invite + family-message ping shipped; opening-window mail did not).
+- **Local Docker HTTPS.** **Shipped in 0.6.0** for Compose (`https://127.0.0.1:43147`, HTTP redirects). Hosted TLS remains the platform (Vercel).
 
 ---
 
@@ -88,6 +89,8 @@ P0 production-privacy work shipped in **0.5.0**. Remaining rows are daily-workfl
 Every idea below is **logging, visualization, communication, or operations**. None write goals, interpret a child, or recommend services.
 
 ### 4.1 Hallway mode (the feature that would make staff love this)
+
+**Status.** Shipped in **0.6.0** (PWA, IndexedDB queue, optional device PIN). Remaining: conflict UX polish and “next student after save.”
 
 **What.** A PWA “Hallway” screen: huge trial buttons, student + goal already chosen, works offline, syncs when the hallway Wi‑Fi comes back.
 
@@ -105,6 +108,8 @@ Every idea below is **logging, visualization, communication, or operations**. No
 
 ### 4.2 Today’s caseload + 10-second log
 
+**Status.** Shipped in **0.6.0** as `/today`. Dashboard stats remain; Today is the worklist.
+
 **What.** Dashboard becomes a worklist, not four stat cards.
 
 - Next reporting dates and stale goals stay.
@@ -114,6 +119,8 @@ Every idea below is **logging, visualization, communication, or operations**. No
 **Success.** A provider can log a 10-trial speech session in under 20 seconds without a page reload.
 
 ### 4.3 Service-minutes ledger and makeup queue
+
+**Status.** Shipped in **0.6.0** as `/minutes` (prescribed vs delivered vs absent/makeup). Click-a-gap scheduler is still open.
 
 **What.** Week view per provider and per student: prescribed minutes, delivered, absent, declined, makeup scheduled.
 
@@ -126,6 +133,8 @@ Every idea below is **logging, visualization, communication, or operations**. No
 - Export this ledger in the records-request packet.
 
 ### 4.4 Family weekly digest (opt-in)
+
+**Status.** Open (v0.7).
 
 **What.** Friday email (or SMS later): shared goals only, last week’s scores in plain language, home carryover the staff already typed, link to the portal.
 
@@ -140,6 +149,8 @@ Every idea below is **logging, visualization, communication, or operations**. No
 
 ### 4.5 IEP meeting room mode
 
+**Status.** Open (v0.7).
+
 **What.** A projector-safe view of the existing meeting packet: large type, one goal per screen, chart, last 5 present sessions, period code, family messages.
 
 **Why.** Teams currently print and shuffle. This is the “wow” in the conference room without inventing recommendations.
@@ -151,6 +162,8 @@ Every idea below is **logging, visualization, communication, or operations**. No
 - Staff still write the narrative. The room mode does not suggest a progress code.
 
 ### 4.6 Progress report studio
+
+**Status.** Shipped in **0.6.0** as `/reports/studio` (missing-comment queue, snippets, bulk not-yet-introduced). Combined filed PDF is still open.
 
 **What.** Caseload × reporting period grid. Cells show missing vs written. Click to write the IEP progress code + narrative. Bulk “mark not yet introduced” with confirm.
 
@@ -164,6 +177,8 @@ Every idea below is **logging, visualization, communication, or operations**. No
 
 ### 4.7 Prompt-fading and independence charts
 
+**Status.** Shipped in **0.6.0** on the goal page (share of trials by prompt level; labeled as data, not advice).
+
 **What.** On a goal, a stacked view of independent vs gesture / verbal / model / physical over time.
 
 **Why.** The trial model already stores `promptLevel`. You are sitting on a visualization no competing “goal tracker” bothers to show — and it is still **data**, not advice.
@@ -172,17 +187,23 @@ Every idea below is **logging, visualization, communication, or operations**. No
 
 ### 4.8 Standing accommodations + evidence gallery
 
+**Status.** Standing list shipped in **0.6.0**. Evidence lightbox / “used in meeting packet” is still open.
+
 **What.** Student-level accommodation list (staff-entered). Session form defaults to that list; staff uncheck what was not used. Evidence files get a lightbox, caption, and “used in meeting packet” flag.
 
 **Why.** Work samples are how teams defend a code. A 5 MB upload with a filename is not a gallery.
 
 ### 4.9 Goal and present-levels versions (amendments)
 
+**Status.** Shipped in **0.6.0**. Period statements can pin to the version active in that window.
+
 **What.** Changing official wording, baseline, target, or mastery rule creates a version row with who / when / why (staff-typed). Reports pin to the version that was active in that period.
 
 **Why.** Overwriting the goal text is a compliance hole.
 
 ### 4.10 Bilingual family surfaces
+
+**Status.** Open (v0.7).
 
 **What.** Family portal, reports, and digest in **English + Spanish** first (UI chrome + staff can store a Spanish plain-language summary).
 
@@ -192,17 +213,23 @@ Every idea below is **logging, visualization, communication, or operations**. No
 
 ### 4.11 ClassLink / OneRoster rostering
 
+**Status.** Open (v1.0).
+
 **What.** Nightly roster sync: schools, staff, students, guardian emails. Roles still live here. Unknown students are staged for case-manager claim, not auto-created as full IEP files.
 
 **Why.** SSO without rostering still means typing 400 profiles.
 
 ### 4.12 Coverage / substitute access
 
+**Status.** Open (v1.0).
+
 **What.** Time-boxed grant: “Patricia covers Maricel’s caseload Mon–Wed.” Audit every view. Auto-expire.
 
 **Why.** Real schools have absences. Sharing a password is the current workaround.
 
 ### 4.13 How-to chatbot, screen-aware (still handbook-only)
+
+**Status.** Handbook-only assistant shipped earlier; 0.6.0 updated articles for Today, Hallway, minutes, and studio. Still no student payload.
 
 **What.** The corner assistant already maps routes to handbook articles. Make it open the article for *this* path by default, with suggested questions. Keep `HF_TOKEN` as optional rephrase of handbook text.
 
@@ -233,11 +260,11 @@ Consent per child · seed never runs in production · object storage required wh
 
 **Shipped when:** `/api/health` reports `ok`, `demo`, `evidence`, and `credentials`. Hosted demo stays `demo: true`. A district still turns demo off, points evidence at private object storage, and completes their own launch checklist.
 
-### v0.6 — “Log it before the bell” (in working tree)
+### v0.6 — “Log it before the bell” (shipped 2026-09-04 as `0.6.0`)
 
-Today caseload · hallway PWA / offline queue · service-minutes ledger + makeup · unread messages + notify · report studio · prompt-level chart · standing accommodations · goal versions.
+Today caseload · hallway PWA / offline queue · service-minutes ledger + makeup · unread messages + notify · report studio · prompt-level chart · standing accommodations · goal versions · local Docker HTTPS.
 
-**Done when:** a provider can finish a typical half-day of sessions from Today → Hallway without opening a full goal page, and period week is the report-studio grid.
+**Shipped when:** a provider can finish a typical half-day of sessions from Today → Hallway without opening a full goal page, and period week is the report-studio grid.
 
 ### v0.7 — “The meeting and the kitchen table”
 
@@ -270,7 +297,7 @@ Do **not** metric “% of goals marked on track.” That would pressure staff to
 
 ## 8. Suggested issue cut (when you want to land work)
 
-Smallest useful slices, in the repo’s `{issue}-{slug}` style. v0.5 safety and the v0.6 daily-workflow screens are in the working tree.
+Smallest useful slices, in the repo’s `{issue}-{slug}` style. v0.5 safety and v0.6 daily-workflow screens have shipped.
 
 1. **Family digest** — the kitchen-table heartbeat (v0.7)
 2. **Meeting room mode** — projector view
@@ -283,7 +310,7 @@ Smallest useful slices, in the repo’s `{issue}-{slug}` style. v0.5 safety and 
 
 ## 9. Recommendation
 
-P0 safety shipped in 0.5.0. Today, hallway, minutes ledger, unread threads, report studio, prompt-level chart, standing accommodations, and goal versions are in the working tree as v0.6. If you only build **three** things next (v0.7):
+P0 safety shipped in 0.5.0. Today, Hallway, minutes ledger, unread threads, report studio, prompt-level chart, standing accommodations, and goal versions shipped in 0.6.0. If you only build **three** things next (v0.7):
 
 1. **Family digest** — this is the product families actually notice.
 2. **Meeting room mode** — this is the conference-room “wow.”
