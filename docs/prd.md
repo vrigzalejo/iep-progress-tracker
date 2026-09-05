@@ -4,12 +4,12 @@
 
 | | |
 | --- | --- |
-| **Status** | Living roadmap (`0.6.0` shipped 2026-09-04) |
-| **Current product** | Daily-workflow MVP (`0.6.0`), fictional demo data until a district turns demo off |
+| **Status** | Living roadmap (`0.6.0` shipped 2026-09-04; v0.7 meeting/digest/PDFs in this tree) |
+| **Current product** | Daily-workflow MVP (`0.6.0`) plus meeting room, family digest, and filed PDFs; fictional demo data until a district turns demo off |
 | **Audience** | Educators, related-service providers, school admins, parents/guardians |
 | **North star** | The fastest, most defensible way to log IEP progress in the moment and send home a report a family can actually read — without the product making IEP decisions. |
 
-This document is grounded in the current app: Today / Hallway session logging, minutes ledger, unread message threads, report studio, standing accommodations, goal versions, family reports, SSO, per-child consent, FERPA student-file export, retention/cron, optional SMTP, TOTP MFA, idle timeout, local Docker HTTPS, and a how-to chatbot that never sees student records.
+This document is grounded in the current app: Today / Hallway session logging, minutes ledger, unread message threads, report studio, standing accommodations, goal versions, family reports, meeting room, weekly digest, filed PDFs, SSO, per-child consent, FERPA student-file export, retention/cron, optional SMTP, TOTP MFA, idle timeout, local Docker HTTPS, and a how-to chatbot that never sees student records.
 
 ---
 
@@ -19,11 +19,11 @@ The app already covers the core loop:
 
 1. Staff sign in → Today worklist → Hallway trial pad (or student → goal) → save a session → report studio for period comments → print report or meeting packet
 2. Parent sees shared goals, home carryover, report, and a per-student message thread
-3. Admin manages team, retention, audit, deletion, and one-student file export
+3. Admin manages team, campus names, retention, audit, deletion, and one-student file export
 
 It is **not** a legal FERPA certification, **not** an IEP writer, and **not** a placement or services recommender. Charts and “on track / needs attention / goal met” badges describe **data against the written mastery rule**. That constraint stays.
 
-**v0.5** closed the production-privacy blockers that kept demo from being turned off. **v0.6** closed the “one goal, one form” bottleneck. What is still missing is not “more IEP features.” It is **family communication that does not depend on someone remembering to open the portal**, a **projector-safe meeting view**, and **filed PDFs** instead of browser print.
+**v0.5** closed the production-privacy blockers that kept demo from being turned off. **v0.6** closed the “one goal, one form” bottleneck. **v0.7** (this tree) adds an opt-in weekly digest, a projector-safe meeting room, and filed report/packet PDFs. Remaining family work is Spanish UI, an evidence gallery, and home-carryover cards.
 
 ---
 
@@ -31,10 +31,10 @@ It is **not** a legal FERPA certification, **not** an IEP writer, and **not** a 
 
 | Persona | Job to be done | Current friction |
 | --- | --- | --- |
-| **Educator / case manager** | Log 8–15 sessions between bells; finish period comments in one sitting | Today + Hallway + report studio exist; leftover friction is attachments, next-student after save, and filed PDFs |
+| **Educator / case manager** | Log 8–15 sessions between bells; finish period comments in one sitting | Today + Hallway + report studio exist; leftover friction is attachments and next-student after save |
 | **Related-service provider** | Hit prescribed weekly minutes; prove makeup when a student is absent | Week ledger exists; makeup is still a session outcome, not a click-the-gap planner |
 | **Administrator** | Roster staff, prove access, answer a records request | Student ZIP + CSV + audit exist; still no school-site tree, SIS roster, or “last backup / last purge” ops panel |
-| **Parent / guardian** | Understand progress in everyday language; know what to practice at home | Per-child consent, portal, and unread threads exist; no weekly digest, no Spanish family UI |
+| **Parent / guardian** | Understand progress in everyday language; know what to practice at home | Per-child consent, portal, unread threads, and opt-in weekly digest exist; Spanish family UI is still open |
 
 ---
 
@@ -64,7 +64,7 @@ P0 production-privacy work shipped in **0.5.0**. Daily-workflow P1 rows shipped 
 | **Messages are a flat list of 40** | No unread state, no notify, no attachments, no thread. Families think nobody saw the note. | **Mostly shipped in 0.6.0.** Per-student thread, unread badge, email ping. Attachments / images are still open. |
 | **Service minutes are a count, not a ledger** | Dashboard shows “below this week’s prescribed minutes.” No makeup planner, no “who was absent Tuesday.” | **Mostly shipped in 0.6.0.** Week ledger: prescribed vs delivered vs absent/makeup. Click-a-gap scheduler is still open. |
 | **Period comments are one student at a time** | Report windows are the painful week. | **Shipped in 0.6.0.** Report studio: period filter, missing-comment queue, staff snippet library, bulk “not yet introduced.” |
-| **Print = browser print** | Meeting packets look fine; they are not a filed PDF. | **Open (v0.7).** Studio print is still the browser. |
+| **Print = browser print** | Meeting packets look fine; they are not a filed PDF. | **Shipped in this tree (v0.7).** Staff can file a report or packet PDF as an evidence-class file. Studio “print all” as one job is still open. |
 | **Search is `ILIKE` on names/goal text** | Fine at 5 demo students; noisy at 400. | **Open.** Filters: school, grade, service area, data signal, report due. Keyboard-first. |
 | **WCAG 2.2 AA is on the launch checklist, not done** | Trial pad and sidebar need large targets, focus order, live-region for trial counts. | **Open (v1.0).** Keyboard + VoiceOver pass on session form, family portal, and print views. Plus axe smoke. |
 
@@ -75,7 +75,7 @@ P0 production-privacy work shipped in **0.5.0**. Daily-workflow P1 rows shipped 
 - **No paraeducator / intern role.** They log under supervision; they should not edit goals or export.
 - **Goal / present-levels version history.** **Shipped in 0.6.0.** Changing official wording creates a dated version; period statements can pin to the version active in that window.
 - **Student-level accommodations catalog.** **Shipped in 0.6.0.** Standing list on the student; session form can check what was used today.
-- **Single-organization deploy.** `Organization` exists, but there is no school-site tree or district → campus → caseload. Blocks a multi-school district.
+- **Single-organization deploy.** `Organization` exists. An admin **Schools** list (campus names students pick) is in this tree. Still no district → campus → caseload tree or staff assigned to a site. Blocks a multi-school district until v1.0.
 - **No SIS rostering.** SSO proves identity; someone still types every student. ClassLink/OneRoster is the obvious next step (SSO already mentions ClassLink).
 - **Monitoring is optional Sentry.** Need a privacy-safe error budget and an admin “last backup / last retention run” panel.
 - **Passkeys** for credentials accounts (TOTP shipped in 0.5.0).
@@ -134,7 +134,7 @@ Every idea below is **logging, visualization, communication, or operations**. No
 
 ### 4.4 Family weekly digest (opt-in)
 
-**Status.** Open (v0.7).
+**Status.** Shipped in this tree (v0.7). SMS later is still open.
 
 **What.** Friday email (or SMS later): shared goals only, last week’s scores in plain language, home carryover the staff already typed, link to the portal.
 
@@ -149,7 +149,7 @@ Every idea below is **logging, visualization, communication, or operations**. No
 
 ### 4.5 IEP meeting room mode
 
-**Status.** Open (v0.7).
+**Status.** Shipped in this tree (v0.7).
 
 **What.** A projector-safe view of the existing meeting packet: large type, one goal per screen, chart, last 5 present sessions, period code, family messages.
 
@@ -163,7 +163,7 @@ Every idea below is **logging, visualization, communication, or operations**. No
 
 ### 4.6 Progress report studio
 
-**Status.** Shipped in **0.6.0** as `/reports/studio` (missing-comment queue, snippets, bulk not-yet-introduced). Combined filed PDF is still open.
+**Status.** Shipped in **0.6.0** as `/reports/studio` (missing-comment queue, snippets, bulk not-yet-introduced). Per-student filed PDF is in this tree; combined “print all” is still open.
 
 **What.** Caseload × reporting period grid. Cells show missing vs written. Click to write the IEP progress code + narrative. Bulk “mark not yet introduced” with confirm.
 
@@ -266,9 +266,9 @@ Today caseload · hallway PWA / offline queue · service-minutes ledger + makeup
 
 **Shipped when:** a provider can finish a typical half-day of sessions from Today → Hallway without opening a full goal page, and period week is the report-studio grid.
 
-### v0.7 — “The meeting and the kitchen table”
+### v0.7 — “The meeting and the kitchen table” (in working tree)
 
-Meeting room mode · server PDFs · family weekly digest · Spanish family UI · evidence gallery · home-carryover print/SMS cards (staff-written only).
+Meeting room mode · server PDFs · family weekly digest. Still open: Spanish family UI · evidence gallery · home-carryover print/SMS cards (staff-written only).
 
 **Done when:** an IEP meeting can run from the projector view, and a guardian who never bookmarks the portal still sees a weekly update they opted into.
 
@@ -297,25 +297,17 @@ Do **not** metric “% of goals marked on track.” That would pressure staff to
 
 ## 8. Suggested issue cut (when you want to land work)
 
-Smallest useful slices, in the repo’s `{issue}-{slug}` style. v0.5 safety and v0.6 daily-workflow screens have shipped.
+Smallest useful slices, in the repo’s `{issue}-{slug}` style. v0.6 daily workflow shipped. Meeting room, digest, and filed PDFs are in this tree.
 
-1. **Family digest** — the kitchen-table heartbeat (v0.7)
-2. **Meeting room mode** — projector view
-3. **Server PDFs** — filed packets
-4. **Spanish family UI** — family comprehension
-5. **OneRoster / coverage / para role** — district (v1.0)
-6. **Passkeys / report-window mail** — leftover 0.5.0 polish if a district asks
+1. **Spanish family UI** — family comprehension (remaining v0.7)
+2. **Evidence gallery / home-carryover cards** — remaining v0.7
+3. **OneRoster / coverage / para role** — district (v1.0)
+4. **Passkeys / report-window mail** — leftover 0.5.0 polish if a district asks
 
 ---
 
 ## 9. Recommendation
 
-P0 safety shipped in 0.5.0. Today, Hallway, minutes ledger, unread threads, report studio, prompt-level chart, standing accommodations, and goal versions shipped in 0.6.0. If you only build **three** things next (v0.7):
-
-1. **Family digest** — this is the product families actually notice.
-2. **Meeting room mode** — this is the conference-room “wow.”
-3. **Server PDFs** — this is the filed packet, not browser print.
-
-Everything else in section 4 is leverage on top of those three.
+P0 safety shipped in 0.5.0. Daily workflow shipped in 0.6.0. Family digest, meeting room, and filed PDFs are in this tree as v0.7. Remaining v0.7 leverage: Spanish family UI, evidence gallery, and staff-written home-carryover cards.
 
 Land work the usual way: GitHub issue (what / who / done-when) → branch `{issue-number}-{short-slug}` off `development` → PR into `development` with `Fixes #N`. Do not commit this file to `development` or `main` directly.

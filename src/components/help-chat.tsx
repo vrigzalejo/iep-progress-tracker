@@ -16,12 +16,12 @@ type ChatMessage = {
 
 const STAFF_PROMPTS = [
   "What can this app do?",
+  "How do I add a school campus?",
   "How do I add a student profile?",
   "How do I record an IEP goal?",
   "How do I log a session with trials?",
-  "How does the dashboard work?",
+  "How do I open meeting room on the projector?",
   "How do I print a meeting packet?",
-  "How does search work?",
   "How do I export a CSV?",
 ];
 
@@ -30,7 +30,7 @@ const FAMILY_PROMPTS = [
   "How do I message the team?",
   "How do I switch between children?",
   "How do I open a progress report?",
-  "How do I print a meeting packet?",
+  "How do I opt in to the weekly email digest?",
   "How do I acknowledge the privacy notice?",
 ];
 
@@ -79,10 +79,10 @@ export function HelpChat({ role }: { role: Role }) {
   const [input, setInput] = useState("");
   const welcome =
     role === "PARENT"
-      ? `I can walk through every family screen: Family home, shared goals, reports, meeting packets, messages, and privacy. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`
+      ? `I can walk through every family screen: Family home, shared goals, reports, meeting packets, weekly email, messages, and privacy. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`
       : role === "ADMINISTRATOR"
-        ? `I can walk through every administrator screen: dashboard, students, goals, sessions, reports, search, messages, team, and privacy. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`
-        : `I can walk through every ${ROLE_LABELS[role]} screen: dashboard, students, goals, sessions, reports, search, messages, and privacy. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`;
+        ? `I can walk through every administrator screen: dashboard, students, goals, sessions, reports, meeting room, schools, team, and privacy. The Setup guide is the six-step tutorial. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`
+        : `I can walk through every ${ROLE_LABELS[role]} screen: dashboard, Today, Hallway, students, goals, sessions, reports, meeting room, messages, and privacy. The Setup guide is the six-step tutorial. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`;
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",

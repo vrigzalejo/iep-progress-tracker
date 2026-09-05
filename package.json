@@ -17,7 +17,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "docker:up": "docker compose --env-file .env.local up --build",
-    "docker:db": "docker compose --env-file .env.local up db -d",
+    "docker:db": "docker compose --env-file .env.local up db mailpit -d",
     "docker:down": "docker compose --env-file .env.local down",
     "postinstall": "prisma generate",
     "vercel-build": "prisma generate && prisma migrate deploy && next build"

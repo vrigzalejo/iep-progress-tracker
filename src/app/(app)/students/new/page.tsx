@@ -2,13 +2,16 @@ import { createStudentAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
-import { requirePermission, listTeam } from "@/lib/queries";
+import { requirePermission, listTeam, listSchools } from "@/lib/queries";
+import { can } from "@/lib/permissions";
+import Link from "next/link";
 
 export const metadata = { title: "Add student" };
 
 export default async function NewStudentPage() {
   const user = await requirePermission("student.create");
   const team = await listTeam(user);
+  const schools = await listSchools(user);
   const educators = team.filter((member) => member.role === "EDUCATOR" || member.role === "ADMINISTRATOR");
   const providers = team.filter((member) => member.role === "PROVIDER" || member.role === "EDUCATOR");
 
@@ -32,8 +35,33 @@ export default async function NewStudentPage() {
               <Input id="grade" name="grade" required maxLength={20} />
             </div>
             <div>
-              <Label htmlFor="school">School</Label>
-              <Input id="school" name="school" required maxLength={120} />
+              <Label htmlFor="schoolId">School</Label>
+              {schools.length === 0 ? (
+                <p className="mt-2 text-sm text-muted">
+                  No campuses are on the list yet.
+                  {can(user.role, "team.manage") ? (
+                    <>
+                      {" "}
+                      <Link href="/schools" className="underline">
+                        Add a school
+                      </Link>{" "}
+                      first.
+                    </>
+                  ) : (
+                    " Ask an administrator to add a school."
+                  )}
+                </p>
+              ) : (
+                <Select id="schoolId" name="schoolId" required>
+                  <option value="">Select a school</option>
+                  {schools.map((school) => (
+                    <option key={school.id} value={school.id}>
+                      {school.name}
+                      {school.code ? ` · ${school.code}` : ""}
+                    </option>
+                  ))}
+                </Select>
+              )}
             </div>
           </div>
           <div>
