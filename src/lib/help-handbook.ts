@@ -395,7 +395,7 @@ Write a message from this page or [Messages](/messages). If no student appears, 
       keywords: ["team", "invite", "deactivate", "people", "staff", "permissions", "matrix", "password"],
       body: `[Team](/team) is for administrators. Read the capability matrix, then add a person: name, email, role (administrator, educator, related-service provider, or parent/guardian). Password is optional once school SSO is on; SSO-only people show “school SSO.” Change someone’s role or **Deactivate** so they cannot sign in.
 
-Parents see a student when their email is a guardian contact on that profile. Providers must be checked on the profile. Use the same email as the district account for SSO. If SMTP is configured, the new person gets an invite email with no student records. Educators cannot open Team—ask an administrator.`,
+Parents see a student when their email is a guardian contact on that profile. Providers must be checked on the profile. Use the same email as the district account for SSO. If email is configured (SMTP or Resend), the new person gets an invite email with no student records. Educators cannot open Team—ask an administrator.`,
     },
     {
       id: "schools",
@@ -520,7 +520,7 @@ If the hallway Wi‑Fi drops, the session stays in a queue on this device and sy
       ],
       body: `On [Family home](/parent), a linked guardian can opt in to a Friday weekly email for that student. It is off by default. The mail lists shared goals, last week’s present-session scores, and home-carryover notes staff already typed. It does not rewrite the child’s data with a model and does not include official IEP wording or disability labels.
 
-The subject is “Weekly update for [preferred name]” only. Each mail says who can see it and includes an unsubscribe link. Staff do not send this by clicking a button—the daily cron sends it on Friday (or when DIGEST_SEND=1 for a test). SMTP must be configured.`,
+The subject is “Weekly update for [preferred name]” only. Each mail says who can see it and includes an unsubscribe link. Staff do not send this by clicking a button—the daily cron sends it on Friday (or when DIGEST_SEND=1 for a test). SMTP or Resend must be configured.`,
     },
     {
       id: "assistant",

@@ -2,8 +2,31 @@ import { APP_NAME } from "@/lib/brand";
 import { captureError } from "@/lib/monitoring";
 import { appOrigin } from "@/lib/runtime";
 
+const RESEND_PLACEHOLDER_KEY = "re_xxxxxxxxx";
+
+function trimEnv(value: string | undefined) {
+  return value?.trim() || "";
+}
+
+function mailFrom(env: NodeJS.Dict<string>) {
+  return trimEnv(env.MAIL_FROM) || trimEnv(env.SMTP_USER);
+}
+
+function fromHeader(from: string) {
+  return from.includes("<") ? from : `${APP_NAME} <${from}>`;
+}
+
+export function smtpConfigured(env: NodeJS.Dict<string> = process.env) {
+  return Boolean(trimEnv(env.SMTP_HOST) && mailFrom(env));
+}
+
+export function resendConfigured(env: NodeJS.Dict<string> = process.env) {
+  const key = trimEnv(env.RESEND_API_KEY);
+  return Boolean(key && key !== RESEND_PLACEHOLDER_KEY && mailFrom(env));
+}
+
 export function mailConfigured(env: NodeJS.Dict<string> = process.env) {
-  return Boolean(env.SMTP_HOST?.trim() && (env.MAIL_FROM?.trim() || env.SMTP_USER?.trim()));
+  return resendConfigured(env) || smtpConfigured(env);
 }
 
 type MailInput = {
@@ -11,6 +34,34 @@ type MailInput = {
   subject: string;
   text: string;
 };
+
+function textToHtml(text: string) {
+  const escaped = text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+  return `<p>${escaped.replaceAll("\n", "<br>")}</p>`;
+}
+
+async function sendResend(input: MailInput, env: NodeJS.Dict<string> = process.env) {
+  const apiKey = trimEnv(env.RESEND_API_KEY);
+  const from = mailFrom(env);
+  if (!apiKey || !from) return false;
+  const { Resend } = await import("resend");
+  const resend = new Resend(apiKey);
+  const { error } = await resend.emails.send({
+    from: fromHeader(from),
+    to: input.to,
+    subject: input.subject,
+    text: input.text,
+    html: textToHtml(input.text),
+  });
+  if (error) {
+    captureError(new Error("resend send failed"), { mail: "failed" });
+    return false;
+  }
+  return true;
+}
 
 async function sendSmtp(input: MailInput, env: NodeJS.Dict<string> = process.env) {
   const nodemailer = await import("nodemailer");
@@ -20,14 +71,14 @@ async function sendSmtp(input: MailInput, env: NodeJS.Dict<string> = process.env
     port,
     secure: port === 465,
     auth:
-      env.SMTP_USER?.trim() && env.SMTP_PASSWORD
+      trimEnv(env.SMTP_USER) && env.SMTP_PASSWORD
         ? { user: env.SMTP_USER, pass: env.SMTP_PASSWORD }
         : undefined,
   });
-  const from = env.MAIL_FROM?.trim() || env.SMTP_USER?.trim();
+  const from = mailFrom(env);
   if (!from) return false;
   await transporter.sendMail({
-    from: `${APP_NAME} <${from}>`,
+    from: fromHeader(from),
     to: input.to,
     subject: input.subject,
     text: input.text,
@@ -38,6 +89,7 @@ async function sendSmtp(input: MailInput, env: NodeJS.Dict<string> = process.env
 export async function sendTransactionalMail(input: MailInput) {
   if (!mailConfigured()) return false;
   try {
+    if (resendConfigured()) return await sendResend(input);
     return await sendSmtp(input);
   } catch (error) {
     captureError(error, { mail: "failed" });
