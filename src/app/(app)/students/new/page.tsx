@@ -12,8 +12,9 @@ export default async function NewStudentPage() {
   const user = await requirePermission("student.create");
   const team = await listTeam(user);
   const schools = await listSchools(user);
-  const educators = team.filter((member) => member.role === "EDUCATOR" || member.role === "ADMINISTRATOR");
-  const providers = team.filter((member) => member.role === "PROVIDER" || member.role === "EDUCATOR");
+  const active = team.filter((member) => !member.deactivatedAt);
+  const educators = active.filter((member) => member.role === "EDUCATOR" || member.role === "ADMINISTRATOR");
+  const providers = active.filter((member) => member.role === "PROVIDER" || member.role === "EDUCATOR");
 
   return (
     <div className="mx-auto max-w-2xl">

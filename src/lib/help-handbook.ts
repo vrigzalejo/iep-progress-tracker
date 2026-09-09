@@ -401,13 +401,14 @@ Write a message from this page or [Messages](/messages). If no student appears, 
         "resend",
         "smtp",
         "deactivate",
+        "reactivate",
         "people",
         "staff",
         "permissions",
         "matrix",
         "password",
       ],
-      body: `[Team](/team) is for administrators. Read the capability matrix, then add a person: name, email, role (administrator, educator, related-service provider, or parent/guardian). Password is optional once school SSO is on; SSO-only people show “school SSO.” Change someone’s role or **Deactivate** so they cannot sign in.
+      body: `[Team](/team) is for administrators. Read the capability matrix, then add a person: name, email, role (administrator, educator, related-service provider, or parent/guardian). Password is optional once school SSO is on; SSO-only people show “school SSO.” Change someone’s role or **Deactivate** so they cannot sign in. A deactivated row stays on the list—use **Reactivate** to restore sign-in. Do not create a second account with the same email.
 
 Parents see a student when their email is a guardian contact on that profile. Providers must be checked on the profile. Use the same email as the district account for SSO. If the school configured SMTP or Resend, saving the new person sends a generic invite (no student records). Educators cannot open Team—ask an administrator.`,
     },

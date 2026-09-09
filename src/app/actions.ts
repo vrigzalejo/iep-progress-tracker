@@ -724,6 +724,24 @@ export async function deactivateUserAction(formData: FormData): Promise<void> {
   redirect("/team?saved=1");
 }
 
+export async function reactivateUserAction(formData: FormData): Promise<void> {
+  const user = await requirePermission("team.manage");
+  const userId = formString(formData, "userId");
+  await prisma.user.update({
+    where: { id: userId, organizationId: user.organizationId },
+    data: { deactivatedAt: null },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "team.reactivate",
+    resourceType: "user",
+    resourceId: userId,
+  });
+  revalidatePath("/team");
+  redirect("/team?saved=1");
+}
+
 export async function updateRetentionAction(formData: FormData): Promise<void> {
   const user = await requirePermission("privacy.manage");
   const parsed = retentionSchema.safeParse({

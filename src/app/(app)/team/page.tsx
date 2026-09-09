@@ -1,6 +1,7 @@
 import {
   createTeamMemberAction,
   deactivateUserAction,
+  reactivateUserAction,
   setUserRoleAction,
 } from "@/app/actions";
 import { Button } from "@/components/ui/button";
@@ -115,6 +116,16 @@ export default async function TeamPage({
                     />
                   </form>
                 </div>
+              ) : null}
+              {member.id !== user.id && member.deactivatedAt ? (
+                <form action={reactivateUserAction}>
+                  <input type="hidden" name="userId" value={member.id} />
+                  <ConfirmSubmit
+                    message={`Reactivate ${member.name}? They will be able to sign in again.`}
+                    label="Reactivate"
+                    variant="secondary"
+                  />
+                </form>
               ) : null}
             </li>
           ))}
