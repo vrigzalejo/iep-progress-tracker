@@ -16,7 +16,17 @@ export async function buildStudentFileZip(organizationId: string, studentId: str
         include: { user: { select: { name: true, email: true, title: true, role: true } } },
       },
       guardians: {
-        select: { name: true, relationship: true, email: true, phone: true },
+        select: { name: true, relationship: true, email: true, phone: true, digestOptIn: true },
+      },
+      attendances: { orderBy: [{ meetingOn: "asc" }, { attendeeName: "asc" }] },
+      filedDocuments: {
+        select: {
+          kind: true,
+          periodLabel: true,
+          createdAt: true,
+          createdBy: { select: { name: true } },
+        },
+        orderBy: { createdAt: "asc" },
       },
       consents: { orderBy: { grantedAt: "asc" } },
       accommodations: { where: { archivedAt: null }, orderBy: { sortOrder: "asc" } },
@@ -164,6 +174,27 @@ export async function buildStudentFileZip(organizationId: string, studentId: str
       ),
     },
     { name: "messages.json", content: json(student.messages) },
+    {
+      name: "meetings.json",
+      content: json(
+        student.attendances.map((row) => ({
+          meetingOn: row.meetingOn,
+          attendeeName: row.attendeeName,
+          present: row.present,
+        })),
+      ),
+    },
+    {
+      name: "filed-documents.json",
+      content: json(
+        student.filedDocuments.map((doc) => ({
+          kind: doc.kind,
+          periodLabel: doc.periodLabel,
+          createdAt: doc.createdAt,
+          createdBy: doc.createdBy.name,
+        })),
+      ),
+    },
     { name: "consents.json", content: json(student.consents) },
     { name: "audit.json", content: json(audit) },
   ]);
@@ -181,8 +212,9 @@ function studentFileReadme(exportedAt: string) {
     "This zip is the school's copy of one student record for a records request.",
     "It includes profile fields, standing accommodations, goals and wording versions,",
     "progress entries, a service-minutes ledger, family and staff messages,",
+    "meeting attendance names, filed report/packet metadata,",
     "consent acknowledgments, and audit actions scoped to this student.",
-    "Evidence binaries are not copied here; progress.json notes whether a file exists.",
+    "Evidence binaries and filed PDF bytes are not copied here; progress.json notes whether a file exists.",
     "Do not email this archive to a personal account.",
     "",
   ].join("\n");

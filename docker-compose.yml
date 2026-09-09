@@ -19,6 +19,21 @@ services:
       timeout: 5s
       retries: 10
 
+  # Local inbox only. Messages never leave the machine. UI: http://127.0.0.1:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   app:
     build:
       context: .
@@ -42,11 +57,16 @@ services:
       NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-true}
       NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-IEP Progress Tracker}
       NEXT_PUBLIC_APP_SLUG: ${NEXT_PUBLIC_APP_SLUG:-iep-progress-tracker}
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      MAIL_FROM: ${MAIL_FROM:-noreply@localhost}
     env_file:
       - path: .env.local
         required: false
     depends_on:
       db:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
     volumes:
       - app-uploads:/app/data

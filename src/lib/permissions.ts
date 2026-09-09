@@ -142,6 +142,13 @@ export const PERMISSION_MATRIX: {
     parent: "Shared reports only",
   },
   {
+    capability: "Add and archive schools",
+    administrator: "Yes",
+    educator: "Select existing only",
+    provider: "View campus name",
+    parent: "No",
+  },
+  {
     capability: "Team and role management",
     administrator: "Yes",
     educator: "No",

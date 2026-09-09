@@ -14,14 +14,25 @@ type ChatMessage = {
   content: string;
 };
 
+const ADMIN_PROMPTS = [
+  "What can this app do?",
+  "How do I add a school campus?",
+  "How do I invite someone by email?",
+  "How do I add a student profile?",
+  "How do I log a session with trials?",
+  "How do I open meeting room on the projector?",
+  "How does the Friday family email work?",
+  "How do I export a CSV?",
+];
+
 const STAFF_PROMPTS = [
   "What can this app do?",
   "How do I add a student profile?",
   "How do I record an IEP goal?",
   "How do I log a session with trials?",
-  "How does the dashboard work?",
+  "How do I open meeting room on the projector?",
   "How do I print a meeting packet?",
-  "How does search work?",
+  "How does the Friday family email work?",
   "How do I export a CSV?",
 ];
 
@@ -30,7 +41,7 @@ const FAMILY_PROMPTS = [
   "How do I message the team?",
   "How do I switch between children?",
   "How do I open a progress report?",
-  "How do I print a meeting packet?",
+  "How do I opt in to the weekly email digest?",
   "How do I acknowledge the privacy notice?",
 ];
 
@@ -79,10 +90,10 @@ export function HelpChat({ role }: { role: Role }) {
   const [input, setInput] = useState("");
   const welcome =
     role === "PARENT"
-      ? `I can walk through every family screen: Family home, shared goals, reports, meeting packets, messages, and privacy. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`
+      ? `Start on Family home: shared goals, progress report, meeting packet, optional Friday weekly email (off by default), messages, and Privacy. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`
       : role === "ADMINISTRATOR"
-        ? `I can walk through every administrator screen: dashboard, students, goals, sessions, reports, search, messages, team, and privacy. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`
-        : `I can walk through every ${ROLE_LABELS[role]} screen: dashboard, students, goals, sessions, reports, search, messages, and privacy. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`;
+        ? `The six-step tutorial is on Setup guide: Privacy, Team and Schools (invite email if SMTP or Resend is set), add a student, record goals as written, log on Today or Hallway, then report studio, Meeting room, or File PDF. Families who opt in get a Friday email—staff do not click send. Ask “what can this app do?” for every screen. I will not write IEP goals or interpret a student’s record.`
+        : `The six-step tutorial is on Setup guide: Privacy, roles, add a student, record goals as written, log on Today or Hallway, then report studio, Meeting room, or File PDF. Families who opt in get a Friday email of scores and home carryover—staff do not click send. Ask “what can this app do?” for every ${ROLE_LABELS[role]} screen. I will not write IEP goals or interpret a student’s record.`;
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
@@ -92,7 +103,8 @@ export function HelpChat({ role }: { role: Role }) {
   ]);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const prompts = role === "PARENT" ? FAMILY_PROMPTS : STAFF_PROMPTS;
+  const prompts =
+    role === "PARENT" ? FAMILY_PROMPTS : role === "ADMINISTRATOR" ? ADMIN_PROMPTS : STAFF_PROMPTS;
   const userTurns = messages.filter((message) => message.role === "user").length;
 
   useEffect(() => {

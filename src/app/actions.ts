@@ -27,14 +27,23 @@ import {
   reportSnippetSchema,
   retentionSchema,
   setupPasswordSchema,
+  schoolSchema,
   studentSchema,
   teamMemberSchema,
   trialSchema,
 } from "@/lib/validation";
 import { ROLE_LABELS, SERVICE_AREAS, type ServiceArea } from "@/lib/constants";
 import { isSsoConfigured } from "@/lib/sso";
-import { sendFamilyMessageMail, sendTeamInviteMail } from "@/lib/mail";
+import {
+  sendAccountDeactivatedMail,
+  sendAccountReactivatedMail,
+  sendFamilyMessageMail,
+  sendTeamInviteMail,
+} from "@/lib/mail";
+import { utcMeetingOn } from "@/lib/meeting";
+import { encodeSimplePdf, packetFromStudent } from "@/lib/packet-pdf";
 import { decryptSecret, encryptSecret, generateTotpSecret, verifyTotp } from "@/lib/totp";
+import { normalizeSchoolCode, normalizeSchoolName } from "@/lib/schools";
 import { runRetentionSweep } from "@/lib/retention-sweep";
 
 /** Auth.js prefixes relative redirectTo with AUTH_URL; use the request host instead. */
@@ -376,7 +385,7 @@ export async function createStudentAction(formData: FormData): Promise<void> {
   const parsed = studentSchema.safeParse({
     preferredName: formString(formData, "preferredName"),
     grade: formString(formData, "grade"),
-    school: formString(formData, "school"),
+    schoolId: formString(formData, "schoolId"),
     caseManagerId: formString(formData, "caseManagerId") || user.id,
     iepAnnualReviewAt: formString(formData, "iepAnnualReviewAt"),
     iepTriennialAt: formString(formData, "iepTriennialAt"),
@@ -386,11 +395,21 @@ export async function createStudentAction(formData: FormData): Promise<void> {
     fail(returnTo, parsed.error.issues[0]?.message ?? "Check the form and try again.");
   }
 
+  const campus = await prisma.school.findFirst({
+    where: {
+      id: parsed.data.schoolId,
+      organizationId: user.organizationId,
+      archivedAt: null,
+    },
+  });
+  if (!campus) fail(returnTo, "Select a school from the list. An administrator can add a campus first.");
+
   const student = await prisma.student.create({
     data: {
       preferredName: parsed.data.preferredName,
       grade: parsed.data.grade,
-      school: parsed.data.school,
+      school: campus.name,
+      schoolId: campus.id,
       caseManagerId: parsed.data.caseManagerId,
       organizationId: user.organizationId,
       iepAnnualReviewAt: optionalDate(parsed.data.iepAnnualReviewAt ?? ""),
@@ -421,6 +440,67 @@ export async function createStudentAction(formData: FormData): Promise<void> {
 
   revalidatePath("/students");
   redirect(`/students/${student.id}`);
+}
+
+export async function createSchoolAction(formData: FormData) {
+  const user = await requirePermission("team.manage");
+  const parsed = schoolSchema.safeParse({
+    name: formString(formData, "name"),
+    code: formString(formData, "code"),
+  });
+  if (!parsed.success) fail("/schools", parsed.error.issues[0]?.message ?? "Check the school name.");
+  const name = normalizeSchoolName(parsed.data.name);
+  const existing = await prisma.school.findFirst({
+    where: { organizationId: user.organizationId, name: { equals: name, mode: "insensitive" } },
+  });
+  if (existing && !existing.archivedAt) fail("/schools", "That school is already on the list.");
+  const school = existing
+    ? await prisma.school.update({
+        where: { id: existing.id },
+        data: { archivedAt: null, code: normalizeSchoolCode(parsed.data.code) ?? existing.code },
+      })
+    : await prisma.school.create({
+        data: {
+          organizationId: user.organizationId,
+          name,
+          code: normalizeSchoolCode(parsed.data.code),
+        },
+      });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: existing ? "school.restore" : "school.create",
+    resourceType: "school",
+    resourceId: school.id,
+    details: name,
+  });
+  revalidatePath("/schools");
+  revalidatePath("/students");
+  redirect("/schools?saved=1");
+}
+
+export async function archiveSchoolAction(formData: FormData) {
+  const user = await requirePermission("team.manage");
+  const schoolId = formString(formData, "schoolId");
+  const school = await prisma.school.findFirst({
+    where: { id: schoolId, organizationId: user.organizationId },
+  });
+  if (!school) fail("/schools", "School not found.");
+  await prisma.school.update({
+    where: { id: school.id },
+    data: { archivedAt: new Date() },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "school.archive",
+    resourceType: "school",
+    resourceId: school.id,
+    details: school.name,
+  });
+  revalidatePath("/schools");
+  revalidatePath("/students");
+  redirect("/schools?saved=archived");
 }
 
 export async function updateStudentDatesAction(formData: FormData): Promise<void> {
@@ -634,9 +714,10 @@ export async function deactivateUserAction(formData: FormData): Promise<void> {
   const user = await requirePermission("team.manage");
   const userId = formString(formData, "userId");
   if (userId === user.id) fail("/team", "You cannot deactivate your own account.");
-  await prisma.user.update({
+  const deactivated = await prisma.user.update({
     where: { id: userId, organizationId: user.organizationId },
     data: { deactivatedAt: new Date() },
+    select: { email: true },
   });
   await writeAudit({
     organizationId: user.organizationId,
@@ -645,6 +726,27 @@ export async function deactivateUserAction(formData: FormData): Promise<void> {
     resourceType: "user",
     resourceId: userId,
   });
+  await sendAccountDeactivatedMail(deactivated.email);
+  revalidatePath("/team");
+  redirect("/team?saved=1");
+}
+
+export async function reactivateUserAction(formData: FormData): Promise<void> {
+  const user = await requirePermission("team.manage");
+  const userId = formString(formData, "userId");
+  const reactivated = await prisma.user.update({
+    where: { id: userId, organizationId: user.organizationId },
+    data: { deactivatedAt: null },
+    select: { email: true },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "team.reactivate",
+    resourceType: "user",
+    resourceId: userId,
+  });
+  await sendAccountReactivatedMail(reactivated.email);
   revalidatePath("/team");
   redirect("/team?saved=1");
 }
@@ -986,4 +1088,124 @@ export async function bulkNotIntroducedAction(formData: FormData): Promise<void>
   });
   revalidatePath("/reports/studio");
   redirect(`/reports/studio?periodId=${periodId}&saved=bulk`);
+}
+
+export async function setDigestOptInAction(formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== "PARENT") fail("/parent", "Only a linked guardian can change this.");
+  const studentId = formString(formData, "studentId");
+  await assertStudentAccess(user, studentId);
+  const optIn = formBool(formData, "digestOptIn");
+  const contact = await prisma.guardianContact.findFirst({
+    where: { studentId, userId: user.id },
+  });
+  if (!contact) fail("/parent", "This account is not linked to that student.");
+  await prisma.guardianContact.update({
+    where: { id: contact.id },
+    data: {
+      digestOptIn: optIn,
+      digestUnsubscribedAt: optIn ? null : new Date(),
+    },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: optIn ? "digest.opt_in" : "digest.opt_out",
+    resourceType: "student",
+    resourceId: studentId,
+    studentId,
+  });
+  revalidatePath("/parent");
+  redirect(`/parent?studentId=${studentId}&saved=digest`);
+}
+
+export async function saveMeetingAttendanceAction(formData: FormData) {
+  const user = await requireStaff();
+  const studentId = formString(formData, "studentId");
+  const returnTo = formString(formData, "returnTo") || `/reports/${studentId}/meeting/room`;
+  await assertStudentAccess(user, studentId);
+  const meetingOn = utcMeetingOn(formString(formData, "meetingOn"));
+  const names = formData.getAll("attendeeName").map(String).map((name) => name.trim()).filter(Boolean);
+  const presentNames = new Set(formData.getAll("present").map(String));
+  for (const name of names) {
+    await prisma.meetingAttendance.upsert({
+      where: {
+        studentId_meetingOn_attendeeName: { studentId, meetingOn, attendeeName: name },
+      },
+      create: {
+        studentId,
+        meetingOn,
+        attendeeName: name,
+        present: presentNames.has(name),
+        createdById: user.id,
+      },
+      update: { present: presentNames.has(name) },
+    });
+  }
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "meeting.attendance",
+    resourceType: "student",
+    resourceId: studentId,
+    studentId,
+    details: `count=${names.length}`,
+  });
+  revalidatePath(returnTo);
+  redirect(`${returnTo}?saved=attendance`);
+}
+
+export async function fileStudentPdfAction(formData: FormData) {
+  const user = await requireStaff();
+  const studentId = formString(formData, "studentId");
+  const kind = formString(formData, "kind") === "REPORT" ? "REPORT" : "PACKET";
+  const returnTo = formString(formData, "returnTo") || `/reports/${studentId}`;
+  await assertStudentAccess(user, studentId);
+  const student = await prisma.student.findFirst({
+    where: { id: studentId, organizationId: user.organizationId },
+    include: {
+      goals: {
+        include: {
+          entries: { orderBy: { recordedAt: "asc" } },
+          periodStatements: { orderBy: { createdAt: "desc" }, take: 1 },
+        },
+      },
+    },
+  });
+  if (!student) fail(returnTo, "Student not found.");
+  const periodLabel = formString(formData, "periodLabel") || null;
+  const lines = packetFromStudent({
+    kind,
+    studentName: student.preferredName,
+    grade: student.grade,
+    school: student.school,
+    periodLabel,
+    goals: student.goals,
+  });
+  const pdf = encodeSimplePdf(lines);
+  const safeName = `${kind.toLowerCase()}-${student.id}-${Date.now()}.pdf`;
+  const storagePath = await storeEvidenceFile(
+    safeName,
+    new File([new Uint8Array(pdf)], safeName, { type: "application/pdf" }),
+  );
+  const filed = await prisma.filedDocument.create({
+    data: {
+      studentId: student.id,
+      organizationId: user.organizationId,
+      kind,
+      periodLabel,
+      storagePath,
+      createdById: user.id,
+    },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "document.file",
+    resourceType: "filedDocument",
+    resourceId: filed.id,
+    studentId: student.id,
+    details: kind,
+  });
+  redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}filed=${filed.id}`);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { progressSchema, signInSchema, studentSchema, teamMemberSchema } from "./validation";
+import { progressSchema, schoolSchema, signInSchema, studentSchema, teamMemberSchema } from "./validation";
 
 describe("validation", () => {
   it("rejects a present session without a note or trials", () => {
@@ -83,9 +83,14 @@ describe("validation", () => {
       studentSchema.safeParse({
         preferredName: "  ",
         grade: "4",
-        school: "Liwanag Elementary",
+        schoolId: "sch1",
         caseManagerId: "u1",
       }).success,
     ).toBe(false);
+  });
+
+  it("requires a campus name when adding a school", () => {
+    expect(schoolSchema.safeParse({ name: " " }).success).toBe(false);
+    expect(schoolSchema.safeParse({ name: "Liwanag Elementary", code: "ELEM" }).success).toBe(true);
   });
 });

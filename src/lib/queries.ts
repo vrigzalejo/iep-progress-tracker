@@ -566,3 +566,32 @@ export async function searchRecords(user: SessionUser, query: string) {
         });
   return { students, goals };
 }
+
+export async function listSchools(user: SessionUser, options?: { includeArchived?: boolean }) {
+  return prisma.school.findMany({
+    where: {
+      organizationId: user.organizationId,
+      ...(options?.includeArchived ? {} : { archivedAt: null }),
+    },
+    include: { _count: { select: { students: true } } },
+    orderBy: { name: "asc" },
+  });
+}
+
+export async function listFiledDocuments(user: SessionUser, studentId: string) {
+  await assertStudentAccess(user, studentId);
+  return prisma.filedDocument.findMany({
+    where: { studentId, organizationId: user.organizationId },
+    include: { createdBy: { select: { name: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+}
+
+export async function listMeetingAttendance(user: SessionUser, studentId: string, meetingOn: Date) {
+  await assertStudentAccess(user, studentId);
+  return prisma.meetingAttendance.findMany({
+    where: { studentId, meetingOn },
+    orderBy: { attendeeName: "asc" },
+  });
+}

@@ -5,9 +5,9 @@ import { ProgressCodeBadge } from "@/components/progress-code-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Label, Textarea } from "@/components/ui/input";
-import { sendMessageAction } from "@/app/actions";
+import { sendMessageAction, setDigestOptInAction } from "@/app/actions";
 import { formatDate } from "@/lib/utils";
-import { EmptyState } from "@/components/ui/alert";
+import { Alert, EmptyState } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import type { ProgressCode } from "@/lib/constants";
 
@@ -16,7 +16,7 @@ export const metadata = { title: "Family portal" };
 export default async function ParentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ studentId?: string }>;
+  searchParams: Promise<{ studentId?: string; saved?: string }>;
 }) {
   const user = await requireParent();
   const params = await searchParams;
@@ -33,6 +33,8 @@ export default async function ParentPage({
       </EmptyState>
     );
   }
+
+  const digestContact = student.guardians.find((guardian) => guardian.userId === user.id);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -75,6 +77,38 @@ export default async function ParentPage({
           <Link href="/privacy">Privacy and consent</Link>
         </Button>
       </div>
+
+      {params.saved === "digest" ? (
+        <Alert title="Weekly email preference saved" tone="success">
+          The school will only send this update if you opted in. It uses scores and home-carryover
+          notes already on file.
+        </Alert>
+      ) : null}
+
+      {digestContact ? (
+        <Card>
+          <CardTitle>Weekly email</CardTitle>
+          <p className="mt-2 text-sm text-muted">
+            Optional Friday update for {student.preferredName}: shared goals, last week’s scores, and
+            staff-written home carryover. Off by default. The subject line is only a name—no scores.
+            Each mail includes who can see it and an unsubscribe link. The product does not rewrite
+            this with a model.
+          </p>
+          <form action={setDigestOptInAction} className="mt-4 space-y-3">
+            <input type="hidden" name="studentId" value={student.id} />
+            <label className="flex items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                name="digestOptIn"
+                defaultChecked={digestContact.digestOptIn && !digestContact.digestUnsubscribedAt}
+                className="mt-1 h-5 w-5"
+              />
+              Send me the weekly update for this student
+            </label>
+            <Button type="submit">Save email preference</Button>
+          </form>
+        </Card>
+      ) : null}
 
       <section className="space-y-3">
         {student.goals.map((goal) => {

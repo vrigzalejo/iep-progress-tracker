@@ -18,6 +18,7 @@ model Organization {
   auditLogs         AuditLog[]
   reportingPeriods  ReportingPeriodWindow[]
   reportSnippets    ReportSnippet[]
+  schools           School[]
 }
 
 model User {
@@ -48,6 +49,8 @@ model User {
   goalVersions      GoalVersion[]
   reportSnippets    ReportSnippet[]
   messageReads      MessageRead[]
+  meetingAttendances MeetingAttendance[]
+  filedDocuments     FiledDocument[]
 
   @@index([organizationId, role])
 }
@@ -57,6 +60,8 @@ model Student {
   preferredName     String
   grade             String
   school            String
+  schoolId          String?
+  schoolSite        School?  @relation(fields: [schoolId], references: [id], onDelete: SetNull)
   caseManagerId     String
   caseManager       User      @relation("CaseManager", fields: [caseManagerId], references: [id])
   organizationId    String
@@ -73,9 +78,26 @@ model Student {
   messages       Message[]
   consents       ConsentRecord[]
   accommodations StudentAccommodation[]
+  attendances    MeetingAttendance[]
+  filedDocuments FiledDocument[]
 
   @@index([organizationId])
   @@index([caseManagerId])
+  @@index([schoolId])
+}
+
+model School {
+  id             String    @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  code           String?
+  archivedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  students       Student[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
 }
 
 model StudentProvider {
@@ -91,15 +113,17 @@ model StudentProvider {
 }
 
 model GuardianContact {
-  id           String  @id @default(cuid())
-  studentId    String
-  student      Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  name         String
-  relationship String
-  email        String
-  phone        String?
-  userId       String?
-  user         User?   @relation(fields: [userId], references: [id])
+  id                    String    @id @default(cuid())
+  studentId             String
+  student               Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  name                  String
+  relationship          String
+  email                 String
+  phone                 String?
+  userId                String?
+  user                  User?     @relation(fields: [userId], references: [id])
+  digestOptIn           Boolean   @default(false)
+  digestUnsubscribedAt  DateTime?
 }
 
 model IepGoal {
@@ -317,4 +341,35 @@ model MessageRead {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([messageId, userId])
+}
+
+model MeetingAttendance {
+  id           String   @id @default(cuid())
+  studentId    String
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  meetingOn    DateTime
+  attendeeName String
+  present      Boolean  @default(true)
+  createdById  String
+  createdBy    User     @relation(fields: [createdById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@unique([studentId, meetingOn, attendeeName])
+  @@index([studentId, meetingOn])
+}
+
+model FiledDocument {
+  id             String   @id @default(cuid())
+  studentId      String
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  organizationId String
+  kind           String
+  periodLabel    String?
+  storagePath    String
+  createdById    String
+  createdBy      User     @relation(fields: [createdById], references: [id])
+  createdAt      DateTime @default(now())
+
+  @@index([studentId, createdAt])
+  @@index([organizationId])
 }

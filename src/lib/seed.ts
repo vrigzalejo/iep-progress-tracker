@@ -12,6 +12,28 @@ import {
   demoEmail,
 } from "@/lib/brand";
 
+async function ensureDemoSchools(organizationId: string) {
+  const elementary = await prisma.school.upsert({
+    where: { organizationId_name: { organizationId, name: DEMO_ELEMENTARY_SCHOOL } },
+    create: { organizationId, name: DEMO_ELEMENTARY_SCHOOL, code: "ELEM" },
+    update: { archivedAt: null },
+  });
+  const middle = await prisma.school.upsert({
+    where: { organizationId_name: { organizationId, name: DEMO_MIDDLE_SCHOOL } },
+    create: { organizationId, name: DEMO_MIDDLE_SCHOOL, code: "MID" },
+    update: { archivedAt: null },
+  });
+  await prisma.student.updateMany({
+    where: { organizationId, school: DEMO_ELEMENTARY_SCHOOL },
+    data: { schoolId: elementary.id },
+  });
+  await prisma.student.updateMany({
+    where: { organizationId, school: DEMO_MIDDLE_SCHOOL },
+    data: { schoolId: middle.id },
+  });
+  return { elementary, middle };
+}
+
 function daysFromNow(days: number) {
   const date = new Date();
   date.setUTCDate(date.getUTCDate() + days);
@@ -423,6 +445,7 @@ async function migrateDemoBrand() {
     where: { school: "Cedar Grove Middle School" },
     data: { school: DEMO_MIDDLE_SCHOOL },
   });
+  await ensureDemoSchools(demoOrg.id);
 
   const studentNames: [string, string][] = [
     ["Jordan Hale", "Jaime Santos"],
@@ -543,6 +566,8 @@ export async function seedDemoData() {
     },
   });
 
+  const { elementary, middle } = await ensureDemoSchools(org.id);
+
   await prisma.user.create({
     data: {
       email: demoEmail("crisanto.reyes"),
@@ -632,6 +657,7 @@ export async function seedDemoData() {
       preferredName: "Jaime Santos",
       grade: "4",
       school: DEMO_ELEMENTARY_SCHOOL,
+      schoolId: elementary.id,
       caseManagerId: educator.id,
       organizationId: org.id,
       iepAnnualReviewAt: daysFromNow(18),
@@ -670,6 +696,7 @@ export async function seedDemoData() {
       preferredName: "Carla Santos",
       grade: "K",
       school: DEMO_ELEMENTARY_SCHOOL,
+      schoolId: elementary.id,
       caseManagerId: educator.id,
       organizationId: org.id,
       iepAnnualReviewAt: daysFromNow(40),
@@ -704,6 +731,7 @@ export async function seedDemoData() {
       preferredName: "Samuel Villanueva",
       grade: "2",
       school: DEMO_ELEMENTARY_SCHOOL,
+      schoolId: elementary.id,
       caseManagerId: educator.id,
       organizationId: org.id,
       iepAnnualReviewAt: daysFromNow(8),
@@ -742,6 +770,7 @@ export async function seedDemoData() {
       preferredName: "Andrea Tan",
       grade: "6",
       school: DEMO_MIDDLE_SCHOOL,
+      schoolId: middle.id,
       caseManagerId: educator.id,
       organizationId: org.id,
       iepAnnualReviewAt: daysFromNow(55),
@@ -775,6 +804,7 @@ export async function seedDemoData() {
       preferredName: "Rafael Bautista",
       grade: "3",
       school: DEMO_ELEMENTARY_SCHOOL,
+      schoolId: elementary.id,
       caseManagerId: educator.id,
       organizationId: org.id,
       iepAnnualReviewAt: daysFromNow(-2),
