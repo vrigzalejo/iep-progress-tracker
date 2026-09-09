@@ -34,7 +34,12 @@ import {
 } from "@/lib/validation";
 import { ROLE_LABELS, SERVICE_AREAS, type ServiceArea } from "@/lib/constants";
 import { isSsoConfigured } from "@/lib/sso";
-import { sendFamilyMessageMail, sendTeamInviteMail } from "@/lib/mail";
+import {
+  sendAccountDeactivatedMail,
+  sendAccountReactivatedMail,
+  sendFamilyMessageMail,
+  sendTeamInviteMail,
+} from "@/lib/mail";
 import { utcMeetingOn } from "@/lib/meeting";
 import { encodeSimplePdf, packetFromStudent } from "@/lib/packet-pdf";
 import { decryptSecret, encryptSecret, generateTotpSecret, verifyTotp } from "@/lib/totp";
@@ -709,9 +714,10 @@ export async function deactivateUserAction(formData: FormData): Promise<void> {
   const user = await requirePermission("team.manage");
   const userId = formString(formData, "userId");
   if (userId === user.id) fail("/team", "You cannot deactivate your own account.");
-  await prisma.user.update({
+  const deactivated = await prisma.user.update({
     where: { id: userId, organizationId: user.organizationId },
     data: { deactivatedAt: new Date() },
+    select: { email: true },
   });
   await writeAudit({
     organizationId: user.organizationId,
@@ -720,6 +726,7 @@ export async function deactivateUserAction(formData: FormData): Promise<void> {
     resourceType: "user",
     resourceId: userId,
   });
+  await sendAccountDeactivatedMail(deactivated.email);
   revalidatePath("/team");
   redirect("/team?saved=1");
 }
@@ -727,9 +734,10 @@ export async function deactivateUserAction(formData: FormData): Promise<void> {
 export async function reactivateUserAction(formData: FormData): Promise<void> {
   const user = await requirePermission("team.manage");
   const userId = formString(formData, "userId");
-  await prisma.user.update({
+  const reactivated = await prisma.user.update({
     where: { id: userId, organizationId: user.organizationId },
     data: { deactivatedAt: null },
+    select: { email: true },
   });
   await writeAudit({
     organizationId: user.organizationId,
@@ -738,6 +746,7 @@ export async function reactivateUserAction(formData: FormData): Promise<void> {
     resourceType: "user",
     resourceId: userId,
   });
+  await sendAccountReactivatedMail(reactivated.email);
   revalidatePath("/team");
   redirect("/team?saved=1");
 }

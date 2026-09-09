@@ -125,6 +125,30 @@ export async function sendFamilyMessageMail(to: string) {
   });
 }
 
+export async function sendAccountDeactivatedMail(to: string) {
+  return sendTransactionalMail({
+    to,
+    subject: `Sign-in is off for this email in ${APP_NAME}`,
+    text: [
+      `An administrator turned off sign-in for this email in ${APP_NAME}.`,
+      "You cannot sign in until an administrator restores access.",
+      "This message does not include student records.",
+    ].join("\n"),
+  });
+}
+
+export async function sendAccountReactivatedMail(to: string) {
+  return sendTransactionalMail({
+    to,
+    subject: `Sign-in was restored in ${APP_NAME}`,
+    text: [
+      `An administrator restored sign-in for this email in ${APP_NAME}.`,
+      `Sign in: ${signInUrl()}`,
+      "This message does not include student records.",
+    ].join("\n"),
+  });
+}
+
 export async function sendReportingWindowMail(to: string) {
   return sendTransactionalMail({
     to,

@@ -151,7 +151,7 @@ Roles stay in this app. The identity provider only proves who the person is.
 | `NEXT_PUBLIC_IDLE_MINUTES` | No | Idle sign-out in minutes. Default `20`. `0` disables (used in Playwright) |
 | `CRON_SECRET` | Cron | Bearer token for `GET/POST /api/cron/daily` (retention sweep, reporting-window notices, Friday family digest). Vercel Cron sends this automatically when the env var is set |
 | `DIGEST_SEND` | Email | Set `1` to send opted-in family digests on a non-Friday (local tests). Production sends on Friday UTC |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `MAIL_FROM` | Email | Optional SMTP. Local Docker uses Mailpit (`127.0.0.1:1025`, inbox at `:8025`). Unset = no mail unless Resend is set. Used for team invites, family-message pings, reporting-window notices, and opted-in weekly family digests. Subjects never include goal text |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `MAIL_FROM` | Email | Optional SMTP. Local Docker uses Mailpit (`127.0.0.1:1025`, inbox at `:8025`). Unset = no mail unless Resend is set. Used for team invites, deactivate/reactivate notices, family-message pings, reporting-window notices, and opted-in weekly family digests. Subjects never include goal text |
 | `RESEND_API_KEY` | Email | Optional Resend API key (`re_…` from [resend.com/api-keys](https://resend.com/api-keys)). When set (and not the `re_xxxxxxxxx` placeholder), mail uses Resend instead of SMTP. Pair with `MAIL_FROM`. Test sends from `onboarding@resend.dev` only reach the Resend account email until you verify a domain |
 
 `.env*` files are gitignored except `.env.example`.

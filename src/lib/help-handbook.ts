@@ -49,7 +49,7 @@ Ask about any staff screen:
 
 **Find and talk** — header search · [Messages](/messages) threads with unread badges · profile thread (Family vs Staff only). A family-thread note can email assigned staff; the mail itself has no student records
 
-**Mail** — If the school configured SMTP or Resend, adding someone on [Team](/team) sends a generic invite. Linked guardians opt in to a Friday weekly email on [Family home](/parent) (off by default; scores and staff-written home carryover only). Staff do not click send—the daily job sends it on Friday
+**Mail** — If the school configured SMTP or Resend, adding someone on [Team](/team) sends a generic invite. **Deactivate** and **Reactivate** also email that person (sign-in off or restored; no student records). Linked guardians opt in to a Friday weekly email on [Family home](/parent) (off by default; scores and staff-written home carryover only). Staff do not click send for the Friday mail—the daily job sends it
 
 **School ops** — [Schools](/schools) (administrators add campus names) · [Team](/team) (invite, change role, deactivate) · [Privacy](/privacy) (notice, parent acknowledgment, retention, CSV, archive, deletion, audit)
 
@@ -408,7 +408,7 @@ Write a message from this page or [Messages](/messages). If no student appears, 
         "matrix",
         "password",
       ],
-      body: `[Team](/team) is for administrators. Read the capability matrix, then add a person: name, email, role (administrator, educator, related-service provider, or parent/guardian). Password is optional once school SSO is on; SSO-only people show “school SSO.” Change someone’s role or **Deactivate** so they cannot sign in. A deactivated row stays on the list—use **Reactivate** to restore sign-in. Do not create a second account with the same email.
+      body: `[Team](/team) is for administrators. Read the capability matrix, then add a person: name, email, role (administrator, educator, related-service provider, or parent/guardian). Password is optional once school SSO is on; SSO-only people show “school SSO.” Change someone’s role or **Deactivate** so they cannot sign in. A deactivated row stays on the list—use **Reactivate** to restore sign-in. Do not create a second account with the same email. If SMTP or Resend is set, deactivate and reactivate send a generic notice to that email (no student records).
 
 Parents see a student when their email is a guardian contact on that profile. Providers must be checked on the profile. Use the same email as the district account for SSO. If the school configured SMTP or Resend, saving the new person sends a generic invite (no student records). Educators cannot open Team—ask an administrator.`,
     },
