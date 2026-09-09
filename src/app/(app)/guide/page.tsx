@@ -17,7 +17,7 @@ const STEPS: {
   },
   {
     title: "Confirm roles and campuses",
-    body: "Administrators invite educators, related-service providers, and family accounts on Team. Add campus names on Schools so new profiles pick from a list. Each person should have only the access their work requires.",
+    body: "Administrators invite educators, related-service providers, and family accounts on Team. If the school configured SMTP or Resend, the new person gets a generic invite email with no student records. Add campus names on Schools so new profiles pick from a list. Each person should have only the access their work requires.",
     links: [
       { href: "/team", label: "Open Team" },
       { href: "/schools", label: "Open Schools" },
@@ -43,7 +43,7 @@ const STEPS: {
   },
   {
     title: "Write the period report and run the meeting",
-    body: "In report studio, choose an IEP progress code and a short narrative. Print the family report or meeting packet, open Meeting room on a projector, or file a PDF. Families who opt in get a Friday email of scores and staff-written home carryover only.",
+    body: "In report studio, choose an IEP progress code and a short narrative. Print the family report or meeting packet, open Meeting room on a projector, or file a PDF. Families who opt in get a Friday email of scores and staff-written home carryover only. Staff do not send that mail by clicking a button—the daily job does, when SMTP or Resend is configured.",
     links: [
       { href: "/reports/studio", label: "Open report studio" },
       { href: "/reports", label: "Open Reports" },

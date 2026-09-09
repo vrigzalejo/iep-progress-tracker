@@ -33,9 +33,9 @@ export function helpArticles(): HelpArticle[] {
 
 Ask about any staff screen:
 
-**Start** — [Sign in](/sign-in) (demo passphrase or school SSO) · [Account setup](/setup) · six-step [Setup guide](/guide) (roles and campuses, Today/Hallway, reports and meeting room)
+**Start** — [Sign in](/sign-in) (demo passphrase or school SSO) · [Account setup](/setup) · six-step [Setup guide](/guide) (roles and campuses, Today/Hallway, reports, meeting room, weekly family email)
 
-**Chrome** — gold demo banner; sidebar (Dashboard, Students, Reports, Messages, Team and Schools if you are an administrator, Privacy, Setup guide); header [Search](/search); Sign out at the bottom of the sidebar; **How to use this site** in the corner
+**Chrome** — gold demo banner; sidebar (Dashboard, Today, Students, Minutes, Reports, Messages, Team and Schools if you are an administrator, Privacy, Setup guide); header [Search](/search); Sign out at the bottom of the sidebar; **How to use this site** in the corner
 
 **Work list** — [Today](/today): remaining sessions this week, one tap into [Hallway](/hallway). [Dashboard](/dashboard) still shows reports due, stale goals, IEP reviews, and minutes. [Minutes](/minutes) is the week ledger.
 
@@ -47,7 +47,9 @@ Ask about any staff screen:
 
 **Reports** — [Report studio](/reports/studio) is the caseload × period grid. [Reports](/reports) still opens one student. Staff write the progress code and narrative. Snippets are district phrases you paste. **Meeting room** is the projector view. **File PDF** stores a packet or report as an evidence-class file.
 
-**Find and talk** — header search · [Messages](/messages) threads with unread badges · profile thread (Family vs Staff only)
+**Find and talk** — header search · [Messages](/messages) threads with unread badges · profile thread (Family vs Staff only). A family-thread note can email assigned staff; the mail itself has no student records
+
+**Mail** — If the school configured SMTP or Resend, adding someone on [Team](/team) sends a generic invite. Linked guardians opt in to a Friday weekly email on [Family home](/parent) (off by default; scores and staff-written home carryover only). Staff do not click send—the daily job sends it on Friday
 
 **School ops** — [Schools](/schools) (administrators add campus names) · [Team](/team) (invite, change role, deactivate) · [Privacy](/privacy) (notice, parent acknowledgment, retention, CSV, archive, deletion, audit)
 
@@ -154,17 +156,17 @@ Open [Team](/team) to see the full capability matrix. Give each person the least
       id: "guide",
       title: "Setup guide",
       hrefs: ["/guide"],
-      keywords: ["guide", "steps", "onboarding", "first", "walkthrough"],
-      body: `The [Setup guide](/guide) is six numbered cards:
+      keywords: ["guide", "steps", "onboarding", "first", "walkthrough", "tutorial", "how to use"],
+      body: `The [Setup guide](/guide) is the six-step tutorial. **How to use this site** in the corner explains any one screen from this handbook.
 
 1. Review privacy and consent — [Privacy](/privacy)
-2. Confirm roles and campuses — administrators invite people on [Team](/team) and add campus names on [Schools](/schools)
+2. Confirm roles and campuses — administrators invite people on [Team](/team) (generic invite email if SMTP or Resend is set) and add campus names on [Schools](/schools)
 3. Add a minimum student profile — [Add student](/students/new) (school is a pick from the campus list)
 4. Record IEP goals as written — from [Students](/students)
 5. Log progress during sessions — [Today](/today) worklist or [Hallway](/hallway) trial pad; absent or declined when the service was not delivered
-6. Write a period report, open [Meeting room](/reports), or file a PDF — [Report studio](/reports/studio). Families may opt in to a Friday weekly email of scores and staff-written home carryover only.
+6. Write a period report, open Meeting room, or file a PDF — [Report studio](/reports/studio). Families may opt in to a Friday weekly email of scores and staff-written home carryover only. Staff do not send that mail by clicking a button.
 
-This demonstration school is already filled with fictional students so you can click every role. Families can open the guide too; the numbered steps are for staff. Use **How to use this site** for any one screen. I only explain the product. I do not fill in goals or interpret a student.`,
+This demonstration school is already filled with fictional students so you can click every role. Families can open the guide too; the numbered steps are for staff. I only explain the product. I do not fill in goals or interpret a student.`,
     },
     {
       id: "setup",
@@ -392,10 +394,22 @@ Write a message from this page or [Messages](/messages). If no student appears, 
       title: "Team and permissions",
       hrefs: ["/team", "/schools"],
       roles: ["ADMINISTRATOR"],
-      keywords: ["team", "invite", "deactivate", "people", "staff", "permissions", "matrix", "password"],
+      keywords: [
+        "team",
+        "invite",
+        "email",
+        "resend",
+        "smtp",
+        "deactivate",
+        "people",
+        "staff",
+        "permissions",
+        "matrix",
+        "password",
+      ],
       body: `[Team](/team) is for administrators. Read the capability matrix, then add a person: name, email, role (administrator, educator, related-service provider, or parent/guardian). Password is optional once school SSO is on; SSO-only people show “school SSO.” Change someone’s role or **Deactivate** so they cannot sign in.
 
-Parents see a student when their email is a guardian contact on that profile. Providers must be checked on the profile. Use the same email as the district account for SSO. If email is configured (SMTP or Resend), the new person gets an invite email with no student records. Educators cannot open Team—ask an administrator.`,
+Parents see a student when their email is a guardian contact on that profile. Providers must be checked on the profile. Use the same email as the district account for SSO. If the school configured SMTP or Resend, saving the new person sends a generic invite (no student records). Educators cannot open Team—ask an administrator.`,
     },
     {
       id: "schools",
@@ -517,17 +531,20 @@ If the hallway Wi‑Fi drops, the session stays in a queue on this device and sy
         "unsubscribe",
         "kitchen",
         "carryover",
+        "resend",
+        "smtp",
+        "cron",
       ],
       body: `On [Family home](/parent), a linked guardian can opt in to a Friday weekly email for that student. It is off by default. The mail lists shared goals, last week’s present-session scores, and home-carryover notes staff already typed. It does not rewrite the child’s data with a model and does not include official IEP wording or disability labels.
 
-The subject is “Weekly update for [preferred name]” only. Each mail says who can see it and includes an unsubscribe link. Staff do not send this by clicking a button—the daily cron sends it on Friday (or when DIGEST_SEND=1 for a test). SMTP or Resend must be configured.`,
+The subject is “Weekly update for [preferred name]” only. Each mail says who can see it and includes an unsubscribe link. Staff do not send this by clicking a button—the daily job sends it on Friday UTC (or when DIGEST_SEND=1 for a weekday test). The school must configure SMTP or Resend. Team invites and family-message pings use the same mail setup.`,
     },
     {
       id: "assistant",
       title: "This how-to assistant",
       hrefs: ["/guide"],
-      keywords: ["chatbot", "assistant", "help", "how to use", "bot"],
-      body: `This panel explains every signed-in screen from the product handbook. Optional Hugging Face rephrasing uses only your question and that handbook—never student rows from the database. I will not write IEP goals, recommend minutes or placement, or interpret a named student.
+      keywords: ["chatbot", "assistant", "help", "how to use", "bot", "tutorial"],
+      body: `**How to use this site** (this panel) explains every signed-in screen from the product handbook, including the six-step [Setup guide](/guide), Team invites, and the Friday family email. Optional Hugging Face rephrasing uses only your question and that handbook—never student rows from the database. I will not write IEP goals, recommend minutes or placement, or interpret a named student.
 
 Ask “what can this app do?” for the full map for your role. Suggested chips cover common tasks. Follow-up questions stay in this thread.`,
     },

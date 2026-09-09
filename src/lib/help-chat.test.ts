@@ -53,10 +53,20 @@ describe("help chat", () => {
     expect(result.text).toMatch(/Schools/);
     expect(result.text).toMatch(/Hallway/);
     expect(result.text).toMatch(/Meeting room/);
+    expect(result.text).toMatch(/Resend/);
   });
 
   it("explains the family weekly email", () => {
     expect(retrieveArticles("opt in to the weekly email digest", "PARENT")[0]?.id).toBe("digest");
+    expect(retrieveArticles("How does the Friday family email work?", "EDUCATOR")[0]?.id).toBe(
+      "digest",
+    );
+  });
+
+  it("explains team invite email", () => {
+    expect(retrieveArticles("How do I invite someone by email?", "ADMINISTRATOR")[0]?.id).toBe(
+      "team",
+    );
   });
 
   it("describes adding a student profile in detail", () => {
