@@ -42,6 +42,7 @@ cp .env.example .env.local
 # set AUTH_SECRET to a long random string
 # optional: change POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
 npm run docker:db
+# Mailpit inbox (local SMTP): http://127.0.0.1:8025
 npm install
 npx prisma migrate deploy
 npx prisma db seed   # only when NEXT_PUBLIC_DEMO_MODE is not false; never on a production database
@@ -148,8 +149,10 @@ Roles stay in this app. The identity provider only proves who the person is.
 | `AUTH_SSO_ORGANIZATION_ID` | No | Organization to attach JIT users to. Defaults to the first org |
 | `AUTH_CREDENTIALS_ENABLED` | No | Set `false` in production after SSO is live. When demonstration mode is off and SSO is configured, password sign-in is off unless this is explicitly `true` |
 | `NEXT_PUBLIC_IDLE_MINUTES` | No | Idle sign-out in minutes. Default `20`. `0` disables (used in Playwright) |
-| `CRON_SECRET` | Cron | Bearer token for `GET/POST /api/cron/daily` (retention sweep + reporting-window notices). Vercel Cron sends this automatically when the env var is set |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `MAIL_FROM` | Email | Optional district SMTP. Unset = no mail. Used for team invites, family-message pings, and reporting-window notices. Subjects never include goal text |
+| `CRON_SECRET` | Cron | Bearer token for `GET/POST /api/cron/daily` (retention sweep, reporting-window notices, Friday family digest). Vercel Cron sends this automatically when the env var is set |
+| `DIGEST_SEND` | Email | Set `1` to send opted-in family digests on a non-Friday (local tests). Production sends on Friday UTC |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `MAIL_FROM` | Email | Optional SMTP. Local Docker uses Mailpit (`127.0.0.1:1025`, inbox at `:8025`). Unset = no mail unless Resend is set. Used for team invites, deactivate/reactivate notices, family-message pings, reporting-window notices, and opted-in weekly family digests. Subjects never include goal text |
+| `RESEND_API_KEY` | Email | Optional Resend API key (`re_…` from [resend.com/api-keys](https://resend.com/api-keys)). When set (and not the `re_xxxxxxxxx` placeholder), mail uses Resend instead of SMTP. Pair with `MAIL_FROM`. Test sends from `onboarding@resend.dev` only reach the Resend account email until you verify a domain |
 
 `.env*` files are gitignored except `.env.example`.
 
@@ -236,9 +239,9 @@ The app still stores evidence files on disk, so keep **one app replica** until y
 Manifests are in `deploy/k8s` (namespace, config, secret, PVCs, Postgres StatefulSet, app Deployment, Service, Ingress).
 
 ```bash
-docker build -t iep-progress-tracker:0.6.0 .
-# Kind: kind load docker-image iep-progress-tracker:0.6.0
-# Minikube: minikube image load iep-progress-tracker:0.6.0
+docker build -t iep-progress-tracker:0.7.0 .
+# Kind: kind load docker-image iep-progress-tracker:0.7.0
+# Minikube: minikube image load iep-progress-tracker:0.7.0
 # Production: use ghcr.io/vrigzalejo/iep-progress-tracker:latest (published on merge to main)
 
 # Edit deploy/k8s/secret.yaml (AUTH_SECRET, POSTGRES_PASSWORD)
@@ -305,7 +308,7 @@ Residual risks: point production Postgres at encrypted volumes and backups; this
 - [ ] Evidence files in private, encrypted storage with access logging (required when demo mode is off)
 - [ ] District retention schedule entered; `CRON_SECRET` set so the daily sweep can run
 - [ ] Parent consent workflow confirmed with your legal team (per linked student; re-ack on notice-version change)
-- [ ] Optional SMTP configured for invites and family-message pings
+- [ ] Optional email configured for invites and family-message pings (SMTP or Resend)
 - [ ] Error monitoring configured **without** student payloads
 - [ ] Accessibility review (WCAG 2.2 AA) with keyboard and screen-reader testing
 - [ ] Incident response contact posted for staff

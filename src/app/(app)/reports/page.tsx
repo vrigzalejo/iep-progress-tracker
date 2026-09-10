@@ -94,6 +94,9 @@ export default async function ReportsPage({
               <Button asChild variant="secondary">
                 <Link href={`/reports/${selected.id}/meeting`}>Meeting packet</Link>
               </Button>
+              <Button asChild variant="secondary">
+                <Link href={`/reports/${selected.id}/meeting/room`}>Meeting room</Link>
+              </Button>
             </div>
           ) : null}
         </Card>

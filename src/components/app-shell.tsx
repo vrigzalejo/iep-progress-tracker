@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  Building2,
   CalendarClock,
   ClipboardList,
   FileText,
@@ -44,6 +45,7 @@ const LINKS: {
   { href: "/minutes", label: "Minutes", icon: Timer, staffOnly: true },
   { href: "/reports", label: "Reports", icon: FileText, permission: "report.create" },
   { href: "/messages", label: "Messages", icon: MessageSquare, permission: "message.send" },
+  { href: "/schools", label: "Schools", icon: Building2, permission: "team.manage" },
   { href: "/team", label: "Team", icon: ClipboardList, permission: "team.manage" },
   { href: "/privacy", label: "Privacy", icon: Shield },
   { href: "/guide", label: "Setup guide", icon: BookOpen },
@@ -59,6 +61,7 @@ export function AppShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const meetingRoom = pathname.includes("/meeting/room");
   const [open, setOpen] = useState(false);
   const items = LINKS.filter((link) => {
     if (link.parentOnly && user.role !== "PARENT") return false;
@@ -67,6 +70,19 @@ export function AppShell({
     if (link.href === "/students" && user.role === "PARENT") return false;
     return true;
   });
+
+  if (meetingRoom) {
+    return (
+      <div className="min-h-screen bg-[#10241c] text-[#f4f0e6]">
+        <MfaEnrollGuard required={Boolean(user.mfaEnrollRequired)} />
+        <IdleTimeout />
+        <a href="#main" className="skip-link">
+          Skip to main content
+        </a>
+        <main id="main">{children}</main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

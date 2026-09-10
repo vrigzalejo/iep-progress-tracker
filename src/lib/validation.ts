@@ -27,10 +27,15 @@ export const signInSchema = z.object({
   password: z.string().min(1, "Enter your password."),
 });
 
+export const schoolSchema = z.object({
+  name: z.string().trim().min(2, "School name is required.").max(120),
+  code: z.string().trim().max(20).optional().or(z.literal("")),
+});
+
 export const studentSchema = z.object({
   preferredName: z.string().trim().min(1, "Preferred name is required.").max(80),
   grade: z.string().trim().min(1, "Grade is required.").max(20),
-  school: z.string().trim().min(1, "School is required.").max(120),
+  schoolId: z.string().min(1, "Select a school."),
   caseManagerId: z.string().min(1, "Select a case manager."),
   iepAnnualReviewAt: z.string().optional().or(z.literal("")),
   iepTriennialAt: z.string().optional().or(z.literal("")),

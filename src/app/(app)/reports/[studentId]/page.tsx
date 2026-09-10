@@ -1,4 +1,8 @@
-import { requireUser, getStudentDetail, listReportingPeriods, currentReportingPeriod } from "@/lib/queries";
+import { requireUser, getStudentDetail, listReportingPeriods, currentReportingPeriod, listFiledDocuments } from "@/lib/queries";
+import { FilePdfForm, FiledDocumentList } from "@/components/file-pdf-form";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { isStaff } from "@/lib/permissions";
 import { ProgressChart } from "@/components/progress-chart";
 import { ProgressCodeBadge } from "@/components/progress-code-badge";
 import { StatusIndicator } from "@/components/status-indicator";
@@ -23,12 +27,26 @@ export default async function ReportPreviewPage({
   const student = await getStudentDetail(user, studentId);
   const periods = await listReportingPeriods(user);
   const period = periods.find((item) => item.id === periodId) ?? currentReportingPeriod(periods);
+  const filed = isStaff(user.role) ? await listFiledDocuments(user, studentId) : [];
 
   return (
     <div className="mx-auto max-w-3xl space-y-8 bg-white p-6 print:p-0">
-      <div className="no-print flex justify-end">
+      <div className="no-print flex flex-wrap justify-end gap-2">
+        <Button asChild variant="secondary">
+          <Link href={`/reports/${student.id}/meeting/room`}>Meeting room</Link>
+        </Button>
+        {isStaff(user.role) ? (
+          <FilePdfForm
+            studentId={student.id}
+            kind="REPORT"
+            periodLabel={period?.label}
+            returnTo={period ? `/reports/${student.id}?periodId=${period.id}` : `/reports/${student.id}`}
+            label="File PDF"
+          />
+        ) : null}
         <PrintButton />
       </div>
+      {filed.length > 0 ? <FiledDocumentList documents={filed} /> : null}
       <header className="flex items-start justify-between border-b border-border pb-4">
         <div className="flex items-center gap-3">
           <Logo />

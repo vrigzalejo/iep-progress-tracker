@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { sendWeeklyFamilyDigests } from "@/lib/digest-send";
 import { notifyOpenReportingWindows, runRetentionSweep } from "@/lib/retention-sweep";
 
 export const dynamic = "force-dynamic";
@@ -33,10 +34,12 @@ export async function GET(request: Request) {
   }
 
   const notices = await notifyOpenReportingWindows();
+  const digest = await sendWeeklyFamilyDigests();
   return NextResponse.json({
     ok: true,
     purged,
     reportingNotices: notices.sent,
+    familyDigests: digest.sent,
   });
 }
 

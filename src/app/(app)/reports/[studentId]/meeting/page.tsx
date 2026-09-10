@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { requireUser, getStudentDetail } from "@/lib/queries";
+import { requireUser, getStudentDetail, listFiledDocuments } from "@/lib/queries";
+import { FilePdfForm, FiledDocumentList } from "@/components/file-pdf-form";
 import { ProgressChart } from "@/components/progress-chart";
 import { ProgressCodeBadge } from "@/components/progress-code-badge";
 import { StatusIndicator } from "@/components/status-indicator";
@@ -29,6 +30,7 @@ export default async function MeetingPacketPage({
   const student = await getStudentDetail(user, studentId);
   const monthStart = new Date(new Date().getTime() - 30 * 86_400_000);
   const familyMessages = student.messages.filter((message) => message.visibility === "FAMILY");
+  const filed = isStaff(user.role) ? await listFiledDocuments(user, studentId) : [];
 
   return (
     <div className="mx-auto max-w-3xl space-y-8 bg-white p-6 print:p-0">
@@ -36,8 +38,22 @@ export default async function MeetingPacketPage({
         <Button asChild variant="secondary">
           <Link href={`/students/${student.id}`}>Back to profile</Link>
         </Button>
-        <PrintButton />
+        <div className="flex flex-wrap gap-2">
+          <Button asChild>
+            <Link href={`/reports/${student.id}/meeting/room`}>Meeting room</Link>
+          </Button>
+          {isStaff(user.role) ? (
+            <FilePdfForm
+              studentId={student.id}
+              kind="PACKET"
+              returnTo={`/reports/${student.id}/meeting`}
+              label="File PDF"
+            />
+          ) : null}
+          <PrintButton />
+        </div>
       </div>
+      {filed.length > 0 ? <FiledDocumentList documents={filed} /> : null}
       <header className="flex items-start justify-between border-b border-border pb-4">
         <div className="flex items-center gap-3">
           <Logo />
