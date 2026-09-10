@@ -1209,3 +1209,199 @@ export async function fileStudentPdfAction(formData: FormData) {
   });
   redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}filed=${filed.id}`);
 }
+
+export async function beginMfaAction(): Promise<void> {
+  const user = await requireUser();
+  const record = await prisma.user.findUnique({ where: { id: user.id } });
+  if (!record?.passwordHash) fail("/setup", "School SSO accounts do not use an authenticator code.");
+  if (record.totpEnabledAt) fail("/setup", "Authenticator is already enabled.");
+  const secret = generateTotpSecret();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { totpSecret: encryptSecret(secret), totpEnabledAt: null },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "auth.mfa_begin",
+    resourceType: "user",
+    resourceId: user.id,
+  });
+  redirect("/setup?mfa=enroll");
+}
+
+export async function confirmMfaAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const code = formString(formData, "totp");
+  const record = await prisma.user.findUnique({ where: { id: user.id } });
+  if (!record?.totpSecret) fail("/setup", "Start authenticator setup first.");
+  let secret = "";
+  try {
+    secret = decryptSecret(record.totpSecret);
+  } catch {
+    fail("/setup", "Authenticator setup could not be read. Start again.");
+  }
+  if (!verifyTotp(secret, code)) fail("/setup", "That authenticator code is not correct.");
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { totpEnabledAt: new Date() },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "auth.mfa_enable",
+    resourceType: "user",
+    resourceId: user.id,
+  });
+  redirect("/setup?updated=mfa");
+}
+
+export async function disableMfaAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const password = formString(formData, "currentPassword");
+  const code = formString(formData, "totp");
+  const record = await prisma.user.findUnique({ where: { id: user.id } });
+  if (!record?.passwordHash || !record.totpSecret || !record.totpEnabledAt) {
+    fail("/setup", "Authenticator is not enabled.");
+  }
+  const valid = await compare(password, record.passwordHash);
+  if (!valid) fail("/setup", "Current password is not correct.");
+  try {
+    if (!verifyTotp(decryptSecret(record.totpSecret), code)) {
+      fail("/setup", "That authenticator code is not correct.");
+    }
+  } catch {
+    fail("/setup", "That authenticator code is not correct.");
+  }
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { totpSecret: null, totpEnabledAt: null },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "auth.mfa_disable",
+    resourceType: "user",
+    resourceId: user.id,
+  });
+  redirect("/setup?updated=mfa-off");
+}
+
+export async function runRetentionAction(formData: FormData): Promise<void> {
+  const user = await requirePermission("privacy.manage");
+  const dryRun = formString(formData, "dryRun") === "true";
+  await runRetentionSweep({
+    organizationId: user.organizationId,
+    actorUserId: user.id,
+    dryRun,
+  });
+  revalidatePath("/privacy");
+  redirect(dryRun ? "/privacy?saved=retention-preview" : "/privacy?saved=retention");
+}
+
+export async function addAccommodationAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const parsed = accommodationSchema.safeParse({
+    studentId: formString(formData, "studentId"),
+    label: formString(formData, "label"),
+  });
+  const returnTo = `/students/${formString(formData, "studentId")}`;
+  if (!parsed.success) fail(returnTo, parsed.error.issues[0]?.message ?? "Name the accommodation.");
+  await assertStudentAccess(user, parsed.data.studentId);
+  const count = await prisma.studentAccommodation.count({
+    where: { studentId: parsed.data.studentId, archivedAt: null },
+  });
+  await prisma.studentAccommodation.create({
+    data: { studentId: parsed.data.studentId, label: parsed.data.label, sortOrder: count },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "student.accommodation",
+    resourceType: "student",
+    resourceId: parsed.data.studentId,
+    studentId: parsed.data.studentId,
+  });
+  revalidatePath(returnTo);
+  redirect(`${returnTo}?saved=1`);
+}
+
+export async function archiveAccommodationAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const id = formString(formData, "accommodationId");
+  const studentId = formString(formData, "studentId");
+  await assertStudentAccess(user, studentId);
+  await prisma.studentAccommodation.update({
+    where: { id },
+    data: { archivedAt: new Date() },
+  });
+  revalidatePath(`/students/${studentId}`);
+  redirect(`/students/${studentId}?saved=1`);
+}
+
+export async function addReportSnippetAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const parsed = reportSnippetSchema.safeParse({
+    label: formString(formData, "label"),
+    body: formString(formData, "body"),
+  });
+  const returnTo = formString(formData, "returnTo") || "/reports/studio";
+  if (!parsed.success) fail(returnTo, parsed.error.issues[0]?.message ?? "Check the snippet.");
+  await prisma.reportSnippet.create({
+    data: {
+      organizationId: user.organizationId,
+      createdById: user.id,
+      label: parsed.data.label,
+      body: parsed.data.body,
+    },
+  });
+  revalidatePath(returnTo);
+  redirect(`${returnTo.split("?")[0]}?saved=snippet`);
+}
+
+export async function bulkNotIntroducedAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  if (!can(user.role, "progress.create")) fail("/reports/studio", "You cannot write period comments.");
+  const periodId = formString(formData, "periodId");
+  const confirm = formString(formData, "confirm");
+  if (confirm !== "NOT_INTRODUCED") {
+    fail("/reports/studio", "Type NOT_INTRODUCED to confirm the bulk update.");
+  }
+  const pairs = formData
+    .getAll("goalId")
+    .map(String)
+    .filter(Boolean);
+  const period = await prisma.reportingPeriodWindow.findUnique({ where: { id: periodId } });
+  if (!period) fail("/reports/studio", "Reporting period not found.");
+  for (const goalId of pairs) {
+    const goal = await prisma.iepGoal.findUnique({
+      where: { id: goalId },
+      include: { versions: true },
+    });
+    if (!goal) continue;
+    await assertStudentAccess(user, goal.studentId);
+    const pinned = versionActiveAt(goal.versions, period.endsAt);
+    await prisma.goalPeriodStatement.upsert({
+      where: { goalId_periodId: { goalId, periodId } },
+      create: {
+        goalId,
+        periodId,
+        progressCode: "NOT_INTRODUCED",
+        narrative: "Staff marked this goal as not yet introduced during this reporting period.",
+        authorId: user.id,
+        goalVersionId: pinned?.id,
+      },
+      update: {},
+    });
+  }
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "report.bulk_not_introduced",
+    resourceType: "period",
+    resourceId: periodId,
+    details: `count=${pairs.length}`,
+  });
+  revalidatePath("/reports/studio");
+  redirect(`/reports/studio?periodId=${periodId}&saved=bulk`);
+}
