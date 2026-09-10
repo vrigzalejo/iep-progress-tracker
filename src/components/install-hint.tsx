@@ -1,26 +1,49 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { X } from "lucide-react";
 import { APP_NAME } from "@/lib/brand";
 import { INSTALL_HINT_KEY, installInstructions, shouldShowInstallHint } from "@/lib/install-app";
 import { cn } from "@/lib/utils";
 
-export function InstallHint({ className }: { className?: string }) {
-  const [visible, setVisible] = useState(false);
-  const [kind, setKind] = useState<ReturnType<typeof installInstructions>>("other");
+const HINT_EVENT = "iep-install-hint";
 
-  useEffect(() => {
-    const dismissed = window.localStorage.getItem(INSTALL_HINT_KEY) === "1";
-    const displayModeStandalone = window.matchMedia("(display-mode: standalone)").matches;
-    const navigatorStandalone = "standalone" in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-    setKind(installInstructions(navigator.userAgent));
-    setVisible(shouldShowInstallHint({ displayModeStandalone, navigatorStandalone, dismissed }));
-  }, []);
+function subscribeInstallHint(onStoreChange: () => void) {
+  window.addEventListener(HINT_EVENT, onStoreChange);
+  const media = window.matchMedia("(display-mode: standalone)");
+  media.addEventListener("change", onStoreChange);
+  return () => {
+    window.removeEventListener(HINT_EVENT, onStoreChange);
+    media.removeEventListener("change", onStoreChange);
+  };
+}
+
+function getInstallHintSnapshot() {
+  const dismissed = window.localStorage.getItem(INSTALL_HINT_KEY) === "1";
+  const displayModeStandalone = window.matchMedia("(display-mode: standalone)").matches;
+  const navigatorStandalone =
+    "standalone" in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+  const visible = shouldShowInstallHint({ displayModeStandalone, navigatorStandalone, dismissed });
+  const kind = installInstructions(navigator.userAgent);
+  return `${visible ? "1" : "0"}:${kind}`;
+}
+
+function getInstallHintServerSnapshot() {
+  return "0:other";
+}
+
+export function InstallHint({ className }: { className?: string }) {
+  const snapshot = useSyncExternalStore(
+    subscribeInstallHint,
+    getInstallHintSnapshot,
+    getInstallHintServerSnapshot,
+  );
+  const visible = snapshot.startsWith("1:");
+  const kind = snapshot.slice(2) as ReturnType<typeof installInstructions>;
 
   function dismiss() {
     window.localStorage.setItem(INSTALL_HINT_KEY, "1");
-    setVisible(false);
+    window.dispatchEvent(new Event(HINT_EVENT));
   }
 
   if (!visible) return null;

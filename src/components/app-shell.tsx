@@ -64,10 +64,11 @@ export function AppShell({
   const pathname = usePathname();
   const meetingRoom = pathname.includes("/meeting/room");
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
+  const [menuPath, setMenuPath] = useState(pathname);
+  if (menuPath !== pathname) {
+    setMenuPath(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
