@@ -325,6 +325,14 @@ export default async function GoalDetailPage({
               />
             </div>
             <div className="sm:col-span-2">
+              <Label htmlFor="plainLanguageSummaryEs">Spanish plain-language summary (optional)</Label>
+              <Textarea
+                id="plainLanguageSummaryEs"
+                name="plainLanguageSummaryEs"
+                defaultValue={goal.plainLanguageSummaryEs ?? ""}
+              />
+            </div>
+            <div className="sm:col-span-2">
               <Label htmlFor="changeReason">Reason if wording or mastery changes</Label>
               <Input
                 id="changeReason"

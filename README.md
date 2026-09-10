@@ -53,6 +53,8 @@ Open [http://127.0.0.1:43147](http://127.0.0.1:43147).
 
 ### Local HTTPS
 
+The mobile app is this site on the home screen (installable PWA), not a second native client. On iPhone or iPad: Safari Share → Add to Home Screen. On Android Chrome: menu → Install app. `start_url` is `/` so staff and families land on the right home. Offline cache is Today and Hallway scores for the current day only.
+
 PWA install and secure cookies need TLS. Create a trusted local cert (once), set `AUTH_URL="https://127.0.0.1:43147"` in `.env.local`, then:
 
 ```bash

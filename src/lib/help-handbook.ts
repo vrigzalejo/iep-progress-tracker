@@ -33,23 +33,23 @@ export function helpArticles(): HelpArticle[] {
 
 Ask about any staff screen:
 
-**Start** — [Sign in](/sign-in) (demo passphrase or school SSO) · [Account setup](/setup) · six-step [Setup guide](/guide) (roles and campuses, Today/Hallway, reports, meeting room, weekly family email)
+**Start** — [Sign in](/sign-in) (demo passphrase, school SSO, or [Forgot or first-time password](/forgot-password)) · [Account setup](/setup) · six-step [Setup guide](/guide) (roles and campuses, Today/Hallway, reports, meeting room, weekly family email)
 
-**Chrome** — gold demo banner; sidebar (Dashboard, Today, Students, Minutes, Reports, Messages, Team and Schools if you are an administrator, Privacy, Setup guide); header [Search](/search); Sign out at the bottom of the sidebar; **How to use this site** in the corner
+**Chrome** — gold demo banner (hidden when demonstration mode is off); sidebar (Dashboard, Today, Students, Minutes, Reports, Messages, Team and Schools if you are an administrator, Privacy, Setup guide); header [Search](/search) (icon on a phone); Sign out at the bottom of the sidebar; **How to use this site** in the corner; **Install** on a phone (Add to Home Screen — same school account)
 
-**Work list** — [Today](/today): remaining sessions this week, one tap into [Hallway](/hallway). [Dashboard](/dashboard) still shows reports due, stale goals, IEP reviews, and minutes. [Minutes](/minutes) is the week ledger.
+**Work list** — [Today](/today): remaining sessions this week, one tap into [Hallway](/hallway) (next student after save). [Dashboard](/dashboard) still shows reports due, stale goals, IEP reviews, and minutes. [Minutes](/minutes) is the week ledger.
 
-**Caseload** — [Students](/students): filter by preferred name, school, or grade; add a minimum profile; IEP calendar; present levels; providers and minutes; guardian contacts; consent
+**Caseload** — [Students](/students): filter by preferred name, school, or grade; add a minimum profile; IEP calendar; present levels; providers and minutes; guardian contacts; consent; **Evidence gallery** and **Home practice cards** on a profile
 
-**Goals** — from a profile, Add IEP goal (official wording, summary, baseline, target, measurement, mastery rule, optional first objective, share-with-family). Open a goal for the chart, extra objectives, and **Log a session**
+**Goals** — from a profile, Add IEP goal (official wording, English summary, optional Spanish summary staff type themselves, baseline, target, measurement, mastery rule, optional first objective, share-with-family). Open a goal for the chart, extra objectives, and **Log a session**
 
 **Sessions** — Present / Absent / Declined / Makeup; trial pad (Independent, Prompted, Incorrect) or frequency/score; setting, minutes, accommodations, home carryover, optional evidence file
 
-**Reports** — [Report studio](/reports/studio) is the caseload × period grid. [Reports](/reports) still opens one student. Staff write the progress code and narrative. Snippets are district phrases you paste. **Meeting room** is the projector view. **File PDF** stores a packet or report as an evidence-class file.
+**Reports** — [Report studio](/reports/studio) is the caseload × period grid (cards on a phone). [Reports](/reports) still opens one student. Staff write the progress code and narrative. Snippets are district phrases you paste. **Meeting room** is the projector view. **File PDF** stores a packet or report as an evidence-class file.
 
-**Find and talk** — header search · [Messages](/messages) threads with unread badges · profile thread (Family vs Staff only). A family-thread note can email assigned staff; the mail itself has no student records
+**Find and talk** — header search with filters (school, grade, service area, data signal, overdue report) · [Messages](/messages) threads with unread badges · profile thread (Family vs Staff only). A family-thread note can email assigned staff; the mail itself has no student records
 
-**Mail** — If the school configured SMTP or Resend, adding someone on [Team](/team) sends a generic invite. **Deactivate** and **Reactivate** also email that person (sign-in off or restored; no student records). Linked guardians opt in to a Friday weekly email on [Family home](/parent) (off by default; scores and staff-written home carryover only). Staff do not click send for the Friday mail—the daily job sends it
+**Mail** — If the school configured SMTP or Resend, adding someone on [Team](/team) sends a generic invite with a set-password link (no student records). **Deactivate** and **Reactivate** also email that person. Linked guardians opt in to a Friday weekly email on [Family home](/parent) (off by default; English or Spanish chrome; scores and staff-written home carryover only). Staff do not click send for the Friday mail—the daily job sends it
 
 **School ops** — [Schools](/schools) (administrators add campus names) · [Team](/team) (invite, change role, deactivate) · [Privacy](/privacy) (notice, parent acknowledgment, retention, CSV, archive, deletion, audit)
 
@@ -72,22 +72,24 @@ Charts and on-track badges are **data snapshots**, not IEP team votes.`,
         "map",
         "family",
         "portal",
+        "spanish",
+        "español",
       ],
       body: `As a parent or guardian you only see students linked to this account, and only goals the school marked share-with-family. You cannot see other families or staff-only notes. ${APP_NAME} does not write IEP goals or interpret a child’s record.
 
-**Family home** — [Family home](/parent) is your landing page. If more than one child is linked, use the name tabs at the top.
+**Family home** — [Family home](/parent) is your landing page. Switch **English / Español** at the top. If more than one child is linked, use the name tabs. **Home practice cards** prints staff-written “to try at home” notes only.
 
-**On that page** — shared goals with everyday-language progress and data-status badges; Open progress report; Meeting packet; optional **Weekly email** opt-in; Privacy and consent; a message box to the team
+**On that page** — shared goals with everyday-language progress (Spanish summary if the school typed one) and data-status badges; Open progress report; Meeting packet; Home practice cards; optional **Weekly email** opt-in; Privacy and consent; a message box to the team
 
-**Reports** — [Reports](/reports) or the buttons on Family home. Print from the report or packet. Staff choose the IEP progress code; you read what they shared
+**Reports** — [Reports](/reports) or the buttons on Family home. Switch language on the report too. Print from the report or packet. Staff choose the IEP progress code; you read what they shared
 
-**Weekly email** — Off by default. If you opt in, Friday mail uses shared scores and staff-written home carryover only. Unsubscribe from the mail or turn it off here.
+**Weekly email** — Off by default. If you opt in, Friday mail uses shared scores and staff-written home carryover only, in the language you last saved. Unsubscribe from the mail or turn it off here.
 
 **Messages** — [Messages](/messages) lists family threads. You can also write from Family home. Keep other children’s information out of the note
 
 **Privacy** — [Privacy](/privacy) explains what is stored. Acknowledge the notice for a linked student. You cannot export CSV, archive, or delete records
 
-**Chrome** — gold banner (demo data is fictional); sidebar Family home, Messages, Privacy, Setup guide; Sign out at the bottom; **How to use this site** in the corner. There is no staff search box
+**Chrome** — gold banner only in demonstration mode (fictional data); sidebar Family home, Messages, Privacy, Setup guide; Sign out at the bottom; **How to use this site** in the corner; **Install** on a phone (Safari Share → Add to Home Screen, or Chrome Install app). There is no staff search box
 
 If no student appears, ask the school to invite this email as a guardian on the student profile.`,
     },
@@ -103,12 +105,17 @@ The gold banner means demonstration data is fictional. Do not enter real records
     {
       id: "signin",
       title: "Sign-in, demo accounts, and school SSO",
-      hrefs: ["/sign-in", "/setup"],
+      hrefs: ["/sign-in", "/setup", "/forgot-password"],
       keywords: [
         "sign",
         "login",
         "password",
         "passphrase",
+        "forgot",
+        "forgotten",
+        "reset",
+        "first-time",
+        "forgot password",
         "demo",
         "sso",
         "microsoft",
@@ -118,9 +125,34 @@ The gold banner means demonstration data is fictional. Do not enter real records
         "account",
         "fictional",
       ],
-      body: `Open [Sign in](/sign-in). Demo emails are listed there and share one passphrase. After sign-in, change the demo password on [Account setup](/setup) before any real deployment. SSO-only accounts have no password and use Microsoft, Google, or district OIDC; an administrator can add a temporary password if needed.
+      body: `Open [Sign in](/sign-in). In demonstration mode, fictional emails are listed and share one passphrase. After sign-in, change that password on [Account setup](/setup) before any real deployment.
 
-Sessions use HTTP-only cookies, expire after eight hours, and sign out after 20 minutes idle (set NEXT_PUBLIC_IDLE_MINUTES=0 to disable). Password accounts can enroll an authenticator on [Account setup](/setup). Unknown SSO emails are rejected unless the school explicitly enables JIT (not for parents). Roles live in this app; the identity provider only proves who the person is. When demonstration mode is off and SSO is configured, password sign-in stays off unless AUTH_CREDENTIALS_ENABLED=true.`,
+When demonstration mode is off, there is no fictional-account card and the footer does not call this a demonstration. An administrator must add your work or family email first. School SSO (Microsoft, Google, or district OIDC) appears when the school configured it. Email and password stay on only if SSO is unset, or AUTH_CREDENTIALS_ENABLED=true. After a password that needs MFA, enter the 6-digit authenticator code.
+
+**Forgot or first-time password** — [Forgot password](/forgot-password) emails a two-hour set-password link if mail (SMTP or Resend) is configured. The message has no student records. Team invites use the same link. If mail is off, an administrator sets a temporary password on [Team](/team), or you use school SSO.
+
+Sessions use HTTP-only cookies, expire after eight hours, and sign out after 20 minutes idle (set NEXT_PUBLIC_IDLE_MINUTES=0 to disable). Password accounts can enroll an authenticator on [Account setup](/setup). Unknown SSO emails are rejected unless the school explicitly enables JIT (not for parents). Roles live in this app; the identity provider only proves who the person is.`,
+    },
+    {
+      id: "install-app",
+      title: "Install the app on a phone or iPad",
+      hrefs: ["/sign-in", "/today", "/parent", "/guide"],
+      keywords: [
+        "install",
+        "iphone",
+        "ipad",
+        "android",
+        "home screen",
+        "pwa",
+        "standalone",
+        "add to home",
+        "mobile app",
+      ],
+      body: `This is the mobile app: the same ${APP_NAME} site, added to the home screen. There is no second App Store product and no extra student database.
+
+On iPhone or iPad, open the site in Safari, tap Share, then **Add to Home Screen**. On Android Chrome, open the browser menu and tap **Install app**. A dismissible install hint appears until you add it. After that, the icon opens in its own window. Sign in with the same school or family account. The start page is the site home (/) — staff go to the dashboard, families to [Family home](/parent), signed-out people to sign-in.
+
+Offline, only Today and Hallway session scores for the current day stay on the device. Reports, messages, and evidence are not cached. The how-to assistant still never sees student records.`,
     },
     {
       id: "roles",
@@ -160,20 +192,29 @@ Open [Team](/team) to see the full capability matrix. Give each person the least
       body: `The [Setup guide](/guide) is the six-step tutorial. **How to use this site** in the corner explains any one screen from this handbook.
 
 1. Review privacy and consent — [Privacy](/privacy)
-2. Confirm roles and campuses — administrators invite people on [Team](/team) (generic invite email if SMTP or Resend is set) and add campus names on [Schools](/schools)
+2. Confirm roles and campuses — administrators invite people on [Team](/team) (set-password link in the generic invite if SMTP or Resend is set) and add campus names on [Schools](/schools)
 3. Add a minimum student profile — [Add student](/students/new) (school is a pick from the campus list)
-4. Record IEP goals as written — from [Students](/students)
-5. Log progress during sessions — [Today](/today) worklist or [Hallway](/hallway) trial pad; absent or declined when the service was not delivered
-6. Write a period report, open Meeting room, or file a PDF — [Report studio](/reports/studio). Families may opt in to a Friday weekly email of scores and staff-written home carryover only. Staff do not send that mail by clicking a button.
+4. Record IEP goals as written — from [Students](/students); optional Spanish summary is staff-typed
+5. Log progress during sessions — [Today](/today) worklist or [Hallway](/hallway) trial pad; absent or declined when the service was not delivered; next student after save
+6. Write a period report, open Meeting room, or file a PDF — [Report studio](/reports/studio). Families may opt in to a Friday weekly email of scores and staff-written home carryover only (English or Spanish chrome). Staff do not send that mail by clicking a button.
 
 This demonstration school is already filled with fictional students so you can click every role. Families can open the guide too; the numbered steps are for staff. I only explain the product. I do not fill in goals or interpret a student.`,
     },
     {
       id: "setup",
       title: "Account setup and password",
-      hrefs: ["/setup"],
-      keywords: ["setup", "password", "change password", "account", "break-glass"],
-      body: `[Account setup](/setup) shows your name, email, and role. Password accounts can change the passphrase (12 or more characters). SSO-only accounts stay on district Microsoft, Google, or OIDC unless an administrator adds a temporary “break-glass” password on Team. After setup, continue to the [setup guide](/guide). Sign out is at the bottom of the sidebar.`,
+      hrefs: ["/setup", "/forgot-password"],
+      keywords: [
+        "setup",
+        "password",
+        "change password",
+        "account",
+        "break-glass",
+        "authenticator",
+        "mfa",
+        "totp",
+      ],
+      body: `[Account setup](/setup) shows your name, email, and role. Password accounts can change the passphrase (12 or more characters). If you cannot sign in, use [Forgot or first-time password](/forgot-password) or the set-password link from a Team invite. SSO-only accounts stay on district Microsoft, Google, or OIDC unless an administrator adds a temporary password on Team. When demonstration mode is off, password staff must enroll an authenticator here before other screens. After setup, continue to the [setup guide](/guide). Sign out is at the bottom of the sidebar.`,
     },
     {
       id: "dashboard",
@@ -217,12 +258,15 @@ Lists under the cards repeat those items with names and dates. Status badges (on
         "filter",
         "case manager",
         "guardian",
+        "carryover",
+        "home practice",
+        "practice cards",
       ],
       body: `Open [Students](/students) for your permitted caseload. Filter by preferred name, school, or grade (case-insensitive). Cards show goal count and a data-status badge.
 
 Administrators and educators can [Add student](/students/new). Required: preferred name, grade, a school from the campus list, case manager. Optional: annual IEP review date, triennial evaluation date, present-levels snapshot, checkboxes for service providers. Administrators add campuses on [Schools](/schools) — this is not a SIS import and does not create IEP goals. Do not add diagnoses, Social Security numbers, or full educational history. Providers cannot add profiles.
 
-On a profile: case manager, providers with this week’s delivered vs prescribed minutes, guardian contacts, IEP calendar (admins/educators can **Save IEP dates** and present levels), **Add IEP goal**, **Build report**, **Meeting packet**, **Meeting room**, goals with **Open goal and chart** / **Log a session**, and a message thread (Family or Staff only). Staff also see the latest privacy-notice acknowledgment.
+On a profile: case manager, providers with this week’s delivered vs prescribed minutes, guardian contacts, IEP calendar (admins/educators can **Save IEP dates** and present levels), **Add IEP goal**, **Build report**, **Meeting packet**, **Meeting room**, **Home practice cards** (printable staff-written carryover), **Evidence gallery** (open or download work samples; staff can flag **Used in meeting packet**), goals with **Open goal and chart** / **Log a session**, and a message thread (Family or Staff only). Staff also see the latest privacy-notice acknowledgment.
 
 Demo profiles already include guardian contacts. Parent accounts see a student when that email is linked as a guardian; invite the parent on [Team](/team) using the same email.`,
     },
@@ -245,8 +289,10 @@ Demo profiles already include guardian contacts. Parent accounts see a student w
         "discontinued",
         "service area",
         "measurement",
+        "spanish",
+        "español",
       ],
-      body: `From a student profile, **Add IEP goal**. Copy official wording from the IEP, then write a plain-language summary families can follow. Set baseline, measurable target, numeric target value, unit (for example % accuracy or WCPM), service area (academic, speech and language, occupational therapy, physical therapy, social and self-advocacy, adaptive), measurement method (percent accuracy, frequency, duration, rubric, independent trials, or rate), reporting cadence (weekly, monthly, or quarterly), next report due, start date, and status (draft, active, goal met, discontinued).
+      body: `From a student profile, **Add IEP goal**. Copy official wording from the IEP, then write a plain-language summary families can follow. Optionally type a **Spanish plain-language summary** yourself—the product does not translate official IEP wording. Set baseline, measurable target, numeric target value, unit (for example % accuracy or WCPM), service area (academic, speech and language, occupational therapy, physical therapy, social and self-advocacy, adaptive), measurement method (percent accuracy, frequency, duration, rubric, independent trials, or rate), reporting cadence (weekly, monthly, or quarterly), next report due, start date, and status (draft, active, goal met, discontinued).
 
 **Mastery rule** must match the IEP: consecutive sessions needed (1–10) and the maximum prompt that still counts (independent, gesture, verbal, model, or physical). Optional present levels at goal start. Optional first short-term objective: official wording, summary, and target value. Check **Share this goal with linked parents** so families can see it (on by default).
 
@@ -281,7 +327,7 @@ On an open goal you can edit those fields, add more objectives, see the trend ch
 
 For trial-based goals (percent accuracy or independent trials), set prompt level first, then tap Independent, Prompted, or Incorrect. Undo last if needed. Frequency and duration goals use +/− counts. Rubric and rate enter a numeric score. Same form: date, setting (classroom, pull-out, group, telehealth, home), minutes delivered, group size, condition (typical supports, without extras, 1:1, small group), and accommodations.
 
-Optional: session notes, home carryover (families can see this), evidence label, and one file up to about 5 MB. You can attach the entry to a short-term objective or the whole annual goal. Charts update from saved present-session data.`,
+Optional: session notes, home carryover (families can see this), evidence label, and one file up to about 5 MB. After save, open the student profile **Evidence gallery** to view the file and flag **Used in meeting packet**. You can attach the entry to a short-term objective or the whole annual goal. Charts update from saved present-session data.`,
     },
     {
       id: "charts",
@@ -329,7 +375,7 @@ These labels never choose an IEP progress code. Staff pick that code on the peri
       ],
       body: `Open [Report studio](/reports/studio) for the whole caseload × period grid (missing vs written). Click **Write** to enter the IEP progress code and narrative. The data-status badge is reference only. You can bulk-mark remaining goals **not yet introduced** (type NOT_INTRODUCED). Save staff-authored snippets to paste—never generated per student. [Reports](/reports) still opens one student: print preview or period comments.
 
-Parents open the same report from [Family home](/parent). Use **Print** in the browser—the gold banner, sidebar, and this assistant hide. Staff can **File PDF** to store a report as an evidence-class file (authenticated download, not a public URL). Codes are professional judgment, not chatbot output.`,
+Parents open the same report from [Family home](/parent) and can switch **English / Español** on that page. Use **Print** in the browser—the gold banner, sidebar, and this assistant hide. Staff can **File PDF** to store a report as an evidence-class file (authenticated download, not a public URL). Codes are professional judgment, not chatbot output.`,
     },
     {
       id: "meeting",
@@ -354,10 +400,22 @@ Parents open the same report from [Family home](/parent). Use **Print** in the b
       title: "Search",
       hrefs: ["/search", "/students"],
       roles: ["ADMINISTRATOR", "EDUCATOR", "PROVIDER"],
-      keywords: ["search", "find", "lookup", "wcpm", "reading", "header", "filter"],
-      body: `Staff search from the header (or [Search](/search)). Matching is case-insensitive. Students match preferred name, school, or grade. Goals match official wording, plain-language summary, measurable target, service area, or student name across **your whole permitted caseload**—not only students whose name already matched.
+      keywords: [
+        "search",
+        "find",
+        "lookup",
+        "wcpm",
+        "reading",
+        "header",
+        "filter",
+        "filters",
+        "overdue",
+        "data signal",
+        "service area",
+      ],
+      body: `Staff search from the header (or [Search](/search)). On a phone, tap the search icon. Matching is case-insensitive. Students match preferred name, school, or grade. Goals match official wording, plain-language summary, measurable target, service area, or student name across **your whole permitted caseload**.
 
-On [Students](/students) you can also filter by school and grade. Results never include records outside your role.`,
+On [Search](/search) you can also filter by school, grade, service area, data signal (on track, needs attention, needs data, goal met), and overdue report date. On [Students](/students) you can filter by school and grade. Results never include records outside your role.`,
     },
     {
       id: "messages",
@@ -384,8 +442,15 @@ Send a new note from the thread, the student profile, or [Family home](/parent).
         "switch",
         "shared",
         "tabs",
+        "spanish",
+        "español",
+        "idioma",
+        "cambiar",
+        "english",
+        "cards",
+        "practice",
       ],
-      body: `[Family home](/parent) is the parent landing page. You see shared goals with everyday-language progress and data-status badges, recent family messages, **Open progress report**, **Meeting packet**, optional **Weekly email**, and **Privacy and consent**. If more than one child is linked, use the name tabs at the top. You cannot see other families or staff-only notes.
+      body: `[Family home](/parent) is the parent landing page. Switch **English / Español** at the top (also on the progress report). You see shared goals with everyday-language progress—Spanish if the school typed a Spanish summary—and data-status badges, recent family messages, **Open progress report**, **Meeting packet**, **Home practice cards** (print staff-written “to try at home” notes only), optional **Weekly email**, and **Privacy and consent**. If more than one child is linked, use the name tabs at the top. You cannot see other families or staff-only notes.
 
 Write a message from this page or [Messages](/messages). If no student appears, ask the school to connect this email as a guardian. Acknowledge the notice on [Privacy](/privacy). You do not log sessions, create goals, search the school, or manage Team.`,
     },
@@ -407,10 +472,11 @@ Write a message from this page or [Messages](/messages). If no student appears, 
         "permissions",
         "matrix",
         "password",
+        "set-password",
       ],
-      body: `[Team](/team) is for administrators. Read the capability matrix, then add a person: name, email, role (administrator, educator, related-service provider, or parent/guardian). Password is optional once school SSO is on; SSO-only people show “school SSO.” Change someone’s role or **Deactivate** so they cannot sign in. A deactivated row stays on the list—use **Reactivate** to restore sign-in. Do not create a second account with the same email. If SMTP or Resend is set, deactivate and reactivate send a generic notice to that email (no student records).
+      body: `[Team](/team) is for administrators. Read the capability matrix (stacked cards on a phone), then add a person: name, email, role (administrator, educator, related-service provider, or parent/guardian). Temporary password is optional if mail or school SSO is configured—saving the person sends a generic invite with a **set-password** link (no student records). SSO-only people show “school SSO.” Change someone’s role or **Deactivate** so they cannot sign in. A deactivated row stays on the list—use **Reactivate** to restore sign-in. Do not create a second account with the same email. If SMTP or Resend is set, deactivate and reactivate send a generic notice to that email (no student records).
 
-Parents see a student when their email is a guardian contact on that profile. Providers must be checked on the profile. Use the same email as the district account for SSO. If the school configured SMTP or Resend, saving the new person sends a generic invite (no student records). Educators cannot open Team—ask an administrator.`,
+Parents see a student when their email is a guardian contact on that profile. Providers must be checked on the profile. Use the same email as the district account for SSO. Educators cannot open Team—ask an administrator.`,
     },
     {
       id: "schools",
@@ -453,8 +519,18 @@ Parents acknowledge **for each linked student**. If the school bumps the notice 
       title: "Session evidence files",
       hrefs: ["/students"],
       roles: ["ADMINISTRATOR", "EDUCATOR", "PROVIDER"],
-      keywords: ["evidence", "upload", "file", "attachment", "work sample", "photo"],
-      body: `When logging a present session you may attach one evidence file (about 5 MB) and a short label such as “weekly probe 4.” Hosted deploys store files in private object storage. When demonstration mode is off, disk uploads are refused—configure Supabase Storage or a private Blob store first. Keep one app replica until storage is private. Evidence stays with the progress entry; it is not training data for AI.`,
+      keywords: [
+        "evidence",
+        "upload",
+        "file",
+        "attachment",
+        "work sample",
+        "photo",
+        "gallery",
+        "lightbox",
+        "packet",
+      ],
+      body: `When logging a present session you may attach one evidence file (about 5 MB) and a short label such as “weekly probe 4.” Open the student profile **Evidence gallery** to view work samples (lightbox for images, download otherwise) instead of a filename only. Staff can check **Used in meeting packet**. Hosted deploys store files in private object storage. When demonstration mode is off, disk uploads are refused—configure Supabase Storage or a private Blob store first. Keep one app replica until storage is private. Evidence stays with the progress entry; it is not training data for AI.`,
     },
     {
       id: "navigation",
@@ -471,12 +547,15 @@ Parents acknowledge **for each linked student**. If the school bumps the notice 
         "print",
         "chrome",
         "header",
+        "phone",
+        "tablet",
+        "responsive",
       ],
       body: `A gold banner at the top appears only in demonstration mode and reminds you this site uses fictional data. Skip to main content is the first focusable link.
 
-The dark sidebar lists only screens your role can open: staff see Dashboard, Today, Students, Minutes, Reports, Messages, Privacy, and Setup guide; administrators also see Team and Schools; parents see Family home instead of Dashboard and Students. On a phone, open the menu with the button next to the header. Staff have a search field in the header. Your name and role sit at the bottom of the sidebar with **Sign out**.
+The dark sidebar lists only screens your role can open: staff see Dashboard, Today, Students, Minutes, Reports, Messages, Privacy, and Setup guide; administrators also see Team and Schools; parents see Family home instead of Dashboard and Students. On a phone, tap the menu button, then the dimmed area, Escape, or a link to close it. Sign out stays at the bottom of that menu. Staff have a search field in the header (search icon on a small phone). Your name and role sit at the bottom of the sidebar with **Sign out**.
 
-**How to use this site** (this assistant) stays in the lower-right corner. Browser **Print** hides the banner, sidebar, and assistant so reports and meeting packets print cleanly. **Meeting room** hides the sidebar and assistant so the projector stays readable.`,
+**How to use this site** (this assistant) stays in the lower-right corner; on a phone it opens as a full-height sheet so it does not cover Save. Browser **Print** hides the banner, sidebar, and assistant so reports, meeting packets, and home practice cards print cleanly. **Meeting room** hides the sidebar and assistant so the projector stays readable.`,
     },
     {
       id: "minutes",
@@ -515,7 +594,7 @@ When you **Log a session**, you can attach the entry to one objective or to the 
       hrefs: ["/today", "/hallway"],
       roles: ["ADMINISTRATOR", "EDUCATOR", "PROVIDER"],
       keywords: ["today", "hallway", "worklist", "offline", "pwa", "ipad", "queue"],
-      body: `[Today](/today) lists students still owed a session or minutes this week. **Log in hallway** opens huge trial buttons. After save, hallway opens the next student. Install the app from the browser if you want a home-screen icon; the start page is Today.
+      body: `[Today](/today) lists students still owed a session or minutes this week. **Log in hallway** opens huge trial buttons. After save, hallway opens the next student still on the list. Install the app from the browser if you want a home-screen icon; the start page is the site home (/) — staff dashboard or family home after sign-in.
 
 If the hallway Wi‑Fi drops, the session stays in a queue on this device and syncs when you are back online. A failed sync stays visible. Optional device PIN is only for a shared cart—it does not replace sign-in.`,
     },
@@ -535,17 +614,19 @@ If the hallway Wi‑Fi drops, the session stays in a queue on this device and sy
         "resend",
         "smtp",
         "cron",
+        "spanish",
+        "español",
       ],
-      body: `On [Family home](/parent), a linked guardian can opt in to a Friday weekly email for that student. It is off by default. The mail lists shared goals, last week’s present-session scores, and home-carryover notes staff already typed. It does not rewrite the child’s data with a model and does not include official IEP wording or disability labels.
+      body: `On [Family home](/parent), a linked guardian can opt in to a Friday weekly email for that student. It is off by default. Switch **English / Español** on Family home so the mail chrome matches; if staff typed a Spanish summary, that text is used when the language is Spanish. The mail lists shared goals, last week’s present-session scores, and home-carryover notes staff already typed. It does not rewrite the child’s data with a model and does not include official IEP wording or disability labels.
 
-The subject is “Weekly update for [preferred name]” only. Each mail says who can see it and includes an unsubscribe link. Staff do not send this by clicking a button—the daily job sends it on Friday UTC (or when DIGEST_SEND=1 for a weekday test). The school must configure SMTP or Resend. Team invites and family-message pings use the same mail setup.`,
+The English subject is “Weekly update for [preferred name]”; Spanish is “Actualización semanal de [preferred name]”—name only, no scores. Each mail says who can see it and includes an unsubscribe link. Staff do not send this by clicking a button—the daily job sends it on Friday UTC (or when DIGEST_SEND=1 for a weekday test). The school must configure SMTP or Resend. Team invites and family-message pings use the same mail setup.`,
     },
     {
       id: "assistant",
       title: "This how-to assistant",
       hrefs: ["/guide"],
       keywords: ["chatbot", "assistant", "help", "how to use", "bot", "tutorial"],
-      body: `**How to use this site** (this panel) explains every signed-in screen from the product handbook, including the six-step [Setup guide](/guide), Team invites, and the Friday family email. Optional Hugging Face rephrasing uses only your question and that handbook—never student rows from the database. I will not write IEP goals, recommend minutes or placement, or interpret a named student.
+      body: `**How to use this site** (this panel) explains every signed-in screen from the product handbook, including the six-step [Setup guide](/guide), Team invites and set-password mail, English/Spanish family chrome, the evidence gallery, home practice cards, search filters, and the Friday family email. Optional Hugging Face rephrasing uses only your question and that handbook—never student rows from the database. I will not write IEP goals, recommend minutes or placement, or interpret a named student.
 
 Ask “what can this app do?” for the full map for your role. Suggested chips cover common tasks. Follow-up questions stay in this thread.`,
     },

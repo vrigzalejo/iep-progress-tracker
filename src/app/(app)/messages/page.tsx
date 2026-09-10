@@ -14,7 +14,7 @@ export default async function MessagesPage() {
   const students = await listVisibleStudents(user);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6 pb-24 sm:pb-0">
       <h1 className="font-serif text-3xl">Messages</h1>
       <p className="text-muted">
         One thread per student.

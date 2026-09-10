@@ -101,13 +101,29 @@ export function signInUrl() {
   return `${appOrigin()}/sign-in`;
 }
 
-export async function sendTeamInviteMail(to: string, roleLabel: string) {
+export async function sendTeamInviteMail(to: string, roleLabel: string, setPasswordUrl?: string) {
   return sendTransactionalMail({
     to,
     subject: `You were added to ${APP_NAME}`,
     text: [
       `An administrator added this email to ${APP_NAME} as ${roleLabel}.`,
-      `Sign in: ${signInUrl()}`,
+      setPasswordUrl ? `Set a password: ${setPasswordUrl}` : `Sign in: ${signInUrl()}`,
+      "This message does not include student records.",
+    ].join("\n"),
+  });
+}
+
+export async function sendPasswordSetMail(to: string, setPasswordUrl: string, kind: "invite" | "reset") {
+  return sendTransactionalMail({
+    to,
+    subject:
+      kind === "invite" ? `Set a password for ${APP_NAME}` : `Reset your password for ${APP_NAME}`,
+    text: [
+      kind === "invite"
+        ? `An administrator added this email to ${APP_NAME}. Set a password to sign in.`
+        : `Use this link to set a new password for ${APP_NAME}. It expires in two hours.`,
+      setPasswordUrl,
+      "If you did not ask for this, you can ignore the message.",
       "This message does not include student records.",
     ].join("\n"),
   });

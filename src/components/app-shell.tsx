@@ -18,9 +18,10 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Logo } from "@/components/logo";
 import { HelpChat } from "@/components/help-chat";
+import { InstallHint } from "@/components/install-hint";
 import { IdleTimeout, MfaEnrollGuard } from "@/components/session-guards";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/app/actions";
@@ -63,6 +64,18 @@ export function AppShell({
   const pathname = usePathname();
   const meetingRoom = pathname.includes("/meeting/room");
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const items = LINKS.filter((link) => {
     if (link.parentOnly && user.role !== "PARENT") return false;
     if (link.staffOnly && !isStaff(user.role)) return false;
@@ -98,22 +111,30 @@ export function AppShell({
         </div>
       ) : null}
       <div className="flex min-h-[calc(100vh-40px)]">
+        {open ? (
+          <button
+            type="button"
+            className="fixed inset-0 z-20 bg-black/40 lg:hidden"
+            aria-label="Close menu"
+            onClick={() => setOpen(false)}
+          />
+        ) : null}
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-30 w-64 border-r border-border bg-forest-deep text-white transition-transform lg:static lg:translate-x-0",
+            "fixed inset-y-0 left-0 z-30 flex w-64 max-w-[85vw] flex-col border-r border-border bg-forest-deep text-white transition-transform lg:static lg:max-w-none lg:translate-x-0",
             open ? "translate-x-0" : "-translate-x-full",
           )}
         >
           <div className="flex items-center justify-between px-4 py-5">
-            <Link href={isStaff(user.role) ? "/dashboard" : "/parent"} className="flex cursor-pointer items-center gap-2">
-              <Logo className="h-9 w-9" />
-              <span className="font-serif text-xl">{APP_NAME}</span>
+            <Link href={isStaff(user.role) ? "/dashboard" : "/parent"} className="flex min-w-0 cursor-pointer items-center gap-2">
+              <Logo className="h-9 w-9 shrink-0" />
+              <span className="truncate font-serif text-xl">{APP_NAME}</span>
             </Link>
-            <button className="lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu">
+            <button className="min-h-11 min-w-11 lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu">
               <X />
             </button>
           </div>
-          <nav aria-label="Primary" className="px-3">
+          <nav aria-label="Primary" className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
             {items.map((link) => {
               const Icon = link.icon;
               const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
@@ -138,7 +159,7 @@ export function AppShell({
               );
             })}
           </nav>
-          <div className="absolute bottom-0 left-0 right-0 border-t border-white/15 p-4 text-sm">
+          <div className="border-t border-white/15 p-4 text-sm">
             <p className="font-semibold">{user.name}</p>
             <p className="text-white/80">{ROLE_LABELS[user.role]}</p>
             <form action={signOutAction}>
@@ -154,32 +175,46 @@ export function AppShell({
           </div>
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="no-print sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-surface/95 px-4 py-3 backdrop-blur">
-            <button
-              className="lg:hidden"
-              onClick={() => setOpen(true)}
-              aria-label="Open menu"
-            >
-              <Menu />
-            </button>
-            {isStaff(user.role) ? (
-              <form action="/search" className="relative max-w-md flex-1">
-                <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted" />
-                <label htmlFor="q" className="sr-only">
-                  Search students and goals
-                </label>
-                <input
-                  id="q"
-                  name="q"
-                  placeholder="Search students or goals"
-                  className="min-h-11 w-full rounded-md border border-border bg-white pl-10 pr-3"
-                />
-              </form>
-            ) : (
-              <p className="text-sm text-muted">Family portal — records for your linked students only</p>
-            )}
+          <header className="no-print sticky top-0 z-20 border-b border-border bg-surface/95 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur">
+            <div className="flex items-center gap-3">
+              <button
+                className="min-h-11 min-w-11 lg:hidden"
+                onClick={() => setOpen(true)}
+                aria-label="Open menu"
+              >
+                <Menu />
+              </button>
+              {isStaff(user.role) ? (
+                <form action="/search" className="relative hidden min-w-0 flex-1 sm:block sm:max-w-md">
+                  <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted" />
+                  <label htmlFor="q" className="sr-only">
+                    Search students and goals
+                  </label>
+                  <input
+                    id="q"
+                    name="q"
+                    placeholder="Search students or goals"
+                    className="min-h-11 w-full rounded-md border border-border bg-white pl-10 pr-3"
+                  />
+                </form>
+              ) : (
+                <p className="min-w-0 text-sm text-muted">Family portal — linked students only</p>
+              )}
+              {isStaff(user.role) ? (
+                <Link
+                  href="/search"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border sm:hidden"
+                  aria-label="Search students and goals"
+                >
+                  <Search className="h-4 w-4" />
+                </Link>
+              ) : null}
+            </div>
           </header>
           <main id="main" className="flex-1 px-4 py-6 sm:px-8">
+            <div className="no-print">
+              <InstallHint className="mb-4" />
+            </div>
             {children}
           </main>
           <HelpChat role={user.role} />

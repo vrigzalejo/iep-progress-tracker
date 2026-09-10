@@ -35,6 +35,8 @@ model User {
   lockedUntil    DateTime?
   totpSecret     String?
   totpEnabledAt  DateTime?
+  passwordResetTokenHash String?
+  passwordResetExpiresAt DateTime?
   createdAt      DateTime  @default(now())
   deactivatedAt  DateTime?
 
@@ -124,6 +126,7 @@ model GuardianContact {
   user                  User?     @relation(fields: [userId], references: [id])
   digestOptIn           Boolean   @default(false)
   digestUnsubscribedAt  DateTime?
+  familyLocale          String    @default("en")
 }
 
 model IepGoal {
@@ -132,6 +135,7 @@ model IepGoal {
   student                    Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   officialWording            String
   plainLanguageSummary       String
+  plainLanguageSummaryEs     String?
   baseline                   String
   measurableTarget           String
   targetValue                Float
@@ -186,6 +190,7 @@ model ProgressEntry {
   notes            String
   evidenceLabel    String?
   evidencePath     String?
+  evidenceInPacket Boolean @default(false)
   authorId         String
   author           User     @relation(fields: [authorId], references: [id])
   createdAt        DateTime @default(now())

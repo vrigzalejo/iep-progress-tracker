@@ -59,6 +59,38 @@ describe("family digest", () => {
     expect(shouldSendWeeklyDigest(new Date("2026-09-03T12:00:00Z"), { DIGEST_SEND: "1" })).toBe(true);
   });
 
+  it("uses Spanish chrome and a staff-written Spanish summary", () => {
+    const digest = buildFamilyDigest(
+      {
+        preferredName: "Jaime",
+        goals: [
+          {
+            sharedWithGuardians: true,
+            plainLanguageSummary: "Ask for a break",
+            plainLanguageSummaryEs: "Pedir un descanso",
+            unit: "% independent",
+            entries: [],
+          },
+        ],
+      },
+      new Date("2026-09-04T12:00:00Z"),
+      "es",
+    );
+    expect(digest.subject).toMatch(/Actualización semanal/);
+    expect(digest.sections[0]?.summary).toBe("Pedir un descanso");
+    const text = formatDigestText({
+      preferredName: "Jaime",
+      weekLabel: digest.weekLabel,
+      sections: digest.sections,
+      portalUrl: "https://example.test/parent",
+      unsubscribeUrl: "https://example.test/unsub",
+      productName: "IEP Progress Tracker",
+      locale: "es",
+    });
+    expect(text).toMatch(/portal familiar/);
+    expect(text).not.toMatch(/recommend/i);
+  });
+
   it("formats a portal link, unsubscribe, and visibility sentence", () => {
     const text = formatDigestText({
       preferredName: "Jaime",

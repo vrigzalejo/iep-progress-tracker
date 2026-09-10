@@ -50,7 +50,18 @@ export default async function TeamPage({
 
       <Card className="overflow-x-auto">
         <CardTitle>Role matrix</CardTitle>
-        <table className="mt-4 min-w-full text-left text-sm">
+        <ul className="mt-4 space-y-3 md:hidden">
+          {PERMISSION_MATRIX.map((row) => (
+            <li key={row.capability} className="rounded-lg border border-border p-3 text-sm">
+              <p className="font-semibold">{row.capability}</p>
+              <p>Administrator: {row.administrator}</p>
+              <p>Educator: {row.educator}</p>
+              <p>Provider: {row.provider}</p>
+              <p>Parent: {row.parent}</p>
+            </li>
+          ))}
+        </ul>
+        <table className="mt-4 hidden min-w-full text-left text-sm md:table">
           <thead>
             <tr className="border-b border-border">
               <th className="py-2 pr-3">Capability</th>
@@ -158,18 +169,17 @@ export default async function TeamPage({
             </Select>
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="password">Temporary password{ssoReady ? " (optional with SSO)" : ""}</Label>
+            <Label htmlFor="password">Temporary password (optional)</Label>
             <Input
               id="password"
               name="password"
               type="password"
-              required={!ssoReady}
-              minLength={ssoReady ? undefined : 12}
+              minLength={12}
             />
             <p className="mt-1 text-sm text-muted">
-              {ssoReady
-                ? "Leave blank to let this person sign in only with school SSO. Their email must match the identity provider."
-                : "At least 12 characters with upper, lower, number, and symbol."}
+              Leave blank to send a set-password link when mail is configured
+              {ssoReady ? ", or to let this person use school SSO" : ""}. A typed password still works
+              immediately.
             </p>
           </div>
           <div>

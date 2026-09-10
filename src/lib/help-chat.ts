@@ -178,6 +178,8 @@ function hrefLabel(href: string) {
     "/privacy": "Privacy",
     "/privacy-notice": "Privacy notice",
     "/parent": "Family home",
+    "/forgot-password": "Forgot password",
+    "/set-password": "Set password",
   };
   return labels[href] ?? href.replace(/^\//, "").replace(/\//g, " ");
 }

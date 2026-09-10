@@ -14,6 +14,9 @@ RUN find prisma/migrations -mindepth 1 -type d -empty -delete \
 
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV AUTH_SECRET=build-placeholder
 ENV DATABASE_URL=postgresql://iep:iep@127.0.0.1:5432/iep

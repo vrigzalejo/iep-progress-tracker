@@ -18,11 +18,11 @@ const ADMIN_PROMPTS = [
   "What can this app do?",
   "How do I add a school campus?",
   "How do I invite someone by email?",
-  "How do I add a student profile?",
-  "How do I log a session with trials?",
+  "How do I reset a forgotten password?",
+  "How do I open the evidence gallery?",
+  "How do I filter search by service area?",
   "How do I open meeting room on the projector?",
   "How does the Friday family email work?",
-  "How do I export a CSV?",
 ];
 
 const STAFF_PROMPTS = [
@@ -30,18 +30,20 @@ const STAFF_PROMPTS = [
   "How do I add a student profile?",
   "How do I record an IEP goal?",
   "How do I log a session with trials?",
-  "How do I open meeting room on the projector?",
+  "How do I open the evidence gallery?",
+  "How do I filter search by service area?",
   "How do I print a meeting packet?",
-  "How does the Friday family email work?",
-  "How do I export a CSV?",
+  "How do I reset a forgotten password?",
 ];
 
 const FAMILY_PROMPTS = [
   "What can I see in the family portal?",
+  "How do I switch the site to Spanish?",
+  "How do I open home practice cards?",
   "How do I message the team?",
   "How do I switch between children?",
-  "How do I open a progress report?",
   "How do I opt in to the weekly email digest?",
+  "How do I install the app on my phone?",
   "How do I acknowledge the privacy notice?",
 ];
 
@@ -90,10 +92,10 @@ export function HelpChat({ role }: { role: Role }) {
   const [input, setInput] = useState("");
   const welcome =
     role === "PARENT"
-      ? `Start on Family home: shared goals, progress report, meeting packet, optional Friday weekly email (off by default), messages, and Privacy. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`
+      ? `Start on Family home: switch English/Español, shared goals, progress report, meeting packet, home practice cards, optional Friday weekly email (off by default), messages, and Privacy. On a phone, Add to Home Screen. Ask “what can this app do?” for the full map. I will not write IEP goals or interpret a student’s record.`
       : role === "ADMINISTRATOR"
-        ? `The six-step tutorial is on Setup guide: Privacy, Team and Schools (invite email if SMTP or Resend is set), add a student, record goals as written, log on Today or Hallway, then report studio, Meeting room, or File PDF. Families who opt in get a Friday email—staff do not click send. Ask “what can this app do?” for every screen. I will not write IEP goals or interpret a student’s record.`
-        : `The six-step tutorial is on Setup guide: Privacy, roles, add a student, record goals as written, log on Today or Hallway, then report studio, Meeting room, or File PDF. Families who opt in get a Friday email of scores and home carryover—staff do not click send. Ask “what can this app do?” for every ${ROLE_LABELS[role]} screen. I will not write IEP goals or interpret a student’s record.`;
+        ? `The six-step tutorial is on Setup guide: Privacy, Team and Schools (invite with a set-password link if mail is on), add a student, record goals as written (optional Spanish summary you type), log on Today or Hallway (next student after save; evidence gallery on the profile), then report studio, Meeting room, or File PDF. Forgot password is on the sign-in screen. Families who opt in get a Friday email—staff do not click send. Ask “what can this app do?” for every screen. I will not write IEP goals or interpret a student’s record.`
+        : `The six-step tutorial is on Setup guide: Privacy, roles, add a student, record goals as written (optional Spanish summary you type), log on Today or Hallway (next student after save; evidence gallery on the profile), then report studio, Meeting room, or File PDF. Forgot password is on the sign-in screen. Families who opt in get a Friday email of scores and home carryover—staff do not click send. Ask “what can this app do?” for every ${ROLE_LABELS[role]} screen. I will not write IEP goals or interpret a student’s record.`;
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
@@ -176,7 +178,7 @@ export function HelpChat({ role }: { role: Role }) {
       {open ? (
         <section
           id={dialogId}
-          className="fixed bottom-20 right-4 z-40 flex h-[min(32rem,calc(100vh-6rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-lg"
+          className="fixed inset-x-0 bottom-0 top-12 z-40 flex flex-col overflow-hidden border-t border-border bg-surface shadow-lg sm:inset-auto sm:bottom-24 sm:right-4 sm:top-auto sm:h-[min(32rem,calc(100vh-7rem))] sm:w-[min(24rem,calc(100vw-2rem))] sm:rounded-xl sm:border"
           aria-labelledby={titleId}
           aria-modal="true"
           role="dialog"
@@ -255,7 +257,7 @@ export function HelpChat({ role }: { role: Role }) {
       ) : null}
       <Button
         type="button"
-        className="fixed bottom-4 right-4 z-40 shadow-md"
+        className="fixed right-4 bottom-[max(5.5rem,calc(env(safe-area-inset-bottom)+4.5rem))] z-40 shadow-md sm:bottom-[max(1rem,env(safe-area-inset-bottom))]"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-controls={open ? dialogId : undefined}
