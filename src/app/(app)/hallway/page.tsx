@@ -54,7 +54,7 @@ export default async function HallwayPage({
     : "/today";
 
   return (
-    <div className="mx-auto max-w-xl space-y-4">
+    <div className="mx-auto max-w-xl space-y-4 pb-24 sm:pb-0">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-forest">Hallway</p>
@@ -67,8 +67,16 @@ export default async function HallwayPage({
       </div>
       {query.saved ? (
         <Alert title="Saved" tone="success">
-          Session is on the record. Opening the next student when one remains.
+          Session is on the record.{" "}
+          {next?.goalId
+            ? `Next on the list is ready — save again to move on, or open Today.`
+            : "No other student remains on today’s list."}
         </Alert>
+      ) : null}
+      {next?.goalId ? (
+        <p className="text-sm text-muted">
+          After this save, Hallway opens the next student still owed a session.
+        </p>
       ) : null}
       {query.queued ? (
         <Alert title="Saved on this device" tone="warning">

@@ -17,7 +17,7 @@ export default async function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-10">
+    <div className="min-h-screen px-4 py-10 pt-[max(2.5rem,env(safe-area-inset-top))]">
       <div className="mx-auto mb-8 flex max-w-5xl items-center gap-3">
         <Logo />
         <div>

@@ -43,6 +43,11 @@ describe("help chat", () => {
     expect(retrieveArticles("open meeting room on the projector", "EDUCATOR")[0]?.id).toBe("meeting");
   });
 
+  it("explains installing the home-screen app", () => {
+    expect(retrieveArticles("add to home screen on iphone", "EDUCATOR")[0]?.id).toBe("install-app");
+    expect(retrieveArticles("install the mobile app", "PARENT")[0]?.id).toBe("install-app");
+  });
+
   it("explains adding a campus", () => {
     expect(retrieveArticles("add a school campus", "ADMINISTRATOR")[0]?.id).toBe("schools");
   });
@@ -66,6 +71,35 @@ describe("help chat", () => {
   it("explains team invite email", () => {
     expect(retrieveArticles("How do I invite someone by email?", "ADMINISTRATOR")[0]?.id).toBe(
       "team",
+    );
+  });
+
+  it("maps forgot password to sign-in", () => {
+    expect(retrieveArticles("How do I reset a forgotten password?", "EDUCATOR")[0]?.id).toBe(
+      "signin",
+    );
+    expect(retrieveArticles("forgot password", "PARENT")[0]?.id).toBe("signin");
+    const result = answerFromHandbook("forgot password", "EDUCATOR");
+    expect(result.hrefs).toContain("/forgot-password");
+    expect(result.text).toMatch(/set-password/i);
+  });
+
+  it("maps Spanish family chrome to the family portal", () => {
+    expect(retrieveArticles("How do I switch the site to Spanish?", "PARENT")[0]?.id).toBe("family");
+    expect(retrieveArticles("cambiar a español", "PARENT")[0]?.id).toBe("family");
+    expect(retrieveArticles("spanish plain-language summary", "EDUCATOR")[0]?.id).toBe("goals");
+  });
+
+  it("maps evidence gallery and search filters", () => {
+    expect(retrieveArticles("How do I open the evidence gallery?", "EDUCATOR")[0]?.id).toBe(
+      "evidence",
+    );
+    expect(retrieveArticles("How do I filter search by service area?", "EDUCATOR")[0]?.id).toBe(
+      "search",
+    );
+    expect(retrieveArticles("How do I open home practice cards?", "PARENT")[0]?.id).toBe("family");
+    expect(retrieveArticles("How do I open home practice cards?", "EDUCATOR")[0]?.id).toBe(
+      "students",
     );
   });
 

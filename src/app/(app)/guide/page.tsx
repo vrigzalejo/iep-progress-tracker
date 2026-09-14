@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card, CardTitle } from "@/components/ui/card";
 import { requireUser } from "@/lib/queries";
 import { APP_NAME } from "@/lib/brand";
+import { isDemoMode } from "@/lib/runtime";
 
 export const metadata = { title: "Setup guide" };
 
@@ -17,7 +18,7 @@ const STEPS: {
   },
   {
     title: "Confirm roles and campuses",
-    body: "Administrators invite educators, related-service providers, and family accounts on Team. If the school configured SMTP or Resend, the new person gets a generic invite email with no student records. Add campus names on Schools so new profiles pick from a list. Each person should have only the access their work requires.",
+    body: "Administrators invite educators, related-service providers, and family accounts on Team. Temporary password is optional if mail or school SSO is on—the generic invite includes a set-password link and no student records. Add campus names on Schools so new profiles pick from a list. Each person should have only the access their work requires.",
     links: [
       { href: "/team", label: "Open Team" },
       { href: "/schools", label: "Open Schools" },
@@ -30,12 +31,12 @@ const STEPS: {
   },
   {
     title: "Record IEP goals as written",
-    body: "Copy official wording from the IEP, then write a plain-language summary. Set baseline, target, measurement method, and reporting dates.",
+    body: "Copy official wording from the IEP, then write a plain-language summary. Optionally type a Spanish summary yourself—the product does not translate official IEP wording. Set baseline, target, measurement method, and reporting dates.",
     links: [{ href: "/students", label: "Open Students" }],
   },
   {
     title: "Log progress during sessions",
-    body: "Open Today for sessions still owed this week, or Hallway to log trials between bells. Tap independent, prompted, or incorrect. Mark absent or declined when the service was not delivered.",
+    body: "Open Today for sessions still owed this week, or Hallway to log trials between bells. Tap independent, prompted, or incorrect. After save, Hallway opens the next student still on the list. Mark absent or declined when the service was not delivered. Open the student profile Evidence gallery to view work samples.",
     links: [
       { href: "/today", label: "Open Today" },
       { href: "/hallway", label: "Open Hallway" },
@@ -43,7 +44,7 @@ const STEPS: {
   },
   {
     title: "Write the period report and run the meeting",
-    body: "In report studio, choose an IEP progress code and a short narrative. Print the family report or meeting packet, open Meeting room on a projector, or file a PDF. Families who opt in get a Friday email of scores and staff-written home carryover only. Staff do not send that mail by clicking a button—the daily job does, when SMTP or Resend is configured.",
+    body: "In report studio, choose an IEP progress code and a short narrative. Print the family report, meeting packet, or home practice cards, open Meeting room on a projector, or file a PDF. Families who opt in get a Friday email of scores and staff-written home carryover only (English or Spanish chrome). Staff do not send that mail by clicking a button—the daily job does, when SMTP or Resend is configured.",
     links: [
       { href: "/reports/studio", label: "Open report studio" },
       { href: "/reports", label: "Open Reports" },
@@ -59,8 +60,10 @@ export default async function GuidePage() {
         <h1 className="font-serif text-3xl">Setup guide</h1>
         <p className="mt-2 text-muted">
           {user.role === "PARENT"
-            ? "Families start on Family home: shared goals, messages, reports, and an optional weekly email. The numbered steps below are for staff. Use How to use this site in the corner for any one screen."
-            : "A short path from first sign-in to a defensible progress record. This demonstration school is already filled with fictional students so you can click through every role. Use How to use this site in the corner if you want a question answered from this guide."}
+            ? "Families start on Family home: switch English/Español, shared goals, messages, reports, home practice cards, and an optional weekly email. The numbered steps below are for staff. Use How to use this site in the corner for any one screen. On a phone, Add to Home Screen (Safari Share, or Chrome Install app)."
+            : isDemoMode()
+              ? "A short path from first sign-in to a defensible progress record. This demonstration school is already filled with fictional students so you can click through every role. On a phone, Add to Home Screen (Safari Share, or Chrome Install app) — that is the mobile app, same account. Use How to use this site in the corner if you want a question answered from this guide."
+              : "A short path from first sign-in to a defensible progress record. An administrator must add your work email first; use Forgot password if you need a set-password link. On a phone, Add to Home Screen (Safari Share, or Chrome Install app) — that is the mobile app, same account. Use How to use this site in the corner if you want a question answered from this guide."}
         </p>
       </div>
       <ol className="space-y-4">

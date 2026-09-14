@@ -35,7 +35,7 @@ export default async function ReportStudioPage({
   const selected = rows.find((row) => row.goalId === query.goalId) ?? missing[0] ?? rows[0];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 pb-24 sm:pb-0">
       <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="font-serif text-3xl">Progress report studio</h1>
@@ -79,7 +79,30 @@ export default async function ReportStudioPage({
         <>
           <Card className="overflow-x-auto">
             <CardTitle>Caseload grid</CardTitle>
-            <table className="mt-4 min-w-full text-sm">
+            <ul className="mt-4 space-y-3 md:hidden">
+              {rows.map((row) => (
+                <li key={row.goalId} className="rounded-lg border border-border p-3">
+                  <p className="font-semibold">{row.studentName}</p>
+                  <p className="text-sm">{row.goalSummary}</p>
+                  <div className="mt-2">
+                    <StatusIndicator signal={row.signal} />
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {row.written ? (
+                      <ProgressCodeBadge code={row.progressCode as ProgressCode} />
+                    ) : (
+                      <Badge tone="gold">Missing</Badge>
+                    )}
+                    <Button asChild size="sm" variant="secondary">
+                      <Link href={`/reports/studio?periodId=${period.id}&goalId=${row.goalId}`}>
+                        Write
+                      </Link>
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <table className="mt-4 hidden min-w-full text-sm md:table">
               <thead>
                 <tr className="text-left text-muted">
                   <th className="px-2 py-2">Student</th>

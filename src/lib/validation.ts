@@ -50,6 +50,7 @@ export const goalSchema = z.object({
     .trim()
     .min(10, "Add a plain-language summary for families.")
     .max(1000),
+  plainLanguageSummaryEs: z.string().trim().max(1000).optional().or(z.literal("")),
   baseline: z.string().trim().min(1, "Baseline is required.").max(500),
   measurableTarget: z.string().trim().min(1, "Measurable target is required.").max(500),
   targetValue: z.coerce.number().positive("Target value must be greater than 0."),
@@ -199,6 +200,22 @@ export const retentionSchema = z.object({
 export const setupPasswordSchema = z
   .object({
     currentPassword: z.string().min(1),
+    newPassword: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((value) => value.newPassword === value.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Enter a valid work or family email."),
+});
+
+export const setPasswordFromTokenSchema = z
+  .object({
+    userId: z.string().min(1),
+    token: z.string().min(1),
     newPassword: passwordSchema,
     confirmPassword: z.string(),
   })

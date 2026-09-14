@@ -52,7 +52,19 @@ export default async function MinutesPage() {
                 <p className="mt-2 text-sm">
                   Absent {row.absent} · Declined {row.declined} · Makeup scheduled {row.makeupScheduled}
                 </p>
-                <div className="mt-3 overflow-x-auto">
+                <ul className="mt-3 space-y-1 text-sm md:hidden">
+                  {row.days.map((day) => (
+                    <li key={day.date}>
+                      {day.date.slice(5)}:{" "}
+                      {day.presentMinutes || day.absent || day.declined || day.makeup
+                        ? `${day.presentMinutes}m${day.absent ? ` / ${day.absent} abs` : ""}${
+                            day.makeup ? ` / ${day.makeup} mu` : ""
+                          }`
+                        : "—"}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-3 hidden overflow-x-auto md:block">
                   <table className="min-w-full text-sm">
                     <thead>
                       <tr className="text-left text-muted">

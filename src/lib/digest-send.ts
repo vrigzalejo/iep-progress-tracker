@@ -4,6 +4,7 @@ import { hasCurrentConsent } from "@/lib/consent";
 import { writeAudit } from "@/lib/audit";
 import { sendTransactionalMail } from "@/lib/mail";
 import { appOrigin } from "@/lib/runtime";
+import { parseFamilyLocale } from "@/lib/family-locale";
 import {
   buildFamilyDigest,
   digestUnsubscribeToken,
@@ -58,12 +59,14 @@ export async function sendWeeklyFamilyDigests(now = new Date()) {
     ) {
       continue;
     }
+    const locale = parseFamilyLocale(contact.familyLocale);
     const digest = buildFamilyDigest(
       {
         preferredName: contact.student.preferredName,
         goals: contact.student.goals,
       },
       now,
+      locale,
     );
     const token = digestUnsubscribeToken(contact.id, secret);
     const text = formatDigestText({
@@ -73,6 +76,7 @@ export async function sendWeeklyFamilyDigests(now = new Date()) {
       portalUrl: `${appOrigin()}/parent?studentId=${contact.studentId}`,
       unsubscribeUrl: `${appOrigin()}/api/digest/unsubscribe?t=${token}`,
       productName: APP_NAME,
+      locale,
     });
     const ok = await sendTransactionalMail({
       to: contact.email,

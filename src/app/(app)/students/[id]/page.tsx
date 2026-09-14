@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input, Label, Textarea } from "@/components/ui/input";
-import { requireUser, getStudentDetail } from "@/lib/queries";
+import { requireUser, getStudentDetail, listStudentEvidence } from "@/lib/queries";
+import { EvidenceGallery } from "@/components/evidence-gallery";
 import { can, isStaff } from "@/lib/permissions";
 import {
   addAccommodationAction,
@@ -37,6 +38,7 @@ export default async function StudentPage({
   await searchParams;
   const student = await getStudentDetail(user, id);
   if (!student) notFound();
+  const evidence = isStaff(user.role) ? await listStudentEvidence(user, id) : [];
   const weekStart = startOfUtcWeek();
   const weekEnd = endOfUtcWeek();
 
@@ -56,6 +58,9 @@ export default async function StudentPage({
               <Link href={`/students/${student.id}/goals/new`}>Add IEP goal</Link>
             </Button>
           ) : null}
+          <Button asChild variant="secondary">
+            <Link href={`/students/${student.id}/carryover`}>Home practice cards</Link>
+          </Button>
           <Button asChild variant="secondary">
             <Link href={`/reports?studentId=${student.id}`}>Build report</Link>
           </Button>
@@ -164,6 +169,27 @@ export default async function StudentPage({
           </form>
         ) : null}
       </Card>
+
+      {isStaff(user.role) ? (
+        <section>
+          <h2 className="font-serif text-2xl">Evidence gallery</h2>
+          <p className="mt-1 text-sm text-muted">Work samples attached to sessions, not filenames only.</p>
+          <div className="mt-4">
+            <EvidenceGallery
+              returnTo={`/students/${student.id}`}
+              canFlag={isStaff(user.role)}
+              items={evidence.map((item) => ({
+                id: item.id,
+                evidenceLabel: item.evidenceLabel,
+                evidencePath: item.evidencePath,
+                evidenceInPacket: item.evidenceInPacket,
+                recordedAt: item.recordedAt,
+                goalSummary: item.goal.plainLanguageSummary,
+              }))}
+            />
+          </div>
+        </section>
+      ) : null}
 
       <section>
         <h2 className="font-serif text-2xl">IEP goals</h2>

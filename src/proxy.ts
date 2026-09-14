@@ -5,10 +5,15 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isPublic =
     pathname.startsWith("/sign-in") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/set-password") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/health") ||
     pathname.startsWith("/api/cron") ||
-    pathname === "/privacy-notice";
+    pathname.startsWith("/api/digest/unsubscribe") ||
+    pathname === "/privacy-notice" ||
+    pathname === "/sw.js" ||
+    pathname.startsWith("/manifest");
   const session =
     request.cookies.get("authjs.session-token") ??
     request.cookies.get("__Secure-authjs.session-token");

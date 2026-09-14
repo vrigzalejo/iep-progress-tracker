@@ -56,6 +56,13 @@ export default async function NewGoalPage({
             <Label htmlFor="plainLanguageSummary">Plain-language summary</Label>
             <Textarea id="plainLanguageSummary" name="plainLanguageSummary" required minLength={10} />
           </div>
+          <div>
+            <Label htmlFor="plainLanguageSummaryEs">Spanish plain-language summary (optional)</Label>
+            <Textarea id="plainLanguageSummaryEs" name="plainLanguageSummaryEs" />
+            <p className="mt-1 text-sm text-muted">
+              Staff-written only. The product does not translate official IEP wording.
+            </p>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="baseline">Baseline</Label>

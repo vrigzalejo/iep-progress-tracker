@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { FieldError, Input, Label } from "@/components/ui/input";
 import { DEMO_ACCOUNTS } from "@/lib/demo-accounts";
 import { APP_NAME, DEMO_PASSPHRASE } from "@/lib/brand";
 import { signInErrorMessage, type SsoProviderButton } from "@/lib/sso";
+import { InstallHint } from "@/components/install-hint";
 
 export function SignInForm({
   ssoProviders,
@@ -23,7 +25,12 @@ export function SignInForm({
   const [password, setPassword] = useState("");
   const [totp, setTotp] = useState("");
   const [mfa, setMfa] = useState(false);
-  const [error, setError] = useState(signInErrorMessage(params.get("error")));
+  const [error, setError] = useState(
+    params.get("reset") === "1"
+      ? ""
+      : signInErrorMessage(params.get("error")),
+  );
+  const resetDone = params.get("reset") === "1";
   const [pending, setPending] = useState<"credentials" | string | null>(null);
   const showDemo = credentialsEnabled && process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 
@@ -62,7 +69,7 @@ export function SignInForm({
   }
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6 lg:grid lg:grid-cols-[1.1fr_0.9fr]">
       <Card>
         <h1 className="font-serif text-3xl">Sign in to {APP_NAME}</h1>
         <p className="mt-2 text-muted">
@@ -133,10 +140,20 @@ export function SignInForm({
             <Button type="submit" disabled={Boolean(pending)} className="w-full">
               {pending === "credentials" ? "Signing in…" : "Sign in"}
             </Button>
+            {credentialsEnabled ? (
+              <p className="text-sm">
+                <Link className="font-semibold text-forest underline" href="/forgot-password">
+                  Forgot or first-time password
+                </Link>
+              </p>
+            ) : null}
           </form>
         ) : (
           <FieldError>{error}</FieldError>
         )}
+        {resetDone ? (
+          <p className="mt-4 text-sm text-forest">Password saved. Sign in with the new password.</p>
+        ) : null}
         <p className="mt-4 text-sm text-muted">
           {credentialsEnabled
             ? "After eight failed password attempts, sign-in is paused for 15 minutes. "
@@ -145,7 +162,7 @@ export function SignInForm({
           <a className="font-semibold text-forest underline" href="/privacy-notice">
             privacy notice
           </a>{" "}
-          before using real records in a production deployment.
+          before using real records.
         </p>
       </Card>
       <div className="space-y-4">
@@ -177,17 +194,21 @@ export function SignInForm({
             </ul>
           </Card>
         ) : (
-          <Card>
-            <h2 className="font-serif text-2xl">School accounts</h2>
-            <p className="mt-2 text-sm text-muted">
+          <p className="text-sm text-muted lg:rounded-xl lg:border lg:border-border lg:bg-surface lg:p-6">
+            <span className="block font-serif text-xl text-ink">School accounts</span>
+            <span className="mt-2 block">
               An administrator must add your work or family email before you can sign in. Roles stay
               in this app; your identity provider only proves who you are.
-            </p>
-          </Card>
+            </span>
+          </p>
         )}
+        <InstallHint />
         <p className="text-sm text-muted">
           {APP_NAME} is designed around FERPA-aligned practices: least privilege, audit logs, and
-          data minimization. This demonstration is not a legal compliance certification.
+          data minimization.{" "}
+          {showDemo
+            ? "This demonstration is not a legal compliance certification."
+            : "This product is not a legal compliance certification."}
         </p>
       </div>
     </div>
