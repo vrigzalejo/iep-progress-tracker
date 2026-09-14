@@ -4,12 +4,12 @@
 
 | | |
 | --- | --- |
-| **Status** | Living roadmap (`0.7.0` shipped 2026-09-09; v0.8 is family comprehension, production sign-in, phone/tablet layout, and the installable mobile app) |
+| **Status** | Living roadmap (`0.7.0` shipped 2026-09-09; v0.8 is family comprehension, production sign-in, phone/tablet layout, the installable mobile app, and privacy-safe log monitoring) |
 | **Current product** | Meeting, digest, and filed-PDF MVP (`0.7.0`); fictional demo data until a district sets `NEXT_PUBLIC_DEMO_MODE=false` |
 | **Audience** | Educators, related-service providers, school admins, parents/guardians |
 | **North star** | The fastest, most defensible way to log IEP progress in the moment and send home a report a family can actually read — without the product making IEP decisions. |
 
-This document is grounded in the current app: Today / Hallway session logging, minutes ledger, unread message threads, report studio, standing accommodations, goal versions, family reports, meeting room, weekly digest, filed PDFs, SSO, per-child consent, FERPA student-file export, retention/cron, optional SMTP, TOTP MFA, idle timeout, local Docker HTTPS, and a how-to chatbot that never sees student records.
+This document is grounded in the current app: Today / Hallway session logging, minutes ledger, unread message threads, report studio, standing accommodations, goal versions, family reports, meeting room, weekly digest, filed PDFs, SSO, per-child consent, FERPA student-file export, retention/cron, optional SMTP, TOTP MFA, idle timeout, local Docker HTTPS, privacy-safe stdout logs, and a how-to chatbot that never sees student records.
 
 ---
 
@@ -23,7 +23,7 @@ The app already covers the core loop:
 
 It is **not** a legal FERPA certification, **not** an IEP writer, and **not** a placement or services recommender. Charts and “on track / needs attention / goal met” badges describe **data against the written mastery rule**. That constraint stays.
 
-**v0.5** closed the production-privacy blockers that kept demo from being turned off. **v0.6** closed the “one goal, one form” bottleneck. **v0.7** adds an opt-in weekly digest, a projector-safe meeting room, and filed report/packet PDFs. **v0.8** is leftover family work, a production sign-in that does not still look like a demo, a phone/tablet shell that does not overflow or fight itself, and the **same product as an installable phone/iPad app** (not a second native codebase).
+**v0.5** closed the production-privacy blockers that kept demo from being turned off. **v0.6** closed the “one goal, one form” bottleneck. **v0.7** adds an opt-in weekly digest, a projector-safe meeting room, and filed report/packet PDFs. **v0.8** is leftover family work, a production sign-in that does not still look like a demo, a phone/tablet shell that does not overflow or fight itself, the **same product as an installable phone/iPad app** (not a second native codebase), and **privacy-safe logs** operators can follow while testing.
 
 ### Sign-in when demonstration mode is off (`NEXT_PUBLIC_DEMO_MODE=false`)
 
@@ -97,7 +97,7 @@ P0 production-privacy work shipped in **0.5.0**. Daily-workflow P1 rows shipped 
 - **Student-level accommodations catalog.** **Shipped in 0.6.0.** Standing list on the student; session form can check what was used today.
 - **Single-organization deploy.** `Organization` exists. An admin **Schools** list (campus names students pick) shipped in **0.7.0**. Still no district → campus → caseload tree or staff assigned to a site. Blocks a multi-school district until v1.0.
 - **No SIS rostering.** SSO proves identity; someone still types every student. ClassLink/OneRoster is the obvious next step (SSO already mentions ClassLink).
-- **Monitoring is optional Sentry.** Need a privacy-safe error budget and an admin “last backup / last retention run” panel.
+- **Monitoring is optional Sentry.** **Stdout JSON logs shipped in 0.8.0** (`npm run docker:logs`, optional local Dozzle). Sentry DSN is still unwired. Admin “last backup / last retention run” panel stays v1.0.
 - **Passkeys** for credentials accounts (TOTP shipped in 0.5.0).
 - **Report-window transactional email** (invite + family-message ping shipped; opening-window mail did not).
 - **Local Docker HTTPS.** **Shipped in 0.6.0** for Compose (`https://127.0.0.1:43147`, HTTP redirects). Hosted TLS remains the platform (Vercel).
@@ -304,6 +304,25 @@ Every idea below is **logging, visualization, communication, or operations**. No
 
 **Non-goals.** App Store listing in v0.8. Push notifications that include student names or scores. Caching reports, messages, or evidence offline. A student-facing social app.
 
+### 4.16 Privacy-safe log monitoring
+
+**Status.** Shipped in **0.8.0** as JSON stdout (request + error lines) plus `npm run docker:logs`. Optional local Dozzle UI on `127.0.0.1:8888`. `SENTRY_DSN` remains unwired; do not send student payloads if you add Sentry later. Admin “last backup / last purge” panel stays v1.0.
+
+**What.** Operators watching a local or hosted process can see that a request happened (method + redacted path such as `/students/:id`) and that an error happened (message + safe context). They cannot reconstruct a student file from logs.
+
+**Why.** Testing `development` and production incidents both need a tail. Raw Next.js / Docker logs are easy to fill with preferred names, search queries, and evidence URLs.
+
+**Requirements**
+
+- One JSON line per event: `ts`, `level`, `event`, `app`, plus scrubbed context.
+- Request logs omit the query string and replace cuid/uuid path segments with `:id`. Health and icon routes are not logged.
+- `captureError` / `scrubLogContext` drop preferred name, email, phone, official wording, notes, narratives, and home carryover. Tests refuse those keys.
+- Local: `npm run docker:logs` follows Compose. `npm run docker:logs:ui` starts Dozzle on loopback only (Docker socket). Set `LOG_REQUESTS=false` to silence request lines.
+- Unhandled request errors go to stdout via `instrumentation.ts` `onRequestError`.
+- Production incidents that leak PII in logs stay a **zero** success metric.
+
+**Non-goals.** An in-app log dump (that would copy records into a second store). Shipping `@sentry/nextjs` in this slice.
+
 ---
 
 ## 5. Non-goals (explicit)
@@ -344,9 +363,9 @@ Meeting room mode · server PDFs · family weekly digest · admin Schools list �
 
 ### v0.8 — “A family can read it without a demo banner” (shipped as `0.8.0`)
 
-Spanish family UI · evidence gallery · staff-written home-carryover cards · production sign-in copy (no “demonstration” footer) · forgot / first-login password from the invite mail · caseload search filters · next student after Hallway save · phone and tablet shell · installable home-screen app.
+Spanish family UI · evidence gallery · staff-written home-carryover cards · production sign-in copy (no “demonstration” footer) · forgot / first-login password from the invite mail · caseload search filters · next student after Hallway save · phone and tablet shell · installable home-screen app · privacy-safe stdout logs (`npm run docker:logs`).
 
-**Done when:** a district can set `NEXT_PUBLIC_DEMO_MODE=false` and the sign-in page looks like a school product; a Spanish-speaking guardian can read the portal, report, and digest on a phone; work samples have a gallery; staff can open Today, Students, Minutes, and Team at 375px without overlapping chrome; Add to Home Screen lands on `/`.
+**Done when:** a district can set `NEXT_PUBLIC_DEMO_MODE=false` and the sign-in page looks like a school product; a Spanish-speaking guardian can read the portal, report, and digest on a phone; work samples have a gallery; staff can open Today, Students, Minutes, and Team at 375px without overlapping chrome; Add to Home Screen lands on `/`; an operator can follow Compose logs without student names, emails, or goal text.
 
 ### v1.0 — “A district can run this”
 
@@ -381,13 +400,14 @@ Smallest useful slices, in the repo’s `{issue}-{slug}` style. v0.6 daily workf
 4. **Spanish family UI** — portal, report, digest chrome (v0.8)
 5. **Evidence gallery / home-carryover cards** — lightbox + staff-written cards (v0.8)
 6. **Search filters + next-student after Hallway save** — daily leftover (v0.8)
-7. **OneRoster / coverage / para role** — district (v1.0)
-8. **Passkeys / report-window mail / print-all PDF** — leftover polish if a district asks
+7. **Privacy-safe log monitoring** — stdout JSON, `docker:logs`, optional Dozzle; no student payloads (v0.8)
+8. **OneRoster / coverage / para role** — district (v1.0)
+9. **Passkeys / report-window mail / print-all PDF** — leftover polish if a district asks
 
 ---
 
 ## 9. Recommendation
 
-P0 safety shipped in 0.5.0. Daily workflow shipped in 0.6.0. Family digest, meeting room, filed PDFs, Schools, and Resend/SMTP mail shipped in 0.7.0. Next: **v0.8** — Spanish family surfaces, evidence gallery, home-carryover cards, a sign-in page that no longer looks like the fictional demo when `NEXT_PUBLIC_DEMO_MODE=false`, a phone/tablet shell that does not overlap itself, and the same site as an installable phone/iPad app (not a second native client).
+P0 safety shipped in 0.5.0. Daily workflow shipped in 0.6.0. Family digest, meeting room, filed PDFs, Schools, and Resend/SMTP mail shipped in 0.7.0. Next: **v0.8** — Spanish family surfaces, evidence gallery, home-carryover cards, a sign-in page that no longer looks like the fictional demo when `NEXT_PUBLIC_DEMO_MODE=false`, a phone/tablet shell that does not overlap itself, the same site as an installable phone/iPad app (not a second native client), and privacy-safe logs you can follow with `npm run docker:logs`.
 
 Land work the usual way: GitHub issue (what / who / done-when) → branch `{issue-number}-{short-slug}` off `development` → PR into `development` with `Fixes #N`. Do not commit this file to `development` or `main` directly.

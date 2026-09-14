@@ -1,8 +1,20 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import {
+  isNoisyLogPath,
+  logEvent,
+  redactRequestPath,
+  shouldLogRequests,
+} from "@/lib/monitoring";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (shouldLogRequests() && !isNoisyLogPath(pathname)) {
+    logEvent("info", "request", {
+      method: request.method,
+      path: redactRequestPath(pathname),
+    });
+  }
   const isPublic =
     pathname.startsWith("/sign-in") ||
     pathname.startsWith("/forgot-password") ||
