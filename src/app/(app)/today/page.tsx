@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Alert, EmptyState } from "@/components/ui/alert";
 import { formatDate } from "@/lib/utils";
+import { hallwayWorkHref } from "@/lib/hallway";
 import { HallwaySync } from "@/components/hallway-sync";
 
 export const metadata = { title: "Today" };
@@ -27,7 +28,18 @@ export default async function TodayPage() {
       <HallwaySync />
       <div className="flex flex-wrap gap-2">
         <Button asChild>
-          <Link href={due[0]?.goalId ? `/hallway?studentId=${due[0].studentId}&goalId=${due[0].goalId}` : "/students"}>
+          <Link
+            href={
+              due[0]?.goalId
+                ? hallwayWorkHref(
+                    { studentId: due[0].studentId, goalId: due[0].goalId },
+                    due[1]?.goalId
+                      ? { studentId: due[1].studentId, goalId: due[1].goalId }
+                      : null,
+                  )
+                : "/students"
+            }
+          >
             Open hallway
           </Link>
         </Button>
@@ -45,9 +57,10 @@ export default async function TodayPage() {
           {due.map((row, index) => {
             const next = due[index + 1];
             const href = row.goalId
-              ? `/hallway?studentId=${row.studentId}&goalId=${row.goalId}${
-                  next?.goalId ? `&nextStudentId=${next.studentId}&nextGoalId=${next.goalId}` : ""
-                }`
+              ? hallwayWorkHref(
+                  { studentId: row.studentId, goalId: row.goalId },
+                  next?.goalId ? { studentId: next.studentId, goalId: next.goalId } : null,
+                )
               : `/students/${row.studentId}`;
             return (
               <li key={`${row.studentId}-${row.serviceArea}`}>

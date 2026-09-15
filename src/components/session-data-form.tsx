@@ -338,12 +338,15 @@ export function SessionDataForm({
           <Label htmlFor="evidenceLabel">Evidence label (optional)</Label>
           <Input id="evidenceLabel" name="evidenceLabel" placeholder="Weekly probe 4, work sample, session log" />
         </div>
-        {compact ? null : (
-          <div>
-            <Label htmlFor="evidence">Attach evidence (optional, 5 MB max)</Label>
-            <Input id="evidence" name="evidence" type="file" />
-          </div>
-        )}
+        <div>
+          <Label htmlFor="evidence">Attach evidence (optional, 5 MB max)</Label>
+          <Input id="evidence" name="evidence" type="file" />
+          {compact ? (
+            <p className="mt-1 text-sm text-muted">
+              Needs a network. Offline hallway saves scores only — the file is not queued.
+            </p>
+          ) : null}
+        </div>
         <Button type="submit" className="w-full min-h-12">
           Save progress
         </Button>

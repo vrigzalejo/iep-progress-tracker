@@ -41,10 +41,16 @@ test("staff can log a session and write a period comment; parent cannot open Tea
   await page.getByRole("link", { name: "Today", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
   const openHallway = page.getByRole("link", { name: "Open hallway" });
+  const hallwayRows = page.getByRole("link", { name: "Log in hallway" });
+  if ((await hallwayRows.count()) >= 2) {
+    await expect(openHallway).toHaveAttribute("href", /nextGoalId=/);
+    await expect(hallwayRows.first()).toHaveAttribute("href", /nextGoalId=/);
+  }
   if (await openHallway.count()) {
     await openHallway.click();
     await expect(page).toHaveURL(/\/hallway/, { timeout: 20_000 });
     await expect(page.getByRole("button", { name: "Save progress" })).toBeVisible();
+    await expect(page.getByLabel("Attach evidence")).toBeVisible();
   }
 
   await page.getByLabel("Primary").getByRole("link", { name: "Reports" }).click();

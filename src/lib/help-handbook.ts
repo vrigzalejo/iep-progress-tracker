@@ -323,11 +323,11 @@ On an open goal you can edit those fields, add more objectives, see the trend ch
         "setting",
         "probe",
       ],
-      body: `From [Today](/today), tap **Log in hallway** for huge trial buttons and the next student after save. You can also open a goal and **Log a session**, or **Hallway** on the profile. Choose outcome: Present, Absent, Declined/refused, or Makeup scheduled (date and place). Only **Present** sessions count toward the consecutive mastery streak. Offline hallway saves stay on this device until Wi‑Fi returns—they are never dropped silently.
+      body: `From [Today](/today), tap **Log in hallway** or **Open hallway** for huge trial buttons. After save, Hallway opens the next student still on Today. On a profile, **Hallway** is that same pad. **Log a session** stays on this student and does not jump. Choose outcome: Present, Absent, Declined/refused, or Makeup scheduled (date and place). Only **Present** sessions count toward the consecutive mastery streak. Offline hallway saves stay on this device until Wi‑Fi returns—they are never dropped silently.
 
 For trial-based goals (percent accuracy or independent trials), set prompt level first, then tap Independent, Prompted, or Incorrect. Undo last if needed. Frequency and duration goals use +/− counts. Rubric and rate enter a numeric score. Same form: date, setting (classroom, pull-out, group, telehealth, home), minutes delivered, group size, condition (typical supports, without extras, 1:1, small group), and accommodations.
 
-Optional: session notes, home carryover (families can see this), evidence label, and one file up to about 5 MB. After save, open the student profile **Evidence gallery** to view the file and flag **Used in meeting packet**. You can attach the entry to a short-term objective or the whole annual goal. Charts update from saved present-session data.`,
+Optional: session notes, home carryover (families can see this), evidence label, and one file up to about 5 MB (also on the Hallway pad when you have a network; offline hallway queues scores only). After save, open the student profile **Evidence gallery** to view the file and flag **Used in meeting packet**. You can attach the entry to a short-term objective or the whole annual goal. Charts update from saved present-session data.`,
     },
     {
       id: "charts",
@@ -594,7 +594,7 @@ When you **Log a session**, you can attach the entry to one objective or to the 
       hrefs: ["/today", "/hallway"],
       roles: ["ADMINISTRATOR", "EDUCATOR", "PROVIDER"],
       keywords: ["today", "hallway", "worklist", "offline", "pwa", "ipad", "queue"],
-      body: `[Today](/today) lists students still owed a session or minutes this week. **Log in hallway** opens huge trial buttons. After save, hallway opens the next student still on the list. Install the app from the browser if you want a home-screen icon; the start page is the site home (/) — staff dashboard or family home after sign-in.
+      body: `[Today](/today) lists students still owed a session or minutes this week. **Open hallway** and **Log in hallway** both pass the next student on the list. After save, hallway opens that student. Opening Hallway from a profile stays on that student even if they are not on Today. Install the app from the browser if you want a home-screen icon; the start page is the site home (/) — staff dashboard or family home after sign-in.
 
 If the hallway Wi‑Fi drops, the session stays in a queue on this device and syncs when you are back online. A failed sync stays visible. Optional device PIN is only for a shared cart—it does not replace sign-in.`,
     },

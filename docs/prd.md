@@ -39,8 +39,8 @@ This is what `/sign-in` already does. It is not a new design — document it so 
 | After a password that needs MFA | Authenticator field appears | Same. Password staff without TOTP are sent to Account setup to enroll (required when demo is off) |
 | Footer under the form | Eight failed passwords pause sign-in for 15 minutes | Same if passwords are on; if SSO-only: “School SSO signs you in with your district account.” |
 | Unknown SSO email | Rejected unless JIT | Same. Default copy: “No matching school account. Ask an administrator to add your email first.” Do not use JIT for parents |
-| Footer FERPA line | Still says “this demonstration is not a legal certification” | **Same copy today** — v0.8 should drop “demonstration” when demo is off |
-| Forgot / reset password | None | **None.** An admin sets a temporary password on Team, or the person uses SSO. That is a v0.8 gap |
+| Footer FERPA line | Says “this demonstration is not a legal certification” | **Shipped in 0.8.0.** Drops “demonstration” when demo is off |
+| Forgot / reset password | [Forgot password](/forgot-password) when mail is on | **Shipped in 0.8.0.** Two-hour set-password link (no student records). Team invite can skip a temp password |
 
 Sessions stay HTTP-only cookies, eight hours, idle sign-out (default 20 minutes). Roles stay in this app.
 
@@ -79,7 +79,7 @@ P0 production-privacy work shipped in **0.5.0**. Daily-workflow P1 rows shipped 
 
 | Gap | Why it matters | Status |
 | --- | --- | --- |
-| **Session log is one goal, one form** | Teachers will not open `/goals/[id]/progress/new` fifteen times. | **Shipped in 0.6.0.** Today worklist → Hallway trial pad. Next-student-after-save is still thin. |
+| **Session log is one goal, one form** | Teachers will not open `/goals/[id]/progress/new` fifteen times. | **Shipped in 0.6.0.** Today worklist → Hallway trial pad. Next-student-after-save and Hallway evidence shipped in **0.8.0**. |
 | **Messages are a flat list of 40** | No unread state, no notify, no attachments, no thread. Families think nobody saw the note. | **Mostly shipped in 0.6.0.** Per-student thread, unread badge, email ping. Attachments / images are still open. |
 | **Service minutes are a count, not a ledger** | Dashboard shows “below this week’s prescribed minutes.” No makeup planner, no “who was absent Tuesday.” | **Mostly shipped in 0.6.0.** Week ledger: prescribed vs delivered vs absent/makeup. Click-a-gap scheduler is still open. |
 | **Period comments are one student at a time** | Report windows are the painful week. | **Shipped in 0.6.0.** Report studio: period filter, missing-comment queue, staff snippet library, bulk “not yet introduced.” |
@@ -110,7 +110,7 @@ Every idea below is **logging, visualization, communication, or operations**. No
 
 ### 4.1 Hallway mode (the feature that would make staff love this)
 
-**Status.** Shipped in **0.6.0** (PWA, IndexedDB queue, optional device PIN). Remaining: conflict UX polish and “next student after save.”
+**Status.** Shipped in **0.6.0** (PWA, IndexedDB queue, optional device PIN). Next-student-after-save and Hallway evidence attach shipped in **0.8.0**. Remaining: conflict UX polish.
 
 **What.** A PWA “Hallway” screen: huge trial buttons, student + goal already chosen, works offline, syncs when the hallway Wi‑Fi comes back.
 

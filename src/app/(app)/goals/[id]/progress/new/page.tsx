@@ -22,8 +22,9 @@ export default async function NewProgressPage({
       <div>
         <h1 className="font-serif text-3xl">Log a session</h1>
         <p className="mt-2 text-muted">
-          For {goal.student.preferredName}. Tap trials during the session, or mark absent / declined
-          if the service was not delivered. Notes stay factual and supportive.
+          For {goal.student.preferredName}. This save stays on this student. Use Hallway from Today
+          or the profile if you want the next student on the worklist after save. Tap trials during
+          the session, or mark absent / declined if the service was not delivered.
         </p>
       </div>
       <Alert title="Write what you observed" tone="info">
