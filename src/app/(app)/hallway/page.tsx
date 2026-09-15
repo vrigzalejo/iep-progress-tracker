@@ -34,10 +34,12 @@ export default async function HallwayPage({
   if (!goalId && query.studentId) {
     const student = await getStudentDetail(user, query.studentId);
     goalId =
-      due.find((row) => row.studentId === student.id && row.goalId)?.goalId ?? student.goals[0]?.id;
+      due.find((row) => row.studentId === student.id && row.goalId)?.goalId ??
+      student.goals[0]?.id ??
+      undefined;
   }
   if (!goalId) {
-    goalId = due.find((row) => row.goalId)?.goalId;
+    goalId = due.find((row) => row.goalId)?.goalId ?? undefined;
   }
   if (!goalId) {
     return (
