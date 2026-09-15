@@ -193,6 +193,12 @@ export default async function StudentPage({
 
       <section>
         <h2 className="font-serif text-2xl">IEP goals</h2>
+        {isStaff(user.role) && can(user.role, "progress.create") ? (
+          <p className="mt-2 text-sm text-muted">
+            <strong>Hallway</strong> is the trial pad and moves to the next student on Today after
+            save. <strong>Log a session</strong> stays on this student.
+          </p>
+        ) : null}
         {student.goals.length === 0 ? (
           <p className="mt-3 text-muted">No shared goals are available on this profile.</p>
         ) : (
@@ -221,12 +227,12 @@ export default async function StudentPage({
                     {can(user.role, "progress.create") ? (
                       <>
                         <Button asChild>
-                          <Link href={`/goals/${goal.id}/progress/new`}>Log a session</Link>
-                        </Button>
-                        <Button asChild variant="secondary">
                           <Link href={`/hallway?studentId=${student.id}&goalId=${goal.id}`}>
                             Hallway
                           </Link>
+                        </Button>
+                        <Button asChild variant="secondary">
+                          <Link href={`/goals/${goal.id}/progress/new`}>Log a session</Link>
                         </Button>
                       </>
                     ) : null}
