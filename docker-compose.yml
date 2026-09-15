@@ -57,6 +57,7 @@ services:
       NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-true}
       NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-IEP Progress Tracker}
       NEXT_PUBLIC_APP_SLUG: ${NEXT_PUBLIC_APP_SLUG:-iep-progress-tracker}
+      LOG_REQUESTS: ${LOG_REQUESTS:-true}
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
       MAIL_FROM: ${MAIL_FROM:-noreply@localhost}
@@ -70,6 +71,11 @@ services:
         condition: service_healthy
     volumes:
       - app-uploads:/app/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test:
         [
@@ -141,6 +147,16 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
+
+  # Optional local log UI (Docker socket, localhost only).
+  # npm run docker:logs:ui → http://127.0.0.1:8888
+  dozzle:
+    image: amir20/dozzle:latest
+    profiles: ["logs"]
+    ports:
+      - "127.0.0.1:8888:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
   pg-data:
