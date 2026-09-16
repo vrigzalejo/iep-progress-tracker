@@ -18,7 +18,7 @@ export default async function NewProgressPage({
   const student = await getStudentDetail(user, goal.studentId);
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
+    <div className="mx-auto max-w-xl space-y-6 pb-24 sm:pb-0">
       <div>
         <h1 className="font-serif text-3xl">Log a session</h1>
         <p className="mt-2 text-muted">
