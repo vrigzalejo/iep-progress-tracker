@@ -4,21 +4,28 @@ import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-md text-sm font-semibold transition-colors [&_svg]:pointer-events-none disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50 min-h-11 px-4",
+  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-semibold shadow-sm transition-colors [&_svg]:pointer-events-none disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50 min-h-11 px-4",
   {
     variants: {
       variant: {
         primary: "bg-forest text-white hover:bg-forest-deep",
-        secondary: "bg-white text-ink border border-border hover:bg-paper",
-        ghost: "text-forest hover:bg-white",
+        secondary: "border border-border bg-white text-ink hover:bg-paper",
+        ghost: "shadow-none text-forest hover:bg-paper",
+        link: "h-auto min-h-0 rounded-none px-0 shadow-none text-forest hover:bg-transparent hover:underline",
         danger: "bg-danger text-white hover:bg-[#6f1c26]",
       },
       size: {
-        default: "min-h-11",
-        sm: "min-h-9 px-3 text-sm",
+        default: "",
+        sm: "min-h-10 px-3.5",
         icon: "h-11 w-11 p-0",
       },
     },
+    compoundVariants: [
+      {
+        variant: "link",
+        class: "h-auto min-h-0 px-0 shadow-none",
+      },
+    ],
     defaultVariants: {
       variant: "primary",
       size: "default",

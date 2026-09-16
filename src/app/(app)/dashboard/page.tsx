@@ -29,10 +29,10 @@ export default async function DashboardPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild>
-            <Link href="/today">Today’s worklist</Link>
+            <Link href="/today">Today</Link>
           </Button>
           <Button asChild variant="secondary">
-            <Link href="/students">Open caseload</Link>
+            <Link href="/students">Caseload</Link>
           </Button>
         </div>
       </header>
@@ -105,23 +105,24 @@ export default async function DashboardPage() {
           {data.needingData.length === 0 ? (
             <p className="mt-3 text-sm text-muted">Every active goal has a recent progress entry.</p>
           ) : (
-            <ul className="mt-4 space-y-3">
+            <ul className="mt-4 divide-y divide-border">
               {data.needingData.map((goal) => (
-                <li key={goal.id} className="rounded-lg border border-border p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <Link href={`/goals/${goal.id}`} className="font-semibold hover:underline">
-                        {goal.studentName}
-                      </Link>
-                      <p className="text-sm text-muted">
-                        {SERVICE_AREA_LABELS[goal.serviceArea as ServiceArea] ?? goal.serviceArea}
-                      </p>
-                    </div>
-                    <StatusIndicator signal={goal.signal} />
+                <li key={goal.id} className="flex items-start justify-between gap-3 py-3">
+                  <div>
+                    <Link href={`/goals/${goal.id}`} className="font-semibold hover:underline">
+                      {goal.studentName}
+                    </Link>
+                    <p className="text-sm text-muted">
+                      {SERVICE_AREA_LABELS[goal.serviceArea as ServiceArea] ?? goal.serviceArea}
+                    </p>
+                    <Link
+                      href={`/goals/${goal.id}/progress/new`}
+                      className="mt-1 inline-block text-sm font-semibold text-forest hover:underline"
+                    >
+                      Log a session
+                    </Link>
                   </div>
-                  <Button asChild variant="secondary" size="sm" className="mt-3">
-                    <Link href={`/goals/${goal.id}/progress/new`}>Log a session</Link>
-                  </Button>
+                  <StatusIndicator signal={goal.signal} />
                 </li>
               ))}
             </ul>
@@ -144,9 +145,12 @@ export default async function DashboardPage() {
                     </Link>
                     <p className="text-sm text-muted">Annual review {formatDate(student.iepAnnualReviewAt)}</p>
                   </div>
-                  <Button asChild variant="secondary" size="sm">
-                    <Link href={`/reports/${student.id}/meeting`}>Packet</Link>
-                  </Button>
+                  <Link
+                    href={`/reports/${student.id}/meeting`}
+                    className="shrink-0 text-sm font-semibold text-forest hover:underline"
+                  >
+                    Meeting packet
+                  </Link>
                 </li>
               ))}
             </ul>

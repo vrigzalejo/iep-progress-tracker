@@ -51,7 +51,7 @@ export default async function HallwayPage({
             : "No remaining sessions are on today’s list."}
         </p>
         <Button asChild>
-          <Link href="/today">Back to Today</Link>
+          <Link href="/today">Today</Link>
         </Button>
       </div>
     );

@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { requireParent, listVisibleStudents, getStudentDetail } from "@/lib/queries";
+import { requireParent, listVisibleStudents, getStudentDetail, markStudentMessagesRead } from "@/lib/queries";
 import { StatusIndicator } from "@/components/status-indicator";
 import { ProgressCodeBadge } from "@/components/progress-code-badge";
 import { FamilyLocaleToggle } from "@/components/family-locale-toggle";
+import { MessageThread } from "@/components/message-thread";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { Label, Textarea } from "@/components/ui/input";
-import { sendMessageAction, setDigestOptInAction } from "@/app/actions";
+import { Label } from "@/components/ui/input";
+import { setDigestOptInAction } from "@/app/actions";
 import { formatDate } from "@/lib/utils";
 import { Alert, EmptyState, FormError } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ export default async function ParentPage({
   const selected =
     students.find((student) => student.id === params.studentId) ?? students[0] ?? null;
   const student = selected ? await getStudentDetail(user, selected.id) : null;
+  if (student) await markStudentMessagesRead(user, student.id);
   const digestContact = student?.guardians.find((guardian) => guardian.userId === user.id);
   const locale = resolveFamilyLocale(
     (await cookies()).get(FAMILY_LOCALE_COOKIE)?.value,
@@ -69,17 +71,17 @@ export default async function ParentPage({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <Button asChild>
           <Link href={`/reports/${student.id}`}>{copy.openReport}</Link>
         </Button>
-        <Button asChild variant="secondary">
+        <Button asChild variant="link">
           <Link href={`/reports/${student.id}/meeting`}>{copy.meetingPacket}</Link>
         </Button>
-        <Button asChild variant="secondary">
+        <Button asChild variant="link">
           <Link href={`/students/${student.id}/carryover`}>{copy.homeCards}</Link>
         </Button>
-        <Button asChild variant="secondary">
+        <Button asChild variant="link">
           <Link href="/privacy">{copy.privacyConsent}</Link>
         </Button>
       </div>
@@ -155,29 +157,26 @@ export default async function ParentPage({
       </section>
 
       <Card>
-        <CardTitle>{copy.messages}</CardTitle>
+        <CardTitle className="flex items-center justify-between gap-3">
+          <span>{copy.messages}</span>
+          <Button asChild variant="link">
+            <Link href={`/messages/${student.id}`}>{copy.messagesNav}</Link>
+          </Button>
+        </CardTitle>
         <FormError error={params.error} />
-        {student.messages.length === 0 ? (
-          <p className="mt-4 text-sm text-muted">{copy.noMessages}</p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {student.messages.map((message) => (
-              <li key={message.id} className="rounded-lg bg-paper p-3">
-                <p className="text-xs text-muted">
-                  {message.fromUser.name} · {formatDate(message.createdAt)}
-                </p>
-                <p>{message.body}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-        <form action={sendMessageAction} className="mt-4 space-y-3">
-          <input type="hidden" name="studentId" value={student.id} />
-          <input type="hidden" name="returnTo" value={`/parent?studentId=${student.id}`} />
-          <Label htmlFor="familyMessage">{copy.writeTeam}</Label>
-          <Textarea id="familyMessage" name="body" required maxLength={2000} />
-          <Button type="submit">{copy.send}</Button>
-        </form>
+        <div className="mt-4">
+          <MessageThread
+            messages={student.messages}
+            currentUserId={user.id}
+            studentId={student.id}
+            returnTo={`/parent?studentId=${student.id}`}
+            isStaffUser={false}
+            locale={locale}
+            compact
+            composerId="familyMessage"
+            labels={{ write: copy.writeTeam, send: copy.send, empty: copy.noMessages }}
+          />
+        </div>
       </Card>
     </div>
   );

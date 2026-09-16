@@ -40,11 +40,11 @@ export default async function TodayPage() {
                 : "/students"
             }
           >
-            Open hallway
+            Hallway
           </Link>
         </Button>
         <Button asChild variant="secondary">
-          <Link href="/minutes">Minutes ledger</Link>
+          <Link href="/minutes">Minutes</Link>
         </Button>
       </div>
       {due.length === 0 ? (
@@ -75,9 +75,9 @@ export default async function TodayPage() {
                     {row.minutesPerWeek} minutes
                   </p>
                   {row.goalSummary ? <p className="mt-1 text-sm text-muted">{row.goalSummary}</p> : null}
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
                     <Badge tone="sky">{row.sessionsRemaining} remaining</Badge>
-                    <Button asChild>
+                    <Button asChild variant="link">
                       <Link href={href}>Log in hallway</Link>
                     </Button>
                   </div>

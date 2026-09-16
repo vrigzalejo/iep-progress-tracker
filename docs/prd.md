@@ -50,10 +50,10 @@ Sessions stay HTTP-only cookies, eight hours, idle sign-out (default 20 minutes)
 
 | Persona | Job to be done | Current friction |
 | --- | --- | --- |
-| **Educator / case manager** | Log 8–15 sessions between bells; finish period comments in one sitting | Today + Hallway + report studio exist; leftover friction is attachments, next-student after save, and pages that still assume a wide laptop |
+| **Educator / case manager** | Log 8–15 sessions between bells; finish period comments in one sitting | Today + Hallway + report studio exist; leftover friction is makeup planning and pages that still assume a wide laptop |
 | **Related-service provider** | Hit prescribed weekly minutes; prove makeup when a student is absent | Week ledger exists; makeup is still a session outcome, not a click-the-gap planner |
 | **Administrator** | Roster staff, prove access, answer a records request | Student ZIP + CSV + audit exist; still no school-site tree, SIS roster, or “last backup / last purge” ops panel |
-| **Parent / guardian** | Understand progress in everyday language; know what to practice at home | Per-child consent, portal, unread threads, and opt-in weekly digest exist; Spanish family UI is still open; family and sign-in pages are desktop-first |
+| **Parent / guardian** | Understand progress in everyday language; know what to practice at home | Per-child consent, portal, Spanish chrome, unread conversation threads, and opt-in weekly digest exist; family reading on a phone shipped in 0.8.0 |
 
 ---
 
@@ -80,9 +80,9 @@ P0 production-privacy work shipped in **0.5.0**. Daily-workflow P1 rows shipped 
 | Gap | Why it matters | Status |
 | --- | --- | --- |
 | **Session log is one goal, one form** | Teachers will not open `/goals/[id]/progress/new` fifteen times. | **Shipped in 0.6.0.** Today worklist → Hallway trial pad. Next-student-after-save and Hallway evidence shipped in **0.8.0**. |
-| **Messages are a flat list of 40** | No unread state, no notify, no attachments, no thread. Families think nobody saw the note. | **Mostly shipped in 0.6.0.** Per-student thread, unread badge, email ping. Attachments / images are still open. |
+| **Messages are a flat list of 40** | No unread state, no notify, no attachments, no thread. Families think nobody saw the note. | **Shipped in 0.6.0** (per-student thread, unread, email ping). **Conversation UI in 0.8.0:** bubbles (yours vs theirs, staff-only gold), day headings, inbox of every student including empty threads, mark-read on Family home and profiles. Attachments / images and live transport are still open. |
 | **Service minutes are a count, not a ledger** | Dashboard shows “below this week’s prescribed minutes.” No makeup planner, no “who was absent Tuesday.” | **Mostly shipped in 0.6.0.** Week ledger: prescribed vs delivered vs absent/makeup. Click-a-gap scheduler is still open. |
-| **Period comments are one student at a time** | Report windows are the painful week. | **Shipped in 0.6.0.** Report studio: period filter, missing-comment queue, staff snippet library, bulk “not yet introduced.” |
+| **Period comments are one student at a time** | Report windows are the painful week. | **Shipped in 0.6.0.** Report studio: period filter, missing-comment queue, staff snippet library, bulk “not yet introduced.” **Caseload list in 0.8.0:** grouped by student, missing vs written, no wrapping table. Combined “print all” is still open. |
 | **Print = browser print** | Meeting packets look fine; they are not a filed PDF. | **Shipped in 0.7.0.** Staff can file a report or packet PDF as an evidence-class file. Studio “print all” as one job is still open. |
 | **Search is `ILIKE` on names/goal text** | Fine at 5 demo students; noisy at 400. | **Shipped in 0.8.0.** Filters: school, grade, service area, data signal, overdue report date. |
 | **Phone and tablet layout is leftover desktop chrome** | Hallway has large targets; everything else still assumes a laptop. The drawer overlaps Sign out on short phones, tables only scroll sideways, and the help chat sits on top of page actions. | **Shipped in 0.8.0.** Drawer scrim, stacked tables, one-column sign-in, help-chat clearance. Full WCAG 2.2 AA stays v1.0. |
@@ -184,9 +184,9 @@ Every idea below is **logging, visualization, communication, or operations**. No
 
 ### 4.6 Progress report studio
 
-**Status.** Shipped in **0.6.0** as `/reports/studio` (missing-comment queue, snippets, bulk not-yet-introduced). Per-student filed PDF shipped in **0.7.0**; combined “print all” is still open.
+**Status.** Shipped in **0.6.0** as `/reports/studio` (missing-comment queue, snippets, bulk not-yet-introduced). Per-student filed PDF shipped in **0.7.0**. Caseload grouped-by-student list shipped in **0.8.0**. Combined “print all” is still open.
 
-**What.** Caseload × reporting period grid. Cells show missing vs written. Click to write the IEP progress code + narrative. Bulk “mark not yet introduced” with confirm.
+**What.** Caseload × reporting period list, grouped by student. Each goal shows missing vs written. Click **Write** to enter the IEP progress code + narrative. Bulk “mark not yet introduced” with confirm.
 
 **Why.** Period week is when products get abandoned.
 
@@ -300,7 +300,7 @@ Every idea below is **logging, visualization, communication, or operations**. No
 - **Header.** Hamburger + full-width search share one row. On a phone the field crowds the menu control; family header copy wraps under the icon.
 - **Help chat.** Fixed `bottom-20 right-4` launcher and panel sit on primary actions (Hallway save, message send, studio submit).
 - **Sign-in.** Stacks the form card, the School accounts / demo card, and a FERPA paragraph. Fine at `lg`; on a phone it is three blocks of the same width with no single primary column.
-- **Tables.** Report studio, minutes ledger, and Team only get `overflow-x-auto`. They do not collapse to cards or a stacked definition list.
+- **Tables.** Minutes ledger and Team still use `overflow-x-auto`. Report studio is a grouped student list (0.8.0 follow-up), not a wrapping four-column table.
 - **Grids.** Dashboard / student / goal stat rows go `md:grid-cols-3` or `4` and squeeze labels. Meeting room stays projector-first (out of scope here).
 
 **Requirements**
@@ -309,7 +309,7 @@ Every idea below is **logging, visualization, communication, or operations**. No
 - Header search can collapse to an icon that expands, or sit on its own row under the title, so the menu control stays ≥44px and unobscured.
 - Help launcher clears the bottom safe area and does not cover the primary button on Hallway, messages, or studio. Full-height sheet on phones is OK.
 - Sign-in is one column below `lg`: credentials/SSO first, School accounts as a short note, FERPA line last. Production copy (no “demonstration”) ships with the sign-in polish already in v0.8.
-- Studio, minutes, and Team: card or stacked rows below `md`; keep the table from `md` up, still horizontally scrollable if a column set is wide.
+- Studio is a grouped list at every width. Minutes and Team: stacked rows below `md`; keep the table from `md` up, still horizontally scrollable if a column set is wide.
 - No page-level horizontal scroll at 375px on sign-in, Today, Students, family home, messages, or a student file. Safe-area insets for notched phones.
 - Verify in a browser at 375 and 768, plus the existing Hallway large-target path. Do not wait for the v1.0 VoiceOver/axe pass.
 
@@ -384,7 +384,7 @@ Consent per child · seed never runs in production · object storage required wh
 
 Today caseload · hallway PWA / offline queue · service-minutes ledger + makeup · unread messages + notify · report studio · prompt-level chart · standing accommodations · goal versions · local Docker HTTPS.
 
-**Shipped when:** a provider can finish a typical half-day of sessions from Today → Hallway without opening a full goal page, and period week is the report-studio grid.
+**Shipped when:** a provider can finish a typical half-day of sessions from Today → Hallway without opening a full goal page, and period week is the report-studio list.
 
 ### v0.7 — “The meeting and the kitchen table” (shipped 2026-09-09 as `0.7.0`)
 
@@ -394,7 +394,7 @@ Meeting room mode · server PDFs · family weekly digest · admin Schools list �
 
 ### v0.8 — “A family can read it without a demo banner” (shipped as `0.8.0`)
 
-Spanish family UI · evidence gallery · staff-written home-carryover cards · production sign-in copy (no “demonstration” footer) · forgot / first-login password from the invite mail · caseload search filters · next student after Hallway save · phone and tablet shell · installable home-screen app · privacy-safe stdout logs (`npm run docker:logs`).
+Spanish family UI · evidence gallery · staff-written home-carryover cards · production sign-in copy (no “demonstration” footer) · forgot / first-login password from the invite mail · caseload search filters · next student after Hallway save · phone and tablet shell · installable home-screen app · privacy-safe stdout logs (`npm run docker:logs`) · staff chrome (status badges vs action buttons, conversation message threads, report-studio list grouped by student).
 
 **Done when:** a district can set `NEXT_PUBLIC_DEMO_MODE=false` and the sign-in page looks like a school product; a Spanish-speaking guardian can read the portal, report, and digest on a phone; work samples have a gallery; staff can open Today, Students, Minutes, and Team at 375px without overlapping chrome; Add to Home Screen lands on `/`; an operator can follow Compose logs without student names, emails, or goal text.
 
@@ -433,13 +433,14 @@ Smallest useful slices, in the repo’s `{issue}-{slug}` style. v0.6 daily workf
 6. **Search filters + next-student after Hallway save** — daily leftover (v0.8)
 7. **Privacy-safe log monitoring** — stdout JSON, `docker:logs`, optional Dozzle; no student payloads (v0.8)
 8. **How-to coach follow-up** — authored tap-scripts, Hallway/Today path truth, focus trap + Stop, spotlight on `data-help` controls, Playwright on Today → Log a session; still no student payload (v0.8 leftover / v1.0)
-9. **OneRoster / coverage / para role** — district (v1.0)
-10. **Passkeys / report-window mail / print-all PDF** — leftover polish if a district asks
+9. **Staff chrome** — status badges vs action buttons, conversation message threads, report studio grouped list (v0.8)
+10. **OneRoster / coverage / para role** — district (v1.0)
+11. **Passkeys / report-window mail / print-all PDF** — leftover polish if a district asks
 
 ---
 
 ## 9. Recommendation
 
-P0 safety shipped in 0.5.0. Daily workflow shipped in 0.6.0. Family digest, meeting room, filed PDFs, Schools, and Resend/SMTP mail shipped in 0.7.0. Next: **v0.8** — Spanish family surfaces, evidence gallery, home-carryover cards, a sign-in page that no longer looks like the fictional demo when `NEXT_PUBLIC_DEMO_MODE=false`, a phone/tablet shell that does not overlap itself, the same site as an installable phone/iPad app (not a second native client), and privacy-safe logs you can follow with `npm run docker:logs`.
+P0 safety shipped in 0.5.0. Daily workflow shipped in 0.6.0. Family digest, meeting room, filed PDFs, Schools, and Resend/SMTP mail shipped in 0.7.0. **v0.8** is family Spanish, evidence gallery, home-carryover cards, production sign-in copy, a phone/tablet shell, the same site as an installable app, privacy-safe logs, and staff chrome (badges vs buttons, conversation threads, report-studio list). Remaining how-to coach follow-up (spotlight, focus trap, e2e) can trail into v1.0.
 
 Land work the usual way: GitHub issue (what / who / done-when) → branch `{issue-number}-{short-slug}` off `development` → PR into `development` with `Fixes #N`. Do not commit this file to `development` or `main` directly.

@@ -406,8 +406,6 @@ export async function listMessageThreads(user: SessionUser) {
   const byStudent = new Map<
     string,
     {
-      studentId: string;
-      studentName: string;
       latest: (typeof messages)[number];
       unread: number;
     }
@@ -417,17 +415,28 @@ export async function listMessageThreads(user: SessionUser) {
     const unread =
       message.fromUserId !== user.id && message.reads.length === 0 ? 1 : 0;
     if (!existing) {
-      byStudent.set(message.studentId, {
-        studentId: message.studentId,
-        studentName: message.student.preferredName,
-        latest: message,
-        unread,
-      });
+      byStudent.set(message.studentId, { latest: message, unread });
     } else {
       existing.unread += unread;
     }
   }
-  return [...byStudent.values()];
+  return students
+    .map((student) => {
+      const bucket = byStudent.get(student.id);
+      return {
+        studentId: student.id,
+        studentName: student.preferredName,
+        latest: bucket?.latest ?? null,
+        unread: bucket?.unread ?? 0,
+      };
+    })
+    .sort((a, b) => {
+      if (a.unread !== b.unread) return b.unread - a.unread;
+      const aTime = a.latest?.createdAt.getTime() ?? 0;
+      const bTime = b.latest?.createdAt.getTime() ?? 0;
+      if (aTime !== bTime) return bTime - aTime;
+      return a.studentName.localeCompare(b.studentName);
+    });
 }
 
 export async function markStudentMessagesRead(user: SessionUser, studentId: string) {

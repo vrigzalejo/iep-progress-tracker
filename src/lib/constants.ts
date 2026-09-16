@@ -98,7 +98,7 @@ export const SIGNAL_LABELS: Record<DataSignal, string> = {
   GOAL_MET: "Goal met",
   ON_TRACK: "On track",
   NEEDS_ATTENTION: "Needs attention",
-  NEEDS_DATA: "Needs recent data",
+  NEEDS_DATA: "Needs data",
 };
 
 export const SIGNAL_HINTS: Record<DataSignal, string> = {
