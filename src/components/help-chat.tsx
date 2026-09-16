@@ -168,7 +168,10 @@ export function HelpChat({ role, locale = "en" }: { role: Role; locale?: FamilyL
     ...messages,
   ];
   const pathNow = pathname.split("?")[0] || "/";
-  askedRef.current = asked;
+
+  useEffect(() => {
+    askedRef.current = asked;
+  }, [asked]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
