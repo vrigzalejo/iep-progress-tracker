@@ -88,6 +88,30 @@ services:
       timeout: 5s
       retries: 3
       start_period: 40s
+    # npm run docker:up uses --watch. Saving app source rebuilds this image
+    # (production Next.js — not instant HMR). Ignore host-only paths so
+    # .certs writes and editor junk do not loop a rebuild.
+    develop:
+      watch:
+        - path: .
+          action: rebuild
+          ignore:
+            - .git
+            - .next
+            - node_modules
+            - .certs
+            - .cursor
+            - .github
+            - coverage
+            - data
+            - docs
+            - e2e
+            - src/generated
+            - .env
+            - .env.local
+            - .env.*.local
+        - path: .env.local
+          action: restart
 
   # TLS terminator. Next.js stays HTTP on the Compose network.
   # The proxy writes .certs/local.pem on first start if the files are missing.

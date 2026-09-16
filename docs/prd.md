@@ -86,6 +86,7 @@ P0 production-privacy work shipped in **0.5.0**. Daily-workflow P1 rows shipped 
 | **Print = browser print** | Meeting packets look fine; they are not a filed PDF. | **Shipped in 0.7.0.** Staff can file a report or packet PDF as an evidence-class file. Studio “print all” as one job is still open. |
 | **Search is `ILIKE` on names/goal text** | Fine at 5 demo students; noisy at 400. | **Shipped in 0.8.0.** Filters: school, grade, service area, data signal, overdue report date. |
 | **Phone and tablet layout is leftover desktop chrome** | Hallway has large targets; everything else still assumes a laptop. The drawer overlaps Sign out on short phones, tables only scroll sideways, and the help chat sits on top of page actions. | **Shipped in 0.8.0.** Drawer scrim, stacked tables, one-column sign-in, help-chat clearance. Full WCAG 2.2 AA stays v1.0. |
+| **How-to chat is a handbook dump in a bubble** | First-week staff will not read Setup guide; a pasted article is not a walkthrough. | **Partial in 0.8.0.** One question, a few choices, numbered taps, one **Go to**. Still no spotlight on real controls, no focus trap, no e2e. See **4.13**. |
 | **WCAG 2.2 AA is on the launch checklist, not done** | Trial pad and sidebar need large targets, focus order, live-region for trial counts. | **Open (v1.0).** Keyboard + VoiceOver pass on session form, family portal, and print views. Plus axe smoke. |
 
 ### P2 — Model and ops debt
@@ -249,11 +250,41 @@ Every idea below is **logging, visualization, communication, or operations**. No
 
 ### 4.13 How-to chatbot, screen-aware (still handbook-only)
 
-**Status.** Handbook-only assistant shipped earlier; 0.6.0 updated articles for Today, Hallway, minutes, and studio. Still no student payload.
+**Status.** First coach slice is in **0.8.0** (`How to use this site` in `src/components/help-chat.tsx`): path-aware welcome, SSE stream, authored tap steps on high-traffic screens, a few choice chips, one **Go to** link, optional `HF_TOKEN` rephrase. It is not done. Spotlight on real controls, dialog a11y, Spanish, and e2e are still open. Follow-up polish is this section — not a new product, not family live chat.
 
-**What.** The corner assistant already maps routes to handbook articles. Make it open the article for *this* path by default, with suggested questions. Keep `HF_TOKEN` as optional rephrase of handbook text.
+**What.** A corner coach that explains **this screen** from the product handbook: what to tap, where to go next, what the product will not do. Optional Hugging Face rephrase of that handbook only. Never a student payload.
 
-**Non-negotiable.** No student payload, no goal text, no “what should I write for this period.”
+**Why.** First-week staff and families will not read the Setup guide. If the coach pastes handbook paragraphs, they close it and ask a colleague. If it walked the actual controls on the page, it would replace hallway training.
+
+**Non-negotiable.** No student payload, no goal text, no “what should I write for this period.” Pathnames sent to `/api/help-chat` must strip ids before any model call (already: `normalizeHelpPathname`). Family **Messages** stay a saved thread (email ping), not a live WebSocket chat.
+
+**Known mess (current code)**
+
+- **Authored taps on some screens only.** Today, Hallway/sessions, Students, goals, reports, Team, Family home, sign-in, and Setup guide have 3–4 tap steps. Other articles still go through `toHelpSteps` (split prose). Retrieval still uses the long article for search.
+- **No spotlight on the real UI.** **Go to Today** / **Go to Hallway** only `Link`s. The coach never highlights Log in hallway, Independent, or Save. Users still have to hunt.
+- **Dialog a11y.** `role="dialog"` + `aria-modal` + Escape + restore-focus to the launcher, but no focus trap. Tab can leave the sheet. Meeting room hides the panel; other pages do not pause the page behind it.
+- **Stream UX.** No Stop. A slow `HF_TOKEN` reply cannot be cancelled. Handbook steps no longer use a fake typewriter delay.
+- **Thread is RAM only.** Refresh or a new device loses the conversation. SessionStorage of how-to questions (never student names) is not wired.
+- **English handbook only.** Family chrome can be Español; the coach is not. Spanish v0.8 (4.11) does not yet cover this panel.
+- **No rate limit / no e2e.** `/api/help-chat` is session-gated only. Playwright never opens the sheet. Unit tests cover retrieval, not the dialog.
+- **Launcher vs primary actions.** 4.14 moved it off the bottom safe area; Hallway Save and message Send can still feel crowded at 375px with the sheet open.
+- **HF replies can ignore the step format.** System prompt asks for numbered taps; `sanitizeHelpReply` only strips external URLs. A rambling model answer lands as a paragraph card.
+
+**Requirements (fix / improve next)**
+
+- **Authored scripts.** Each high-traffic screen (Today, Hallway, Students, report studio, Family home, Team, Privacy) gets 3–5 handbook steps written as taps (“Tap **Log in hallway**”), not split prose. Retrieval still uses the long article for search.
+- **Coach marks.** Optional `data-help` on those controls. Choosing a walkthrough highlights the target (ring + short label) without reading the student row. No screenshot upload to a model.
+- **Path truth.** `/today` → Today worklist; `/hallway` → Hallway pad; session-log article only when the question is about trials/outcomes. Arrived banner uses the route label (Hallway, Today), not a colliding article title.
+- **Dialog quality.** Focus trap while open; Escape and close return focus to the launcher; `aria-busy` during stream; Stop cancels the reader. Respect `prefers-reduced-motion` (no ping/bounce).
+- **Fast path without HF.** Handbook steps appear immediately (or one rAF), not artificial per-step delay. `HF_TOKEN` remains optional rephrase of those steps.
+- **Spanish.** When Family home language is Español, choices and steps use the Spanish handbook strings. Still no model translation of official IEP wording.
+- **Playwright.** Sign in → Today → open How to use this site → tap Log a session → numbered steps visible → Try Hallway navigates. Do not assert on a named student.
+- **Abuse floor.** Per-session rate limit on `POST /api/help-chat` (coarse, no logging of the question body).
+- **Sheet vs Save.** With the panel open at 375px, Hallway Save, message Send, and studio submit stay tappable or the sheet becomes a full-height overlay that is clearly dismissible.
+
+**Done when.** A new educator on Today can complete “log a session” from the coach without opening Setup guide, with the Hallway control highlighted, and with zero student fields in the network payload to Hugging Face (or no HF call at all).
+
+**Non-goals.** Generating IEP content. Reading the caseload to “personalize” a tip. WebSocket family Messages. A third-party live-chat vendor. Training a model on school data. Persisting how-to logs in Postgres.
 
 ### 4.14 Phone and tablet shell
 
@@ -401,8 +432,9 @@ Smallest useful slices, in the repo’s `{issue}-{slug}` style. v0.6 daily workf
 5. **Evidence gallery / home-carryover cards** — lightbox + staff-written cards (v0.8)
 6. **Search filters + next-student after Hallway save** — daily leftover (v0.8)
 7. **Privacy-safe log monitoring** — stdout JSON, `docker:logs`, optional Dozzle; no student payloads (v0.8)
-8. **OneRoster / coverage / para role** — district (v1.0)
-9. **Passkeys / report-window mail / print-all PDF** — leftover polish if a district asks
+8. **How-to coach follow-up** — authored tap-scripts, Hallway/Today path truth, focus trap + Stop, spotlight on `data-help` controls, Playwright on Today → Log a session; still no student payload (v0.8 leftover / v1.0)
+9. **OneRoster / coverage / para role** — district (v1.0)
+10. **Passkeys / report-window mail / print-all PDF** — leftover polish if a district asks
 
 ---
 

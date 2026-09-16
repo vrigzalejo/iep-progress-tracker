@@ -9,35 +9,37 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Label, Textarea } from "@/components/ui/input";
 import { sendMessageAction, setDigestOptInAction } from "@/app/actions";
 import { formatDate } from "@/lib/utils";
-import { Alert, EmptyState } from "@/components/ui/alert";
+import { Alert, EmptyState, FormError } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import type { ProgressCode } from "@/lib/constants";
 import { familyCopy } from "@/lib/family-copy";
-import { FAMILY_LOCALE_COOKIE, familyGoalSummary, parseFamilyLocale } from "@/lib/family-locale";
+import { FAMILY_LOCALE_COOKIE, familyGoalSummary, resolveFamilyLocale } from "@/lib/family-locale";
 
 export const metadata = { title: "Family portal" };
 
 export default async function ParentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ studentId?: string; saved?: string }>;
+  searchParams: Promise<{ studentId?: string; saved?: string; error?: string }>;
 }) {
   const user = await requireParent();
   const params = await searchParams;
-  const locale = parseFamilyLocale((await cookies()).get(FAMILY_LOCALE_COOKIE)?.value);
-  const copy = familyCopy(locale);
   const students = await listVisibleStudents(user);
   const selected =
     students.find((student) => student.id === params.studentId) ?? students[0] ?? null;
   const student = selected ? await getStudentDetail(user, selected.id) : null;
+  const digestContact = student?.guardians.find((guardian) => guardian.userId === user.id);
+  const locale = resolveFamilyLocale(
+    (await cookies()).get(FAMILY_LOCALE_COOKIE)?.value,
+    digestContact?.familyLocale,
+  );
+  const copy = familyCopy(locale);
 
   if (!student) {
     return (
       <EmptyState title={copy.noStudent}>{copy.noStudentBody}</EmptyState>
     );
   }
-
-  const digestContact = student.guardians.find((guardian) => guardian.userId === user.id);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -85,6 +87,11 @@ export default async function ParentPage({
       {params.saved === "digest" ? (
         <Alert title={copy.weeklySaved} tone="success">
           {copy.weeklySavedBody}
+        </Alert>
+      ) : null}
+      {params.saved === "1" ? (
+        <Alert title={copy.messageSent} tone="success">
+          {copy.messageSentBody}
         </Alert>
       ) : null}
 
@@ -149,21 +156,26 @@ export default async function ParentPage({
 
       <Card>
         <CardTitle>{copy.messages}</CardTitle>
-        <ul className="mt-4 space-y-3">
-          {student.messages.map((message) => (
-            <li key={message.id} className="rounded-lg bg-paper p-3">
-              <p className="text-xs text-muted">
-                {message.fromUser.name} · {formatDate(message.createdAt)}
-              </p>
-              <p>{message.body}</p>
-            </li>
-          ))}
-        </ul>
+        <FormError error={params.error} />
+        {student.messages.length === 0 ? (
+          <p className="mt-4 text-sm text-muted">{copy.noMessages}</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {student.messages.map((message) => (
+              <li key={message.id} className="rounded-lg bg-paper p-3">
+                <p className="text-xs text-muted">
+                  {message.fromUser.name} · {formatDate(message.createdAt)}
+                </p>
+                <p>{message.body}</p>
+              </li>
+            ))}
+          </ul>
+        )}
         <form action={sendMessageAction} className="mt-4 space-y-3">
           <input type="hidden" name="studentId" value={student.id} />
           <input type="hidden" name="returnTo" value={`/parent?studentId=${student.id}`} />
-          <Label htmlFor="body">{copy.writeTeam}</Label>
-          <Textarea id="body" name="body" required />
+          <Label htmlFor="familyMessage">{copy.writeTeam}</Label>
+          <Textarea id="familyMessage" name="body" required maxLength={2000} />
           <Button type="submit">{copy.send}</Button>
         </form>
       </Card>

@@ -13,7 +13,7 @@ import { SERVICE_AREA_LABELS, type ProgressCode, type ServiceArea } from "@/lib/
 import { cookies } from "next/headers";
 import { APP_NAME } from "@/lib/brand";
 import { familyCopy } from "@/lib/family-copy";
-import { FAMILY_LOCALE_COOKIE, familyGoalSummary, parseFamilyLocale } from "@/lib/family-locale";
+import { FAMILY_LOCALE_COOKIE, familyGoalSummary, resolveFamilyLocale } from "@/lib/family-locale";
 import { FamilyLocaleToggle } from "@/components/family-locale-toggle";
 
 export const metadata = { title: "Printable progress report" };
@@ -26,13 +26,17 @@ export default async function ReportPreviewPage({
   searchParams: Promise<{ periodId?: string }>;
 }) {
   const user = await requireUser();
-  const locale = user.role === "PARENT"
-    ? parseFamilyLocale((await cookies()).get(FAMILY_LOCALE_COOKIE)?.value)
-    : "en";
-  const copy = familyCopy(locale);
   const { studentId } = await params;
   const { periodId } = await searchParams;
   const student = await getStudentDetail(user, studentId);
+  const locale =
+    user.role === "PARENT"
+      ? resolveFamilyLocale(
+          (await cookies()).get(FAMILY_LOCALE_COOKIE)?.value,
+          student.guardians.find((guardian) => guardian.userId === user.id)?.familyLocale,
+        )
+      : "en";
+  const copy = familyCopy(locale);
   const periods = await listReportingPeriods(user);
   const period = periods.find((item) => item.id === periodId) ?? currentReportingPeriod(periods);
   const filed = isStaff(user.role) ? await listFiledDocuments(user, studentId) : [];
@@ -41,11 +45,18 @@ export default async function ReportPreviewPage({
     <div className="mx-auto max-w-3xl space-y-8 bg-white p-6 print:p-0">
       <div className="no-print flex flex-wrap justify-end gap-2">
         {user.role === "PARENT" ? (
-          <FamilyLocaleToggle locale={locale} returnTo={`/reports/${studentId}`} />
+          <>
+            <Button asChild variant="secondary">
+              <Link href={`/parent?studentId=${student.id}`}>Back to Family home</Link>
+            </Button>
+            <FamilyLocaleToggle locale={locale} returnTo={`/reports/${studentId}`} />
+          </>
         ) : null}
-        <Button asChild variant="secondary">
-          <Link href={`/reports/${student.id}/meeting/room`}>Meeting room</Link>
-        </Button>
+        {isStaff(user.role) ? (
+          <Button asChild variant="secondary">
+            <Link href={`/reports/${student.id}/meeting/room`}>Meeting room</Link>
+          </Button>
+        ) : null}
         {isStaff(user.role) ? (
           <FilePdfForm
             studentId={student.id}

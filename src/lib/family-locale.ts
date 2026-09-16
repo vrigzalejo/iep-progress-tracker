@@ -6,6 +6,15 @@ export function parseFamilyLocale(value: string | null | undefined): FamilyLocal
   return value === "es" ? "es" : "en";
 }
 
+/** Cookie wins when present; otherwise the last language saved on the guardian row. */
+export function resolveFamilyLocale(
+  cookieValue: string | null | undefined,
+  storedValue?: string | null,
+): FamilyLocale {
+  if (cookieValue === "es" || cookieValue === "en") return cookieValue;
+  return parseFamilyLocale(storedValue);
+}
+
 export function familyGoalSummary(goal: {
   plainLanguageSummary: string;
   plainLanguageSummaryEs?: string | null;
