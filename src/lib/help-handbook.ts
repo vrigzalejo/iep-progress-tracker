@@ -232,6 +232,8 @@ This demonstration school is already filled with fictional students so you can c
         "work list",
         "home",
         "attention",
+        "this page",
+        "this screen",
       ],
       body: `Staff [Dashboard](/dashboard) is a work list, not an IEP decision engine. Greeting uses your first name. **Open caseload** goes to [Students](/students).
 
@@ -529,6 +531,10 @@ Parents acknowledge **for each linked student**. If the school bumps the notice 
         "gallery",
         "lightbox",
         "packet",
+        "attach",
+        "caption",
+        "drop",
+        "pdf",
       ],
       body: `When logging a present session you may attach one evidence file (about 5 MB) and a short label such as “weekly probe 4.” Open the student profile **Evidence gallery** to view work samples (lightbox for images, download otherwise) instead of a filename only. Staff can check **Used in meeting packet**. Hosted deploys store files in private object storage. When demonstration mode is off, disk uploads are refused—configure Supabase Storage or a private Blob store first. Keep one app replica until storage is private. Evidence stays with the progress entry; it is not training data for AI.`,
     },

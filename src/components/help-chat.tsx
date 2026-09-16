@@ -10,6 +10,7 @@ import { type Role } from "@/lib/constants";
 import type { FamilyLocale } from "@/lib/family-locale";
 import {
   clipHelpHistory,
+  helpArrivedHint,
   helpHrefLabel,
   helpPageLabel,
   helpWelcome,
@@ -150,6 +151,8 @@ export function HelpChat({ role, locale = "en" }: { role: Role; locale?: FamilyL
   const launcherRef = useRef<HTMLButtonElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const wasOpen = useRef(false);
+  const pathRef = useRef(pathname.split("?")[0] || "/");
+  const askedRef = useRef<string[]>([]);
   const page = helpPageLabel(pathname);
   const welcome = helpWelcome(role, pathname);
   const asked = messages.filter((message) => message.role === "user").map((message) => message.content);
@@ -165,10 +168,28 @@ export function HelpChat({ role, locale = "en" }: { role: Role; locale?: FamilyL
     ...messages,
   ];
   const pathNow = pathname.split("?")[0] || "/";
+  askedRef.current = asked;
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [messages, welcome, open]);
+
+  useEffect(() => {
+    const previous = pathRef.current;
+    if (previous === pathNow) return;
+    pathRef.current = pathNow;
+    if (!open || askedRef.current.length === 0) return;
+    const prompts = suggestedHelpPrompts(role, pathNow, askedRef.current);
+    setMessages((current) => [
+      ...current,
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: helpArrivedHint(pathNow),
+        prompts,
+      },
+    ]);
+  }, [pathNow, open, role]);
 
   useEffect(() => {
     if (wasOpen.current && !open) launcherRef.current?.focus();

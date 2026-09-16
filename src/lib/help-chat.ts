@@ -202,8 +202,13 @@ export const HELP_FAMILY_PROMPTS = [
   "How do I acknowledge the privacy notice?",
 ];
 
-const PATH_PROMPTS: { match: string; prompts: string[] }[] = [
-  { match: "/hallway", prompts: ["How do I log a session with trials?", "How does Hallway pick the next student?"] },
+const PATH_PROMPTS: { match: string | RegExp; prompts: string[] }[] = [
+  { match: /\/progress\/new$/, prompts: ["How do I log a session with trials?", "How do I attach session evidence?"] },
+  { match: /\/goals\/new$/, prompts: ["How do I record an IEP goal?"] },
+  { match: /^\/goals\//, prompts: ["How do I record an IEP goal?", "How do I log a session with trials?"] },
+  { match: /\/carryover$/, prompts: ["How do I open home practice cards?"] },
+  { match: /\/meeting(\/room)?$/, prompts: ["How do I open meeting room on the projector?", "How do I print a meeting packet?"] },
+  { match: "/hallway", prompts: ["How do I log a session with trials?", "How do I attach session evidence?"] },
   { match: "/today", prompts: ["How do I log a session with trials?", "How does Hallway pick the next student?"] },
   { match: "/search", prompts: ["How do I filter search by service area?"] },
   { match: "/reports/studio", prompts: ["How do I print a meeting packet?"] },
@@ -214,9 +219,35 @@ const PATH_PROMPTS: { match: string; prompts: string[] }[] = [
   { match: "/schools", prompts: ["How do I add a school campus?"] },
   { match: "/privacy", prompts: ["How do I acknowledge the privacy notice?"] },
   { match: "/guide", prompts: ["What can this app do?"] },
+  { match: "/dashboard", prompts: ["What's on the dashboard?", "How do I check the minutes ledger?"] },
+  { match: "/minutes", prompts: ["How do I check the minutes ledger?"] },
+  { match: "/setup", prompts: ["How do I reset a forgotten password?"] },
   { match: "/students", prompts: ["How do I add a student profile?", "How do I open the evidence gallery?"] },
   { match: "/sign-in", prompts: ["How do I reset a forgotten password?"] },
-  { match: "/setup", prompts: ["How do I reset a forgotten password?"] },
+];
+
+function pathMatchesHelp(path: string, match: string | RegExp) {
+  if (typeof match !== "string") return match.test(path);
+  return path === match || path.startsWith(`${match}/`);
+}
+
+function pathHelpPrompts(pathname: string) {
+  const path = pathname.split("?")[0] || "";
+  return PATH_PROMPTS.find((row) => pathMatchesHelp(path, row.match))?.prompts ?? [];
+}
+
+const PATH_ARTICLE_ALIASES: { test: (path: string) => boolean; id: string | ((role: Role) => string) }[] = [
+  { test: (path) => /\/progress\/new$/.test(path), id: "sessions" },
+  { test: (path) => /\/goals\/new$/.test(path), id: "goals" },
+  {
+    test: (path) => path.startsWith("/goals/"),
+    id: (role) => (role === "PARENT" ? "family" : role === "PROVIDER" ? "sessions" : "goals"),
+  },
+  { test: (path) => /\/carryover$/.test(path), id: (role) => (role === "PARENT" ? "family" : "students") },
+  { test: (path) => /\/meeting(\/room)?$/.test(path), id: "meeting" },
+  { test: (path) => path === "/minutes" || path.startsWith("/minutes/"), id: "minutes" },
+  { test: (path) => path === "/dashboard", id: "dashboard" },
+  { test: (path) => path === "/setup" || path.startsWith("/setup"), id: "setup" },
 ];
 
 function isCatalogArticle(article: HelpArticle) {
@@ -225,6 +256,14 @@ function isCatalogArticle(article: HelpArticle) {
 
 export function articleForPath(pathname: string, role: Role) {
   const path = pathname.split("?")[0] || "/";
+  for (const alias of PATH_ARTICLE_ALIASES) {
+    if (!alias.test(path)) continue;
+    const id = typeof alias.id === "function" ? alias.id(role) : alias.id;
+    const aliased = helpArticles().find(
+      (article) => article.id === id && (!article.roles || article.roles.includes(role)),
+    );
+    if (aliased) return aliased;
+  }
   const slug = path.split("/").filter(Boolean)[0] ?? "";
   const ranked = helpArticles()
     .filter((article) => !article.roles || article.roles.includes(role))
@@ -252,9 +291,9 @@ export function helpPagePath(pathname: string) {
 }
 
 export function helpPageLabel(pathname: string) {
-  const path = helpPagePath(pathname);
-  if (path === "/") return "";
-  return helpHrefLabel(path);
+  const full = pathname.split("?")[0] || "/";
+  if (full === "/" || full === "") return "";
+  return helpHrefLabel(full);
 }
 
 export function helpHrefAllowed(href: string, role: Role) {
@@ -286,6 +325,9 @@ const PROMPT_ACCESS: Record<string, (role: Role) => boolean> = {
   "How do I log a session with trials?": (role) => can(role, "progress.create"),
   "How does Hallway pick the next student?": (role) => can(role, "progress.create"),
   "How do I open the evidence gallery?": (role) => isStaff(role),
+  "How do I attach session evidence?": (role) => can(role, "progress.create"),
+  "What's on the dashboard?": (role) => isStaff(role),
+  "How do I check the minutes ledger?": (role) => isStaff(role),
   "How do I filter search by service area?": (role) => can(role, "search.staff"),
   "How do I print a meeting packet?": (role) => can(role, "report.create"),
   "How do I open meeting room on the projector?": (role) => isStaff(role),
@@ -317,11 +359,7 @@ export function suggestedHelpPrompts(role: Role, pathname = "", asked: string[] 
         : role === "PROVIDER"
           ? HELP_PROVIDER_PROMPTS
           : HELP_STAFF_PROMPTS;
-  const path = pathname.split("?")[0] || "";
-  const extra =
-    PATH_PROMPTS.filter((row) => path === row.match || path.startsWith(`${row.match}/`)).sort(
-      (a, b) => b.match.length - a.match.length,
-    )[0]?.prompts ?? [];
+  const extra = pathHelpPrompts(pathname);
   const seen = new Set(asked.map((item) => item.trim().toLowerCase()));
   return [...extra, ...defaults].filter((prompt) => {
     if (!helpPromptAllowed(prompt, role)) return false;
@@ -358,6 +396,9 @@ export function shortenHelpPrompt(question: string) {
     "how do i add a student profile?": "Add a student",
     "how do i record an iep goal?": "Record an IEP goal",
     "how do i open the evidence gallery?": "Open the evidence gallery",
+    "how do i attach session evidence?": "Attach evidence",
+    "what's on the dashboard?": "This dashboard",
+    "how do i check the minutes ledger?": "Minutes ledger",
     "how do i print a meeting packet?": "Print a meeting packet",
     "how do i reset a forgotten password?": "Reset a password",
     "how do i invite someone by email?": "Invite someone",
@@ -390,6 +431,11 @@ export function retrieveArticles(question: string, role: Role, limit = 3, pathna
       let score = scoreArticle(article, queryTokens, role, questionLower);
       if (pathArticle && article.id === pathArticle.id && !isCatalogArticle(article)) score += 6;
       if (/\b(message|messages|thread)\b/.test(questionLower) && article.id === "messages") score += 8;
+      if (/\b(attach(?:ing)?(?: session)? evidence|work sample|photo or pdf|drop a file)\b/.test(questionLower) && article.id === "evidence") {
+        score += 12;
+      }
+      if (/\b(minutes ledger|check the minutes)\b/.test(questionLower) && article.id === "minutes") score += 8;
+      if (/\bwhat'?s on the dashboard\b/.test(questionLower) && article.id === "dashboard") score += 8;
       if (
         role === "PARENT" &&
         /\b(spanish|español|espanol)\b/.test(questionLower) &&
@@ -414,6 +460,7 @@ export function retrieveArticles(question: string, role: Role, limit = 3, pathna
 }
 
 export function helpHrefLabel(href: string) {
+  const path = href.split("?")[0] || href;
   const labels: Record<string, string> = {
     "/guide": "Setup guide",
     "/setup": "Account setup",
@@ -435,8 +482,19 @@ export function helpHrefLabel(href: string) {
     "/parent": "Family home",
     "/forgot-password": "Forgot password",
     "/set-password": "Set password",
+    "/goals": "Goal",
   };
-  return labels[href] ?? href.replace(/^\//, "").replace(/\//g, " ");
+  if (labels[path]) return labels[path];
+  if (/\/carryover$/.test(path)) return "Home practice cards";
+  if (/\/meeting\/room$/.test(path)) return "Meeting room";
+  if (/\/meeting$/.test(path)) return "Meeting packet";
+  if (/\/progress\/new$/.test(path)) return "Log a session";
+  if (/\/goals\/new$/.test(path)) return "Add goal";
+  if (/^\/goals\//.test(path)) return "Goal";
+  if (/^\/students\//.test(path)) return "Student";
+  if (/^\/reports\//.test(path)) return "Progress report";
+  if (/^\/messages\//.test(path)) return "Messages";
+  return path.replace(/^\//, "").replace(/\//g, " ");
 }
 
 function conversationalBody(article: HelpArticle, question = "") {
@@ -541,6 +599,18 @@ const HELP_CONTINUE: Record<string, string> = {
   signin: "How do I reset a forgotten password?",
   team: "How do I add a school campus?",
   guide: "How do I log a session with trials?",
+  dashboard: "How do I check the minutes ledger?",
+  minutes: "How do I log a session with trials?",
+  evidence: "How do I open the evidence gallery?",
+  messages: "How do I switch the site to Spanish?",
+  digest: "How do I open home practice cards?",
+  search: "How do I add a student profile?",
+  setup: "How do I install the app on my phone?",
+  "install-app": "What can this app do?",
+  privacy: "How do I acknowledge the privacy notice?",
+  objectives: "How do I log a session with trials?",
+  navigation: "How do I install the app on my phone?",
+  charts: "How do I log a session with trials?",
 };
 
 const HELP_LEADS: Record<string, string> = {
@@ -556,6 +626,21 @@ const HELP_LEADS: Record<string, string> = {
   signin: "Passwords are reset from Forgot password.",
   team: "Invites go out from Team.",
   guide: "The Setup guide is the six staff steps.",
+  dashboard: "Dashboard is a work list, not an IEP decision.",
+  minutes: "Minutes is this week’s service ledger.",
+  evidence: "Evidence is one optional photo or PDF on a present session.",
+  search: "Staff search lives in the header.",
+  setup: "Account setup is where you change a password.",
+  "install-app": "The mobile app is this same site on the home screen.",
+  privacy: "Privacy is the notice and parent acknowledgment.",
+  digest: "The Friday email is off unless a guardian opts in.",
+  objectives: "Short-term objectives stay attached to the annual goal.",
+  navigation: "The sidebar only lists screens your role can open.",
+  charts: "Charts are data snapshots against the written mastery rule.",
+  roles: "Each login only sees what that role is allowed to see.",
+  assistant: "This box explains screens from the product handbook.",
+  schools: "Campus names live on Schools.",
+  export: "CSV and ZIP exports start on Privacy.",
 };
 
 const HELP_CLOSERS: Record<string, string> = {
@@ -568,13 +653,27 @@ const HELP_CLOSERS: Record<string, string> = {
   family: "Want how to switch to Spanish?",
   catalog: "Want the session walkthrough next?",
   "catalog-family": "Want how to switch to Spanish?",
+  dashboard: "Want the minutes ledger next?",
+  minutes: "Want how to log a session with trials?",
+  evidence: "Want how to open the evidence gallery?",
+  search: "Want how to add a student profile?",
+  setup: "Want how to install the app on my phone?",
+  "install-app": "Want what this app can do?",
+  privacy: "Want how to switch to Spanish?",
+  digest: "Want how to open home practice cards?",
+  objectives: "Want how to log a session against that goal?",
+  navigation: "Want how to install the app on my phone?",
+  charts: "Want how to log a session with trials?",
+  team: "Want how to add a school campus?",
+  schools: "Want how to invite someone by email?",
+  assistant: "Want what this app can do?",
 };
 
 const HELP_NEXT_PROMPTS: Record<string, string[]> = {
-  sessions: ["How does Hallway pick the next student?", "How do I open the evidence gallery?"],
+  sessions: ["How does Hallway pick the next student?", "How do I attach session evidence?"],
   today: ["How do I log a session with trials?", "How does Hallway pick the next student?"],
   students: ["How do I record an IEP goal?", "How do I open the evidence gallery?"],
-  goals: ["How do I log a session with trials?"],
+  goals: ["How do I log a session with trials?", "How do I attach session evidence?"],
   reports: ["How do I print a meeting packet?", "How do I open meeting room on the projector?"],
   meeting: ["How do I print a meeting packet?"],
   family: ["How do I switch the site to Spanish?", "How do I message the team?"],
@@ -583,6 +682,20 @@ const HELP_NEXT_PROMPTS: Record<string, string[]> = {
   team: ["How do I add a school campus?", "How do I reset a forgotten password?"],
   guide: ["How do I add a student profile?", "How do I log a session with trials?"],
   signin: ["How do I reset a forgotten password?"],
+  dashboard: ["How do I check the minutes ledger?", "How do I log a session with trials?"],
+  minutes: ["How do I log a session with trials?", "How does Hallway pick the next student?"],
+  evidence: ["How do I attach session evidence?", "How do I log a session with trials?"],
+  search: ["How do I add a student profile?", "How do I open the evidence gallery?"],
+  setup: ["How do I reset a forgotten password?", "How do I install the app on my phone?"],
+  "install-app": ["What can this app do?", "How do I acknowledge the privacy notice?"],
+  privacy: ["How do I acknowledge the privacy notice?", "How do I install the app on my phone?"],
+  digest: ["How do I open home practice cards?", "How do I switch the site to Spanish?"],
+  messages: ["How do I switch the site to Spanish?", "How do I open home practice cards?"],
+  objectives: ["How do I log a session with trials?"],
+  navigation: ["How do I install the app on my phone?"],
+  charts: ["How do I log a session with trials?"],
+  schools: ["How do I invite someone by email?"],
+  assistant: ["What can this app do?"],
 };
 
 export function isHelpThanks(question: string) {
@@ -590,7 +703,7 @@ export function isHelpThanks(question: string) {
 }
 
 function isParentStaffTopic(question: string) {
-  return /\b(hallway|log (an? )?session|log a session|add a student|create student|iep goal|evidence gallery|report studio|invite someone|school campus|minutes gap|filter search|caseload search)\b/i.test(
+  return /\b(hallway|log (an? )?session|log a session|add a student|create student|iep goal|evidence gallery|attach evidence|report studio|invite someone|school campus|minutes gap|minutes ledger|filter search|caseload search|this dashboard)\b/i.test(
     question,
   );
 }
@@ -607,7 +720,27 @@ export function promptFromHelpCloser(line: string) {
     .replace(/\*\*/g, "")
     .replace(/[?!.]+$/g, "")
     .trim();
-  if (key === "want how to switch to spanish") return "How do I switch the site to Spanish?";
+  const mapped: Record<string, string> = {
+    "want what this app can do": "What can this app do?",
+    "want how to switch to spanish": "How do I switch the site to Spanish?",
+    "want what happens after save": "How does Hallway pick the next student?",
+    "want the trial-button walkthrough": "How do I log a session with trials?",
+    "want how to record an iep goal next": "How do I record an IEP goal?",
+    "want how to log a session against that goal": "How do I log a session with trials?",
+    "want the meeting packet steps": "How do I print a meeting packet?",
+    "want how to open meeting room on a projector": "How do I open meeting room on the projector?",
+    "want the session walkthrough next": "How do I log a session with trials?",
+    "want how to attach evidence from that pad": "How do I attach session evidence?",
+    "want how to log a session on a profile": "How do I log a session with trials?",
+    "want the meeting packet from family home": "How do I print a meeting packet?",
+    "want me to walk through logging a session": "How do I log a session with trials?",
+    "want how to log a session": "How do I log a session with trials?",
+    "want the minutes ledger next": "How do I check the minutes ledger?",
+    "want how to open the evidence gallery": "How do I open the evidence gallery?",
+  };
+  if (mapped[key]) return mapped[key];
+  if (key.startsWith("want how to ")) return `How do I ${key.slice("want how to ".length)}?`;
+  if (key.startsWith("want how does ")) return `How does ${key.slice("want how does ".length)}?`;
   return null;
 }
 
@@ -713,9 +846,124 @@ const HELP_SCRIPTS: Record<string, string[]> = {
     "Tap **Invite** and enter the person’s school email.",
     "They get a set-password link if mail is on.",
   ],
+  dashboard: [
+    "After sign-in, staff land on **Dashboard**.",
+    "The four cards are reports due, goals needing data, IEP reviews, and minutes gap.",
+    "Tap a row to open that student or goal. These counts are data snapshots, not IEP decisions.",
+  ],
+  minutes: [
+    "Open **Minutes** in the sidebar.",
+    "This week’s ledger shows prescribed vs delivered minutes, plus absent, declined, and makeup.",
+    "A gap is a scheduling snapshot. It does not change the IEP. **Schedule makeup** opens Hallway.",
+  ],
+  evidence: [
+    "When logging a present session, tap **Choose a photo or PDF** (or drop a file).",
+    "A caption is filled from the filename unless you change it. Keep the file under 5 MB.",
+    "After save, open the student **Evidence gallery** to view it or flag **Used in meeting packet**. Offline Hallway does not queue the file.",
+  ],
+  search: [
+    "Tap **Search** in the header (the icon on a phone).",
+    "Type a preferred name, then optionally filter school, grade, or service area.",
+    "Open a row to the student or goal.",
+  ],
+  setup: [
+    "Open **Account setup**.",
+    "Password accounts change the passphrase here and can enroll an authenticator.",
+    "If you cannot sign in, use **Forgot password** instead.",
+  ],
+  "install-app": [
+    "On iPhone or iPad, open this site in Safari, tap Share, then **Add to Home Screen**.",
+    "On Android Chrome, open the browser menu and tap **Install app**.",
+    "Sign in with the same school or family account. This is not a second App Store product.",
+  ],
+  privacy: [
+    "Open **Privacy**.",
+    "Read the notice. Parents tap **Acknowledge** for each linked child.",
+    "Staff who can export use **Download CSV export** on that page. Do not email the file to a personal account.",
+  ],
+  digest: [
+    "On **Family home**, find **Weekly email**.",
+    "Check the box and save if you want Friday mail. It is off by default.",
+    "The mail uses shared scores and staff-written home carryover only.",
+  ],
+  objectives: [
+    "Open the student, then the goal.",
+    "Add a short-term objective if the IEP lists one.",
+    "When you log a session you can attach the entry to that objective or the whole annual goal.",
+  ],
+  navigation: [
+    "Use the sidebar for the main screens. On a phone, open the menu.",
+    "**How to use this site** is in the corner. **Sign out** is at the bottom of the sidebar.",
+    "Browser **Print** hides the banner, sidebar, and this assistant. Meeting room hides them too.",
+  ],
+  charts: [
+    "Open a goal to see the trend chart of present-session scores.",
+    "Badges (on track, needs attention, needs data, goal met) are data snapshots against the written mastery rule.",
+    "They never choose an IEP progress code. Staff pick that code on the period report.",
+  ],
+  roles: [
+    "Administrators see every student in the organization and invite people on **Team**.",
+    "Educators case-manage students; providers only see assigned students and cannot type IEP goals.",
+    "Parents see linked children and share-with-family goals only, from **Family home**.",
+  ],
+  schools: [
+    "Open **Schools**.",
+    "Tap **Add campus** and type the school name.",
+    "That name is what staff pick when they add a student.",
+  ],
+  export: [
+    "Open **Privacy**.",
+    "Choose **Download CSV export** for students you are allowed to see.",
+    "Administrators can also download a student education record ZIP. Do not email the file to a personal account.",
+  ],
+  assistant: [
+    "Tap a chip or type a question about the page you are on.",
+    "Answers come from the product handbook for this site.",
+    "This assistant will not write IEP goals, recommend minutes, or interpret a student.",
+  ],
+  overview: [
+    "This app transcribes IEP goals as written, logs sessions, and shares family-friendly reports.",
+    "Charts and on-track badges describe data against the written mastery rule. They are not IEP team votes.",
+    "After sign-in, staff land on **Dashboard**; parents land on **Family home**.",
+  ],
 };
 
 function helpScript(id: string, role: Role, question = "") {
+  if (id === "evidence" && /gallery/i.test(question)) {
+    return [
+      "Open the student profile.",
+      "Scroll to **Evidence gallery**.",
+      "Tap **Open** for a preview, or check **Used in meeting packet**.",
+    ];
+  }
+  if (id === "roles" && role === "PARENT") {
+    return [
+      "You are signed in as a parent or guardian.",
+      "You only see linked children and goals the school marked share-with-family.",
+      "You cannot open Dashboard, Today, Hallway, or Team.",
+    ];
+  }
+  if (id === "privacy" && role === "PARENT") {
+    return [
+      "Open **Privacy** from the sidebar, or **Privacy and consent** on Family home.",
+      "Acknowledge the notice for each linked child.",
+      "You cannot export CSV, archive, or delete records.",
+    ];
+  }
+  if (id === "navigation" && role === "PARENT") {
+    return [
+      "The sidebar is Family home, Messages, Privacy, and Setup guide.",
+      "**Sign out** is at the bottom of that menu.",
+      "**How to use this site** stays in the corner.",
+    ];
+  }
+  if (id === "digest" && role !== "PARENT") {
+    return [
+      "Guardians opt in on **Family home**. Staff do not click send.",
+      "Friday mail uses shared scores and staff-written home carryover only.",
+      "The language follows the guardian’s last **English / Español** choice.",
+    ];
+  }
   if (id === "family" && /home practice|carryover|try at home/i.test(question)) {
     return [
       "On **Family home**, tap **Home practice cards**.",
@@ -832,11 +1080,17 @@ function helpCloser(id: string, role: Role) {
   if (id === "students" && !can(role, "student.create")) {
     return "Want how to log a session on a profile?";
   }
+  if (id === "search" && !can(role, "student.create")) {
+    return "Want how to log a session with trials?";
+  }
   if (id === "reports" && role === "PARENT") {
     return "Want the meeting packet from Family home?";
   }
   if (id === "messages" && role === "PARENT") {
     return "Want how to switch to Spanish?";
+  }
+  if (id === "privacy" && role !== "PARENT") {
+    return "Want how to install the app on my phone?";
   }
   if (id === "catalog" && role === "PROVIDER") {
     return "Want the session walkthrough next?";

@@ -190,7 +190,7 @@ describe("help chat", () => {
     expect(articleForPath("/parent", "PARENT")?.id).toBe("family");
     expect(suggestedHelpPrompts("EDUCATOR", "/hallway")[0]).toMatch(/session|Hallway/i);
     expect(suggestedHelpPrompts("EDUCATOR", "/hallway", ["How do I log a session with trials?"])[0]).toMatch(
-      /Hallway pick/i,
+      /attach|Hallway pick/i,
     );
     expect(helpWelcome("EDUCATOR", "/today")).toMatch(/Today/i);
     expect(helpWelcome("EDUCATOR", "/today")).toMatch(/What do you want to do/i);
@@ -281,6 +281,57 @@ describe("help chat", () => {
     ]);
     expect(continued.text.toLowerCase()).toMatch(/next person|next student|does not stay/);
     expect(answerFromHandbook("thanks", "EDUCATOR").text).toMatch(/Anytime/);
+  });
+
+  it("covers each signed-in role on the screens they can open", () => {
+    expect(articleForPath("/goals/goal-1", "EDUCATOR")?.id).toBe("goals");
+    expect(articleForPath("/goals/goal-1/progress/new", "EDUCATOR")?.id).toBe("sessions");
+    expect(articleForPath("/goals/goal-1", "PROVIDER")?.id).toBe("sessions");
+    expect(articleForPath("/dashboard", "EDUCATOR")?.id).toBe("dashboard");
+    expect(articleForPath("/minutes", "PROVIDER")?.id).toBe("minutes");
+    expect(articleForPath("/reports/stu-1/meeting", "ADMINISTRATOR")?.id).toBe("meeting");
+    expect(articleForPath("/students/stu-1/carryover", "PARENT")?.id).toBe("family");
+    expect(articleForPath("/students/stu-1/carryover", "EDUCATOR")?.id).toBe("students");
+    expect(articleForPath("/setup", "PARENT")?.id).toBe("setup");
+
+    expect(helpWelcome("EDUCATOR", "/goals/goal-1")).toMatch(/Goal/i);
+    expect(helpWelcome("EDUCATOR", "/minutes")).toMatch(/Minutes/i);
+    expect(helpArrivedHint("/goals/goal-1/progress/new")).toMatch(/Log a session/i);
+
+    expect(suggestedHelpPrompts("EDUCATOR", "/dashboard")[0]).toMatch(/dashboard/i);
+    expect(suggestedHelpPrompts("PROVIDER", "/minutes")[0]).toMatch(/minutes/i);
+    expect(suggestedHelpPrompts("ADMINISTRATOR", "/schools")[0]).toMatch(/campus/i);
+    expect(suggestedHelpPrompts("PARENT", "/students/stu-1/carryover")[0]).toMatch(/home practice/i);
+    expect(suggestedHelpPrompts("PROVIDER", "/goals/goal-1").join(" ")).not.toMatch(/record an IEP goal/i);
+    expect(suggestedHelpPrompts("PROVIDER", "/goals/goal-1")[0]).toMatch(/session/i);
+
+    expect(retrieveArticles("How do I attach session evidence?", "EDUCATOR")[0]?.id).toBe("evidence");
+    expect(retrieveArticles("What's on the dashboard?", "EDUCATOR", 3, "/dashboard")[0]?.id).toBe(
+      "dashboard",
+    );
+    expect(retrieveArticles("what is this page", "EDUCATOR", 3, "/minutes")[0]?.id).toBe("minutes");
+    expect(retrieveArticles("who can see student records", "PARENT")[0]?.id).toBe("roles");
+
+    const attach = answerFromHandbook("How do I attach session evidence?", "EDUCATOR", "/hallway");
+    expect(attach.text).toMatch(/Choose a photo or PDF/i);
+
+    const parentRoles = answerFromHandbook("who can see what", "PARENT", "/parent");
+    expect(parentRoles.text).toMatch(/parent or guardian/i);
+    expect(parentRoles.text).not.toMatch(/Open \[Team\]/i);
+    expect(parentRoles.prompts.join(" ")).not.toMatch(/Hallway|Add a student/i);
+
+    expect(promptFromHelpCloser("Want how to attach evidence from that pad?")).toBe(
+      "How do I attach session evidence?",
+    );
+    expect(promptFromHelpCloser("Want what happens after **Save**?")).toBe(
+      "How does Hallway pick the next student?",
+    );
+    expect(promptFromHelpCloser("Want the minutes ledger next?")).toBe(
+      "How do I check the minutes ledger?",
+    );
+
+    const minutes = answerFromHandbook("How do I check the minutes ledger?", "ADMINISTRATOR", "/minutes");
+    expect(minutes.text).toMatch(/prescribed vs delivered/i);
   });
 
   it("streams a handbook answer over SSE when no model token is set", async () => {
