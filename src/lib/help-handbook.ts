@@ -626,9 +626,9 @@ The English subject is “Weekly update for [preferred name]”; Spanish is “A
       title: "This how-to assistant",
       hrefs: ["/guide"],
       keywords: ["chatbot", "assistant", "help", "how to use", "bot", "tutorial"],
-      body: `**How to use this site** (this panel) explains every signed-in screen from the product handbook, including the six-step [Setup guide](/guide), Team invites and set-password mail, English/Spanish family chrome, the evidence gallery, home practice cards, search filters, and the Friday family email. Optional Hugging Face rephrasing uses only your question and that handbook—never student rows from the database. I will not write IEP goals, recommend minutes or placement, or interpret a named student.
+      body: `**How to use this site** (this panel) is a coach: it asks what you want to do first, then walks the taps as numbered cards. **Your move** choices stay under the reply; **Try** jumps to the screen. If you change pages, it offers a walkthrough of the new screen. Optional Hugging Face rephrasing uses only your question and this handbook—never student rows from the database. I will not write IEP goals, recommend minutes or placement, or interpret a named student.
 
-Ask “what can this app do?” for the full map for your role. Suggested chips cover common tasks. Follow-up questions stay in this thread.`,
+Tap a choice, type what you want to do, or ask “what can this app do?” The six-step tutorial stays on the [Setup guide](/guide).`,
     },
   ];
 }

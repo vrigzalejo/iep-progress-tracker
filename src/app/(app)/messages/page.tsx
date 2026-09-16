@@ -52,8 +52,8 @@ export default async function MessagesPage() {
       {students.length > 0 && threads.length < students.length ? (
         <p className="text-sm text-muted">
           Start a thread from a{" "}
-          <Link href="/students" className="underline">
-            student profile
+          <Link href={isStaff(user.role) ? "/students" : "/parent"} className="underline">
+            {isStaff(user.role) ? "student profile" : "Family home"}
           </Link>
           .
         </p>

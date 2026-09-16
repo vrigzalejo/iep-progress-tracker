@@ -60,10 +60,10 @@ export default async function GuidePage() {
         <h1 className="font-serif text-3xl">Setup guide</h1>
         <p className="mt-2 text-muted">
           {user.role === "PARENT"
-            ? "Families start on Family home: switch English/Español, shared goals, messages, reports, home practice cards, and an optional weekly email. The numbered steps below are for staff. Use How to use this site in the corner for any one screen. On a phone, Add to Home Screen (Safari Share, or Chrome Install app)."
+            ? "Families start on Family home: switch English/Español, shared goals, messages, reports, home practice cards, and an optional weekly email. The numbered steps below are for staff. Use How to use this site in the corner—tap a chip or ask about the screen you are on. On a phone, Add to Home Screen (Safari Share, or Chrome Install app)."
             : isDemoMode()
-              ? "A short path from first sign-in to a defensible progress record. This demonstration school is already filled with fictional students so you can click through every role. On a phone, Add to Home Screen (Safari Share, or Chrome Install app) — that is the mobile app, same account. Use How to use this site in the corner if you want a question answered from this guide."
-              : "A short path from first sign-in to a defensible progress record. An administrator must add your work email first; use Forgot password if you need a set-password link. On a phone, Add to Home Screen (Safari Share, or Chrome Install app) — that is the mobile app, same account. Use How to use this site in the corner if you want a question answered from this guide."}
+              ? "A short path from first sign-in to a defensible progress record. This demonstration school is already filled with fictional students so you can click through every role. On a phone, Add to Home Screen (Safari Share, or Chrome Install app) — that is the mobile app, same account. Use How to use this site in the corner: it chats about this screen, with chips and Open buttons."
+              : "A short path from first sign-in to a defensible progress record. An administrator must add your work email first; use Forgot password if you need a set-password link. On a phone, Add to Home Screen (Safari Share, or Chrome Install app) — that is the mobile app, same account. Use How to use this site in the corner: it chats about this screen, with chips and Open buttons."}
         </p>
       </div>
       <ol className="space-y-4">

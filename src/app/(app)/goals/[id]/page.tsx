@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { requireUser, getGoalDetail } from "@/lib/queries";
-import { can } from "@/lib/permissions";
+import { can, isStaff } from "@/lib/permissions";
 import { trialSummary } from "@/lib/progress";
 import {
   CONDITION_TAG_LABELS,
@@ -53,7 +53,14 @@ export default async function GoalDetailPage({
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <p className="text-sm">
-        <Link href={`/students/${goal.studentId}`} className="text-forest hover:underline">
+        <Link
+          href={
+            isStaff(user.role)
+              ? `/students/${goal.studentId}`
+              : `/parent?studentId=${goal.studentId}`
+          }
+          className="text-forest hover:underline"
+        >
           ← {goal.student.preferredName}
         </Link>
       </p>

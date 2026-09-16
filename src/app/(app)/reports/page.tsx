@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireUser, listVisibleStudents, listReportingPeriods, currentReportingPeriod } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ export default async function ReportsPage({
   searchParams: Promise<{ studentId?: string; periodId?: string }>;
 }) {
   const user = await requireUser();
+  if (user.role === "PARENT") redirect("/parent");
   const params = await searchParams;
   const students = await listVisibleStudents(user);
   const periods = await listReportingPeriods(user);

@@ -229,6 +229,8 @@ The Compose file starts **Postgres**, the app, a **Caddy** proxy, and a small po
 npm run docker:up
 ```
 
+Leave that process running. Compose Watch rebuilds the **app image** when you save `src/`, `prisma/`, `public/`, or the Dockerfile (production Next.js, so a rebuild takes a minute, not hot reload). Saving `.env.local` restarts the app container without a rebuild. Host-only paths such as `.certs/` are ignored so they do not loop a build. For faster UI work against the same Postgres, keep using `npm run docker:db` and `npm run dev` below.
+
 Optional: `brew install mkcert && mkcert -install`, then put those certs in `.certs/` (or run `npm run dev:https` once) to avoid a browser warning.
 
 Open [https://127.0.0.1:43147](https://127.0.0.1:43147) or [http://127.0.0.1:43147](http://127.0.0.1:43147) (redirects to HTTPS). Stop with `npm run docker:down`. Volumes keep Postgres data (`pg-data`) and uploads (`app-uploads`).

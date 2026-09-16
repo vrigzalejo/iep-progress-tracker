@@ -6,7 +6,7 @@ import { isStaff } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { PrintButton } from "@/components/print-button";
 import { familyCopy } from "@/lib/family-copy";
-import { FAMILY_LOCALE_COOKIE, familyGoalSummary, parseFamilyLocale } from "@/lib/family-locale";
+import { FAMILY_LOCALE_COOKIE, familyGoalSummary, resolveFamilyLocale } from "@/lib/family-locale";
 import { formatDate } from "@/lib/utils";
 
 export const metadata = { title: "Home practice cards" };
@@ -20,9 +20,13 @@ export default async function CarryoverCardsPage({
   const { id } = await params;
   const student = await getStudentDetail(user, id);
   if (!student) notFound();
-  const locale = user.role === "PARENT"
-    ? parseFamilyLocale((await cookies()).get(FAMILY_LOCALE_COOKIE)?.value)
-    : "en";
+  const locale =
+    user.role === "PARENT"
+      ? resolveFamilyLocale(
+          (await cookies()).get(FAMILY_LOCALE_COOKIE)?.value,
+          student.guardians.find((guardian) => guardian.userId === user.id)?.familyLocale,
+        )
+      : "en";
   const copy = familyCopy(locale);
   const cards = student.goals
     .filter((goal) => user.role !== "PARENT" || goal.sharedWithGuardians)

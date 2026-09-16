@@ -36,12 +36,22 @@ export default async function MeetingPacketPage({
     <div className="mx-auto max-w-3xl space-y-8 bg-white p-6 print:p-0">
       <div className="no-print flex flex-wrap justify-between gap-3">
         <Button asChild variant="secondary">
-          <Link href={`/students/${student.id}`}>Back to profile</Link>
+          <Link
+            href={
+              isStaff(user.role)
+                ? `/students/${student.id}`
+                : `/parent?studentId=${student.id}`
+            }
+          >
+            {isStaff(user.role) ? "Back to profile" : "Back to Family home"}
+          </Link>
         </Button>
         <div className="flex flex-wrap gap-2">
-          <Button asChild>
-            <Link href={`/reports/${student.id}/meeting/room`}>Meeting room</Link>
-          </Button>
+          {isStaff(user.role) ? (
+            <Button asChild>
+              <Link href={`/reports/${student.id}/meeting/room`}>Meeting room</Link>
+            </Button>
+          ) : null}
           {isStaff(user.role) ? (
             <FilePdfForm
               studentId={student.id}

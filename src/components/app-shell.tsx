@@ -29,6 +29,8 @@ import { can, isStaff, type Permission } from "@/lib/permissions";
 import type { Role } from "@/lib/constants";
 import { ROLE_LABELS } from "@/lib/constants";
 import { APP_NAME } from "@/lib/brand";
+import { familyCopy } from "@/lib/family-copy";
+import type { FamilyLocale } from "@/lib/family-locale";
 import { cn } from "@/lib/utils";
 
 const LINKS: {
@@ -52,15 +54,26 @@ const LINKS: {
   { href: "/guide", label: "Setup guide", icon: BookOpen },
 ];
 
+function familyNavLabel(href: string, copy: ReturnType<typeof familyCopy>) {
+  if (href === "/parent") return copy.familyHomeNav;
+  if (href === "/messages") return copy.messagesNav;
+  if (href === "/privacy") return copy.privacyNav;
+  if (href === "/guide") return copy.guideNav;
+  return null;
+}
+
 export function AppShell({
   user,
   unreadMessages = 0,
+  locale = "en",
   children,
 }: {
   user: { name: string; email: string; role: Role; mfaEnrollRequired?: boolean };
   unreadMessages?: number;
+  locale?: FamilyLocale;
   children: ReactNode;
 }) {
+  const chrome = user.role === "PARENT" ? familyCopy(locale) : null;
   const pathname = usePathname();
   const meetingRoom = pathname.includes("/meeting/room");
   const [open, setOpen] = useState(false);
@@ -82,6 +95,7 @@ export function AppShell({
     if (link.staffOnly && !isStaff(user.role)) return false;
     if (link.permission && !can(user.role, link.permission)) return false;
     if (link.href === "/students" && user.role === "PARENT") return false;
+    if (link.href === "/reports" && user.role === "PARENT") return false;
     return true;
   });
 
@@ -91,7 +105,7 @@ export function AppShell({
         <MfaEnrollGuard required={Boolean(user.mfaEnrollRequired)} />
         <IdleTimeout />
         <a href="#main" className="skip-link">
-          Skip to main content
+          {chrome?.skipToContent ?? "Skip to main content"}
         </a>
         <main id="main">{children}</main>
       </div>
@@ -103,7 +117,7 @@ export function AppShell({
       <MfaEnrollGuard required={Boolean(user.mfaEnrollRequired)} />
       <IdleTimeout />
       <a href="#main" className="skip-link">
-        Skip to main content
+        {chrome?.skipToContent ?? "Skip to main content"}
       </a>
       {process.env.NEXT_PUBLIC_DEMO_MODE !== "false" ? (
         <div className="no-print border-b border-[#c9b45c] bg-[#f7efd6] px-4 py-2 text-center text-sm text-gold">
@@ -116,7 +130,7 @@ export function AppShell({
           <button
             type="button"
             className="fixed inset-0 z-20 bg-black/40 lg:hidden"
-            aria-label="Close menu"
+            aria-label={chrome?.closeMenu ?? "Close menu"}
             onClick={() => setOpen(false)}
           />
         ) : null}
@@ -131,7 +145,7 @@ export function AppShell({
               <Logo className="h-9 w-9 shrink-0" />
               <span className="truncate font-serif text-xl">{APP_NAME}</span>
             </Link>
-            <button className="min-h-11 min-w-11 lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu">
+            <button className="min-h-11 min-w-11 lg:hidden" onClick={() => setOpen(false)} aria-label={chrome?.closeMenu ?? "Close menu"}>
               <X />
             </button>
           </div>
@@ -150,7 +164,7 @@ export function AppShell({
                   onClick={() => setOpen(false)}
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
-                  {link.label}
+                  {(chrome && familyNavLabel(link.href, chrome)) || link.label}
                   {link.href === "/messages" && unreadMessages > 0 ? (
                     <span className="ml-auto rounded-full bg-gold px-2 py-0.5 text-xs text-forest-deep">
                       {unreadMessages}
@@ -162,7 +176,7 @@ export function AppShell({
           </nav>
           <div className="border-t border-white/15 p-4 text-sm">
             <p className="font-semibold">{user.name}</p>
-            <p className="text-white/80">{ROLE_LABELS[user.role]}</p>
+            <p className="text-white/80">{chrome?.parentRole ?? ROLE_LABELS[user.role]}</p>
             <form action={signOutAction}>
               <Button
                 type="submit"
@@ -170,7 +184,7 @@ export function AppShell({
                 className="mt-3 w-full cursor-pointer justify-start text-white hover:bg-white/10"
               >
                 <LogOut className="h-4 w-4" />
-                Sign out
+                {chrome?.signOut ?? "Sign out"}
               </Button>
             </form>
           </div>
@@ -181,7 +195,7 @@ export function AppShell({
               <button
                 className="min-h-11 min-w-11 lg:hidden"
                 onClick={() => setOpen(true)}
-                aria-label="Open menu"
+                aria-label={chrome?.openMenu ?? "Open menu"}
               >
                 <Menu />
               </button>
@@ -199,7 +213,7 @@ export function AppShell({
                   />
                 </form>
               ) : (
-                <p className="min-w-0 text-sm text-muted">Family portal — linked students only</p>
+                <p className="min-w-0 text-sm text-muted">{chrome?.headerLinked ?? "Family portal — linked students only"}</p>
               )}
               {isStaff(user.role) ? (
                 <Link
@@ -218,7 +232,7 @@ export function AppShell({
             </div>
             {children}
           </main>
-          <HelpChat role={user.role} />
+          <HelpChat role={user.role} locale={locale} />
         </div>
       </div>
     </div>

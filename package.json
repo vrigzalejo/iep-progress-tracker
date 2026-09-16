@@ -16,7 +16,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "docker:up": "docker compose --env-file .env.local up --build",
+    "docker:up": "docker compose --env-file .env.local up --build --watch",
     "docker:db": "docker compose --env-file .env.local up db mailpit -d",
     "docker:down": "docker compose --env-file .env.local down",
     "docker:logs": "docker compose --env-file .env.local logs -f --tail=200",

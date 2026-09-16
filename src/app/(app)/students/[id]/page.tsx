@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { StatusIndicator } from "@/components/status-indicator";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,9 @@ export default async function StudentPage({
   const user = await requireUser();
   const { id } = await params;
   await searchParams;
+  if (user.role === "PARENT") {
+    redirect(`/parent?studentId=${id}`);
+  }
   const student = await getStudentDetail(user, id);
   if (!student) notFound();
   const evidence = isStaff(user.role) ? await listStudentEvidence(user, id) : [];

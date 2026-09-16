@@ -94,8 +94,12 @@ function optionalInt(value: string) {
 }
 
 function fail(returnTo: string, message: string): never {
-  const path = returnTo.startsWith("/") ? returnTo.split("?")[0] : "/dashboard";
-  redirect(`${path}?error=${encodeURIComponent(message)}`);
+  const raw = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/dashboard";
+  const path = raw.split("?")[0] || "/dashboard";
+  const params = new URLSearchParams(raw.includes("?") ? raw.slice(raw.indexOf("?") + 1) : "");
+  params.delete("saved");
+  params.set("error", message);
+  redirect(`${path}?${params.toString()}`);
 }
 
 function parseTrials(json: string | undefined) {
@@ -609,7 +613,8 @@ export async function sendMessageAction(formData: FormData): Promise<void> {
     await Promise.all([...recipients].map((email) => sendFamilyMessageMail(email)));
   }
 
-  redirect(`${returnTo}?saved=1`);
+  const next = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : `/messages/${parsed.data.studentId}`;
+  redirect(withSaved(next));
 }
 
 export async function savePeriodStatementAction(formData: FormData): Promise<void> {
@@ -1314,8 +1319,14 @@ export async function setPasswordFromTokenAction(formData: FormData): Promise<vo
 export async function setFamilyLocaleAction(formData: FormData): Promise<void> {
   const locale = parseFamilyLocale(formString(formData, "locale"));
   const returnTo = formString(formData, "returnTo") || "/parent";
+  const stay = formString(formData, "stay") === "1";
   const jar = await cookies();
-  jar.set(FAMILY_LOCALE_COOKIE, locale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+  jar.set(FAMILY_LOCALE_COOKIE, locale, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+    httpOnly: true,
+  });
   const user = await requireUser();
   if (user.role === "PARENT") {
     await prisma.guardianContact.updateMany({
@@ -1323,6 +1334,8 @@ export async function setFamilyLocaleAction(formData: FormData): Promise<void> {
       data: { familyLocale: locale },
     });
   }
+  revalidatePath("/", "layout");
+  if (stay) return;
   redirect(returnTo.startsWith("/") ? returnTo : "/parent");
 }
 

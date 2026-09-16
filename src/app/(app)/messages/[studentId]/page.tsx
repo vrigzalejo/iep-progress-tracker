@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { sendMessageAction } from "@/app/actions";
+import { Alert, FormError } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Label, Textarea } from "@/components/ui/input";
@@ -12,11 +13,14 @@ export const metadata = { title: "Message thread" };
 
 export default async function MessageThreadPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ studentId: string }>;
+  searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
   const user = await requireUser();
   const { studentId } = await params;
+  const query = await searchParams;
   const student = await getStudentDetail(user, studentId);
   await markStudentMessagesRead(user, student.id);
 
@@ -29,9 +33,18 @@ export default async function MessageThreadPage({
       </p>
       <h1 className="font-serif text-3xl">Thread for {student.preferredName}</h1>
       <p className="text-muted">
-        Unread notes are marked read when you open this page. Staff-only notes never appear for
-        families.
+        {isStaff(user.role)
+          ? "Unread notes are marked read when you open this page. Staff-only notes never appear for families."
+          : "You only see the family thread. Staff-only notes never appear here."}
       </p>
+      {query.saved ? (
+        <Alert title="Message sent" tone="success">
+          {isStaff(user.role)
+            ? "Assigned staff and, if you chose the family thread, linked guardians can read it."
+            : "The team can read it on the family thread."}
+        </Alert>
+      ) : null}
+      <FormError error={query.error} />
       <Card>
         <CardTitle>Conversation</CardTitle>
         <ul className="mt-4 space-y-3">
