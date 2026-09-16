@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { createProgressAction } from "@/app/actions";
+import { EvidenceAttach } from "@/components/evidence-attach";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
@@ -334,19 +335,7 @@ export function SessionDataForm({
             placeholder="Practice the break request before homework."
           />
         </div>
-        <div>
-          <Label htmlFor="evidenceLabel">Evidence label (optional)</Label>
-          <Input id="evidenceLabel" name="evidenceLabel" placeholder="Weekly probe 4, work sample, session log" />
-        </div>
-        <div>
-          <Label htmlFor="evidence">Attach evidence (optional, 5 MB max)</Label>
-          <Input id="evidence" name="evidence" type="file" />
-          {compact ? (
-            <p className="mt-1 text-sm text-muted">
-              Needs a network. Offline hallway saves scores only — the file is not queued.
-            </p>
-          ) : null}
-        </div>
+        <EvidenceAttach compact={compact} />
         <Button type="submit" className="w-full min-h-12">
           Save progress
         </Button>

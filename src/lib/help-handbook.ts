@@ -327,7 +327,7 @@ On an open goal you can edit those fields, add more objectives, see the trend ch
 
 For trial-based goals (percent accuracy or independent trials), set prompt level first, then tap Independent, Prompted, or Incorrect. Undo last if needed. Frequency and duration goals use +/− counts. Rubric and rate enter a numeric score. Same form: date, setting (classroom, pull-out, group, telehealth, home), minutes delivered, group size, condition (typical supports, without extras, 1:1, small group), and accommodations.
 
-Optional: session notes, home carryover (families can see this), evidence label, and one file up to about 5 MB (also on the Hallway pad when you have a network; offline hallway queues scores only). After save, open the student profile **Evidence gallery** to view the file and flag **Used in meeting packet**. You can attach the entry to a short-term objective or the whole annual goal. Charts update from saved present-session data.`,
+Optional: session notes, home carryover (families can see this), and one photo or PDF (drop, camera, or file picker; under 5 MB). A caption is filled from the filename unless you change it. Also on the Hallway pad when you have a network; offline hallway queues scores only. After save, open the student profile **Evidence gallery** to view the file and flag **Used in meeting packet**. You can attach the entry to a short-term objective or the whole annual goal. Charts update from saved present-session data.`,
     },
     {
       id: "charts",
@@ -530,7 +530,7 @@ Parents acknowledge **for each linked student**. If the school bumps the notice 
         "lightbox",
         "packet",
       ],
-      body: `When logging a present session you may attach one evidence file (about 5 MB) and a short label such as “weekly probe 4.” Open the student profile **Evidence gallery** to view work samples (lightbox for images, download otherwise) instead of a filename only. Staff can check **Used in meeting packet**. Hosted deploys store files in private object storage. When demonstration mode is off, disk uploads are refused—configure Supabase Storage or a private Blob store first. Keep one app replica until storage is private. Evidence stays with the progress entry; it is not training data for AI.`,
+      body: `When logging a present session you may drop or choose one photo or PDF (about 5 MB). A caption is suggested from the filename (for example “weekly probe 4”). Open the student profile **Evidence gallery** to view work samples (lightbox for images, download otherwise) instead of a filename only. Staff can check **Used in meeting packet**. Hosted deploys store files in private object storage. When demonstration mode is off, disk uploads are refused—configure Supabase Storage or a private Blob store first. Keep one app replica until storage is private. Evidence stays with the progress entry; it is not training data for AI.`,
     },
     {
       id: "navigation",

@@ -50,7 +50,8 @@ test("staff can log a session and write a period comment; parent cannot open Tea
     await openHallway.click();
     await expect(page).toHaveURL(/\/hallway/, { timeout: 20_000 });
     await expect(page.getByRole("button", { name: "Save progress" })).toBeVisible();
-    await expect(page.getByLabel("Attach evidence")).toBeVisible();
+    await expect(page.getByText("Attach evidence", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Choose a photo or PDF" })).toBeVisible();
   }
 
   await page.getByLabel("Primary").getByRole("link", { name: "Reports" }).click();
