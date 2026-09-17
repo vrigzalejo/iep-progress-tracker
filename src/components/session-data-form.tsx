@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { createProgressAction } from "@/app/actions";
+import { EvidenceAttach } from "@/components/evidence-attach";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
@@ -167,13 +168,13 @@ export function SessionDataForm({
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <Button type="button" className="min-h-16 text-base sm:min-h-20" onClick={() => addTrial("INDEPENDENT")}>
+              <Button type="button" className="min-h-16 rounded-2xl text-base sm:min-h-20" onClick={() => addTrial("INDEPENDENT")}>
                 Independent
               </Button>
               <Button
                 type="button"
                 variant="secondary"
-                className="min-h-16 text-base"
+                className="min-h-16 rounded-2xl text-base"
                 onClick={() => addTrial("PROMPTED")}
               >
                 Prompted
@@ -181,7 +182,7 @@ export function SessionDataForm({
               <Button
                 type="button"
                 variant="danger"
-                className="min-h-16 text-base"
+                className="min-h-16 rounded-2xl text-base"
                 onClick={() => addTrial("INCORRECT")}
               >
                 Incorrect
@@ -334,16 +335,7 @@ export function SessionDataForm({
             placeholder="Practice the break request before homework."
           />
         </div>
-        <div>
-          <Label htmlFor="evidenceLabel">Evidence label (optional)</Label>
-          <Input id="evidenceLabel" name="evidenceLabel" placeholder="Weekly probe 4, work sample, session log" />
-        </div>
-        {compact ? null : (
-          <div>
-            <Label htmlFor="evidence">Attach evidence (optional, 5 MB max)</Label>
-            <Input id="evidence" name="evidence" type="file" />
-          </div>
-        )}
+        <EvidenceAttach compact={compact} />
         <Button type="submit" className="w-full min-h-12">
           Save progress
         </Button>

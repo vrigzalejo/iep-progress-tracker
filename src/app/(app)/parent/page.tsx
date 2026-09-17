@@ -1,22 +1,27 @@
 import Link from "next/link";
-import { requireParent, listVisibleStudents, getStudentDetail } from "@/lib/queries";
+import { cookies } from "next/headers";
+import { requireParent, listVisibleStudents, getStudentDetail, markStudentMessagesRead } from "@/lib/queries";
 import { StatusIndicator } from "@/components/status-indicator";
 import { ProgressCodeBadge } from "@/components/progress-code-badge";
+import { FamilyLocaleToggle } from "@/components/family-locale-toggle";
+import { MessageThread } from "@/components/message-thread";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { Label, Textarea } from "@/components/ui/input";
-import { sendMessageAction, setDigestOptInAction } from "@/app/actions";
+import { Label } from "@/components/ui/input";
+import { setDigestOptInAction } from "@/app/actions";
 import { formatDate } from "@/lib/utils";
-import { Alert, EmptyState } from "@/components/ui/alert";
+import { Alert, EmptyState, FormError } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import type { ProgressCode } from "@/lib/constants";
+import { familyCopy } from "@/lib/family-copy";
+import { FAMILY_LOCALE_COOKIE, familyGoalSummary, resolveFamilyLocale } from "@/lib/family-locale";
 
 export const metadata = { title: "Family portal" };
 
 export default async function ParentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ studentId?: string; saved?: string }>;
+  searchParams: Promise<{ studentId?: string; saved?: string; error?: string }>;
 }) {
   const user = await requireParent();
   const params = await searchParams;
@@ -24,27 +29,27 @@ export default async function ParentPage({
   const selected =
     students.find((student) => student.id === params.studentId) ?? students[0] ?? null;
   const student = selected ? await getStudentDetail(user, selected.id) : null;
+  if (student) await markStudentMessagesRead(user, student.id);
+  const digestContact = student?.guardians.find((guardian) => guardian.userId === user.id);
+  const locale = resolveFamilyLocale(
+    (await cookies()).get(FAMILY_LOCALE_COOKIE)?.value,
+    digestContact?.familyLocale,
+  );
+  const copy = familyCopy(locale);
 
   if (!student) {
     return (
-      <EmptyState title="No student is linked to this account">
-        Ask your school’s special education office to connect this family account to a student
-        profile.
-      </EmptyState>
+      <EmptyState title={copy.noStudent}>{copy.noStudentBody}</EmptyState>
     );
   }
 
-  const digestContact = student.guardians.find((guardian) => guardian.userId === user.id);
-
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <header>
-        <p className="text-sm font-semibold uppercase tracking-wide text-forest">Family portal</p>
-        <h1 className="font-serif text-3xl">{student.preferredName}’s progress</h1>
-        <p className="mt-2 max-w-2xl text-muted">
-          You can see goals the school has shared, recent progress in everyday language, reports,
-          and messages with the team. You cannot see other families’ students.
-        </p>
+      <header className="space-y-3">
+        <FamilyLocaleToggle locale={locale} returnTo={`/parent?studentId=${student.id}`} />
+        <p className="text-sm font-semibold uppercase tracking-wide text-forest">{copy.portalEyebrow}</p>
+        <h1 className="font-serif text-3xl">{copy.progressTitle(student.preferredName)}</h1>
+        <p className="mt-2 max-w-2xl text-muted">{copy.portalIntro}</p>
       </header>
 
       {students.length > 1 ? (
@@ -66,34 +71,36 @@ export default async function ParentPage({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <Button asChild>
-          <Link href={`/reports/${student.id}`}>Open progress report</Link>
+          <Link href={`/reports/${student.id}`}>{copy.openReport}</Link>
         </Button>
-        <Button asChild variant="secondary">
-          <Link href={`/reports/${student.id}/meeting`}>Meeting packet</Link>
+        <Button asChild variant="link">
+          <Link href={`/reports/${student.id}/meeting`}>{copy.meetingPacket}</Link>
         </Button>
-        <Button asChild variant="secondary">
-          <Link href="/privacy">Privacy and consent</Link>
+        <Button asChild variant="link">
+          <Link href={`/students/${student.id}/carryover`}>{copy.homeCards}</Link>
+        </Button>
+        <Button asChild variant="link">
+          <Link href="/privacy">{copy.privacyConsent}</Link>
         </Button>
       </div>
 
       {params.saved === "digest" ? (
-        <Alert title="Weekly email preference saved" tone="success">
-          The school will only send this update if you opted in. It uses scores and home-carryover
-          notes already on file.
+        <Alert title={copy.weeklySaved} tone="success">
+          {copy.weeklySavedBody}
+        </Alert>
+      ) : null}
+      {params.saved === "1" ? (
+        <Alert title={copy.messageSent} tone="success">
+          {copy.messageSentBody}
         </Alert>
       ) : null}
 
       {digestContact ? (
         <Card>
-          <CardTitle>Weekly email</CardTitle>
-          <p className="mt-2 text-sm text-muted">
-            Optional Friday update for {student.preferredName}: shared goals, last week’s scores, and
-            staff-written home carryover. Off by default. The subject line is only a name—no scores.
-            Each mail includes who can see it and an unsubscribe link. The product does not rewrite
-            this with a model.
-          </p>
+          <CardTitle>{copy.weeklyEmail}</CardTitle>
+          <p className="mt-2 text-sm text-muted">{copy.weeklyEmailBody(student.preferredName)}</p>
           <form action={setDigestOptInAction} className="mt-4 space-y-3">
             <input type="hidden" name="studentId" value={student.id} />
             <label className="flex items-start gap-3 text-sm">
@@ -103,9 +110,9 @@ export default async function ParentPage({
                 defaultChecked={digestContact.digestOptIn && !digestContact.digestUnsubscribedAt}
                 className="mt-1 h-5 w-5"
               />
-              Send me the weekly update for this student
+              {copy.weeklyOptIn}
             </label>
-            <Button type="submit">Save email preference</Button>
+            <Button type="submit">{copy.saveEmail}</Button>
           </form>
         </Card>
       ) : null}
@@ -119,8 +126,8 @@ export default async function ParentPage({
             <Card key={goal.id}>
               <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
                 <div>
-                  <CardTitle className="text-xl">{goal.plainLanguageSummary}</CardTitle>
-                  <p className="mt-2 text-sm text-muted">Official goal: {goal.officialWording}</p>
+                  <CardTitle className="text-xl">{familyGoalSummary(goal, locale)}</CardTitle>
+                  <p className="mt-2 text-sm text-muted">{copy.officialGoal}: {goal.officialWording}</p>
                 </div>
                 <div className="flex flex-col items-start gap-2">
                   <StatusIndicator signal={goal.signal} />
@@ -129,20 +136,20 @@ export default async function ParentPage({
               </div>
               {latest ? (
                 <p className="mt-3 text-sm">
-                  Latest update {formatDate(latest.recordedAt)}: {latest.score} {goal.unit}.{" "}
+                  {copy.latestUpdate(formatDate(latest.recordedAt), `${latest.score} ${goal.unit}`)}{" "}
                   {latest.notes}
                 </p>
               ) : (
-                <p className="mt-3 text-sm text-muted">The team has not posted a score yet.</p>
+                <p className="mt-3 text-sm text-muted">{copy.noScore}</p>
               )}
               {statement ? <p className="mt-2 text-sm">{statement.narrative}</p> : null}
               {carryover ? (
                 <p className="mt-2 rounded-lg bg-paper p-3 text-sm">
-                  <strong>To try at home:</strong> {carryover}
+                  <strong>{copy.tryAtHome}</strong> {carryover}
                 </p>
               ) : null}
               <Button asChild variant="secondary" className="mt-4">
-                <Link href={`/goals/${goal.id}`}>See the chart</Link>
+                <Link href={`/goals/${goal.id}`}>{copy.seeChart}</Link>
               </Button>
             </Card>
           );
@@ -150,24 +157,26 @@ export default async function ParentPage({
       </section>
 
       <Card>
-        <CardTitle>Messages with the team</CardTitle>
-        <ul className="mt-4 space-y-3">
-          {student.messages.map((message) => (
-            <li key={message.id} className="rounded-lg bg-paper p-3">
-              <p className="text-xs text-muted">
-                {message.fromUser.name} · {formatDate(message.createdAt)}
-              </p>
-              <p>{message.body}</p>
-            </li>
-          ))}
-        </ul>
-        <form action={sendMessageAction} className="mt-4 space-y-3">
-          <input type="hidden" name="studentId" value={student.id} />
-          <input type="hidden" name="returnTo" value={`/parent?studentId=${student.id}`} />
-          <Label htmlFor="body">Write to the team</Label>
-          <Textarea id="body" name="body" required placeholder="A question or an observation from home." />
-          <Button type="submit">Send</Button>
-        </form>
+        <CardTitle className="flex items-center justify-between gap-3">
+          <span>{copy.messages}</span>
+          <Button asChild variant="link">
+            <Link href={`/messages/${student.id}`}>{copy.messagesNav}</Link>
+          </Button>
+        </CardTitle>
+        <FormError error={params.error} />
+        <div className="mt-4">
+          <MessageThread
+            messages={student.messages}
+            currentUserId={user.id}
+            studentId={student.id}
+            returnTo={`/parent?studentId=${student.id}`}
+            isStaffUser={false}
+            locale={locale}
+            compact
+            composerId="familyMessage"
+            labels={{ write: copy.writeTeam, send: copy.send, empty: copy.noMessages }}
+          />
+        </div>
       </Card>
     </div>
   );

@@ -406,8 +406,6 @@ export async function listMessageThreads(user: SessionUser) {
   const byStudent = new Map<
     string,
     {
-      studentId: string;
-      studentName: string;
       latest: (typeof messages)[number];
       unread: number;
     }
@@ -417,17 +415,28 @@ export async function listMessageThreads(user: SessionUser) {
     const unread =
       message.fromUserId !== user.id && message.reads.length === 0 ? 1 : 0;
     if (!existing) {
-      byStudent.set(message.studentId, {
-        studentId: message.studentId,
-        studentName: message.student.preferredName,
-        latest: message,
-        unread,
-      });
+      byStudent.set(message.studentId, { latest: message, unread });
     } else {
       existing.unread += unread;
     }
   }
-  return [...byStudent.values()];
+  return students
+    .map((student) => {
+      const bucket = byStudent.get(student.id);
+      return {
+        studentId: student.id,
+        studentName: student.preferredName,
+        latest: bucket?.latest ?? null,
+        unread: bucket?.unread ?? 0,
+      };
+    })
+    .sort((a, b) => {
+      if (a.unread !== b.unread) return b.unread - a.unread;
+      const aTime = a.latest?.createdAt.getTime() ?? 0;
+      const bTime = b.latest?.createdAt.getTime() ?? 0;
+      if (aTime !== bTime) return bTime - aTime;
+      return a.studentName.localeCompare(b.studentName);
+    });
 }
 
 export async function markStudentMessagesRead(user: SessionUser, studentId: string) {
@@ -542,9 +551,34 @@ export async function listAudit(user: SessionUser) {
   });
 }
 
-export async function searchRecords(user: SessionUser, query: string) {
+export type SearchFilters = {
+  q?: string;
+  school?: string;
+  grade?: string;
+  serviceArea?: string;
+  signal?: string;
+  reportDue?: string;
+};
+
+export async function searchRecords(user: SessionUser, filters: SearchFilters | string) {
+  const parsed = typeof filters === "string" ? { q: filters } : filters;
+  const query = parsed.q?.trim() ?? "";
+  const hasFilter = Boolean(
+    query || parsed.school || parsed.grade || parsed.serviceArea || parsed.signal || parsed.reportDue,
+  );
+  if (!hasFilter) return { students: [], goals: [] };
+
   const caseload = await listVisibleStudents(user);
-  const students = await listVisibleStudents(user, query);
+  let students = query ? await listVisibleStudents(user, query) : caseload;
+  if (parsed.school) {
+    students = students.filter(
+      (student) => student.school === parsed.school || student.schoolId === parsed.school,
+    );
+  }
+  if (parsed.grade) {
+    students = students.filter((student) => student.grade === parsed.grade);
+  }
+
   const caseloadIds = caseload.map((student) => student.id);
   const goals =
     caseloadIds.length === 0
@@ -553,18 +587,49 @@ export async function searchRecords(user: SessionUser, query: string) {
           where: {
             studentId: { in: caseloadIds },
             ...(user.role === "PARENT" ? { sharedWithGuardians: true } : {}),
-            OR: [
-              { officialWording: ilike(query) },
-              { plainLanguageSummary: ilike(query) },
-              { measurableTarget: ilike(query) },
-              { serviceArea: ilike(query) },
-              { student: { preferredName: ilike(query) } },
-            ],
+            ...(parsed.serviceArea ? { serviceArea: parsed.serviceArea } : {}),
+            ...(parsed.reportDue === "overdue" ? { nextReportDue: { lt: new Date() } } : {}),
+            ...(query
+              ? {
+                  OR: [
+                    { officialWording: ilike(query) },
+                    { plainLanguageSummary: ilike(query) },
+                    { measurableTarget: ilike(query) },
+                    { serviceArea: ilike(query) },
+                    { student: { preferredName: ilike(query) } },
+                  ],
+                }
+              : {}),
           },
-          include: { student: { select: { preferredName: true } } },
-          take: 20,
+          include: {
+            student: { select: { preferredName: true } },
+            entries: { orderBy: { recordedAt: "asc" as const } },
+          },
+          take: 40,
         });
-  return { students, goals };
+  const scored = goals
+    .map((goal) => ({ ...goal, signal: computeDataSignal(goal) }))
+    .filter((goal) => (parsed.signal ? goal.signal === parsed.signal : true))
+    .slice(0, 20);
+  return { students, goals: scored };
+}
+
+export async function listStudentEvidence(user: SessionUser, studentId: string) {
+  await assertStudentAccess(user, studentId);
+  return prisma.progressEntry.findMany({
+    where: {
+      evidencePath: { not: null },
+      goal: {
+        studentId,
+        ...(user.role === "PARENT" ? { sharedWithGuardians: true } : {}),
+      },
+    },
+    include: {
+      goal: { select: { id: true, plainLanguageSummary: true, sharedWithGuardians: true } },
+    },
+    orderBy: { recordedAt: "desc" },
+    take: 40,
+  });
 }
 
 export async function listSchools(user: SessionUser, options?: { includeArchived?: boolean }) {

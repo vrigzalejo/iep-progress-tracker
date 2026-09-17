@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Alert, EmptyState } from "@/components/ui/alert";
 import { formatDate } from "@/lib/utils";
+import { hallwayWorkHref } from "@/lib/hallway";
 import { HallwaySync } from "@/components/hallway-sync";
 
 export const metadata = { title: "Today" };
@@ -27,12 +28,23 @@ export default async function TodayPage() {
       <HallwaySync />
       <div className="flex flex-wrap gap-2">
         <Button asChild>
-          <Link href={due[0]?.goalId ? `/hallway?studentId=${due[0].studentId}&goalId=${due[0].goalId}` : "/students"}>
-            Open hallway
+          <Link
+            href={
+              due[0]?.goalId
+                ? hallwayWorkHref(
+                    { studentId: due[0].studentId, goalId: due[0].goalId },
+                    due[1]?.goalId
+                      ? { studentId: due[1].studentId, goalId: due[1].goalId }
+                      : null,
+                  )
+                : "/students"
+            }
+          >
+            Hallway
           </Link>
         </Button>
         <Button asChild variant="secondary">
-          <Link href="/minutes">Minutes ledger</Link>
+          <Link href="/minutes">Minutes</Link>
         </Button>
       </div>
       {due.length === 0 ? (
@@ -45,9 +57,10 @@ export default async function TodayPage() {
           {due.map((row, index) => {
             const next = due[index + 1];
             const href = row.goalId
-              ? `/hallway?studentId=${row.studentId}&goalId=${row.goalId}${
-                  next?.goalId ? `&nextStudentId=${next.studentId}&nextGoalId=${next.goalId}` : ""
-                }`
+              ? hallwayWorkHref(
+                  { studentId: row.studentId, goalId: row.goalId },
+                  next?.goalId ? { studentId: next.studentId, goalId: next.goalId } : null,
+                )
               : `/students/${row.studentId}`;
             return (
               <li key={`${row.studentId}-${row.serviceArea}`}>
@@ -62,9 +75,9 @@ export default async function TodayPage() {
                     {row.minutesPerWeek} minutes
                   </p>
                   {row.goalSummary ? <p className="mt-1 text-sm text-muted">{row.goalSummary}</p> : null}
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
                     <Badge tone="sky">{row.sessionsRemaining} remaining</Badge>
-                    <Button asChild>
+                    <Button asChild variant="link">
                       <Link href={href}>Log in hallway</Link>
                     </Button>
                   </div>

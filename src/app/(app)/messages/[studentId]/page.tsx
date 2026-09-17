@@ -1,79 +1,56 @@
 import Link from "next/link";
-import { sendMessageAction } from "@/app/actions";
-import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
-import { Label, Textarea } from "@/components/ui/input";
+import { MessageThread } from "@/components/message-thread";
+import { Alert, FormError } from "@/components/ui/alert";
 import { requireUser, getStudentDetail, markStudentMessagesRead } from "@/lib/queries";
 import { isStaff } from "@/lib/permissions";
-import { MESSAGE_VISIBILITY_LABELS, type MessageVisibility } from "@/lib/constants";
-import { formatDate } from "@/lib/utils";
 
 export const metadata = { title: "Message thread" };
 
 export default async function MessageThreadPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ studentId: string }>;
+  searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
   const user = await requireUser();
   const { studentId } = await params;
+  const query = await searchParams;
   const student = await getStudentDetail(user, studentId);
   await markStudentMessagesRead(user, student.id);
+  const staff = isStaff(user.role);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6 pb-24 sm:pb-0">
       <p className="text-sm">
-        <Link href="/messages" className="text-forest hover:underline">
+        <Link href="/messages" className="font-semibold text-forest hover:underline">
           ← Messages
         </Link>
       </p>
-      <h1 className="font-serif text-3xl">Thread for {student.preferredName}</h1>
-      <p className="text-muted">
-        Unread notes are marked read when you open this page. Staff-only notes never appear for
-        families.
-      </p>
-      <Card>
-        <CardTitle>Conversation</CardTitle>
-        <ul className="mt-4 space-y-3">
-          {student.messages.map((message) => (
-            <li key={message.id} className="rounded-lg bg-paper px-3 py-2">
-              <p className="text-xs text-muted">
-                {message.fromUser.name} · {formatDate(message.createdAt)}
-                {isStaff(user.role) ? (
-                  <>
-                    {" "}
-                    · {MESSAGE_VISIBILITY_LABELS[message.visibility as MessageVisibility]}
-                  </>
-                ) : null}
-              </p>
-              <p>{message.body}</p>
-            </li>
-          ))}
-          {student.messages.length === 0 ? (
-            <li className="text-sm text-muted">No messages yet.</li>
-          ) : null}
-        </ul>
-        <form action={sendMessageAction} className="mt-4 space-y-3">
-          <input type="hidden" name="studentId" value={student.id} />
-          <input type="hidden" name="returnTo" value={`/messages/${student.id}`} />
-          <Label htmlFor="body">Write a message</Label>
-          <Textarea id="body" name="body" required maxLength={2000} />
-          {isStaff(user.role) ? (
-            <fieldset>
-              <legend className="mb-2 text-sm font-semibold">Who can see this</legend>
-              <label className="flex min-h-11 items-center gap-2">
-                <input type="radio" name="visibility" value="FAMILY" defaultChecked className="h-4 w-4" />
-                Family thread
-              </label>
-              <label className="flex min-h-11 items-center gap-2">
-                <input type="radio" name="visibility" value="STAFF" className="h-4 w-4" />
-                Staff only
-              </label>
-            </fieldset>
-          ) : null}
-          <Button type="submit">Send message</Button>
-        </form>
-      </Card>
+      <header>
+        <p className="text-sm font-semibold uppercase tracking-wide text-forest">Messages</p>
+        <h1 className="font-serif text-3xl">{student.preferredName}</h1>
+        <p className="mt-1 text-muted">
+          {staff
+            ? "Unread notes are marked read when you open this page. Staff-only notes never appear for families."
+            : "You only see the family thread. Staff-only notes never appear here."}
+        </p>
+      </header>
+      {query.saved ? (
+        <Alert title="Message sent" tone="success">
+          {staff
+            ? "Assigned staff and, if you chose the family thread, linked guardians can read it."
+            : "The team can read it on the family thread."}
+        </Alert>
+      ) : null}
+      <FormError error={query.error} />
+      <MessageThread
+        messages={student.messages}
+        currentUserId={user.id}
+        studentId={student.id}
+        returnTo={`/messages/${student.id}`}
+        isStaffUser={staff}
+      />
     </div>
   );
 }

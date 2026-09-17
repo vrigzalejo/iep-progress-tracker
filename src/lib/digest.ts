@@ -1,9 +1,12 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { familyCopy } from "@/lib/family-copy";
+import { familyGoalSummary, type FamilyLocale } from "@/lib/family-locale";
 import { formatDate } from "@/lib/utils";
 
 export type DigestGoal = {
   sharedWithGuardians: boolean;
   plainLanguageSummary: string;
+  plainLanguageSummaryEs?: string | null;
   unit: string;
   entries: {
     recordedAt: string | Date;
@@ -35,11 +38,17 @@ export function digestWeekRange(now: Date = new Date()) {
   return { start, end };
 }
 
-export function digestSubject(preferredName: string) {
-  return `Weekly update for ${preferredName}`;
+export function digestSubject(preferredName: string, locale: FamilyLocale = "en") {
+  const copy = familyCopy(locale);
+  return locale === "es" ? copy.digestSubjectEs(preferredName) : copy.digestSubject(preferredName);
 }
 
-export function buildFamilyDigest(student: DigestStudent, now: Date = new Date()) {
+export function buildFamilyDigest(
+  student: DigestStudent,
+  now: Date = new Date(),
+  locale: FamilyLocale = "en",
+) {
+  const copy = familyCopy(locale);
   const { start, end } = digestWeekRange(now);
   const goals = student.goals.filter((goal) => goal.sharedWithGuardians);
   const sections = goals.map((goal) => {
@@ -50,13 +59,13 @@ export function buildFamilyDigest(student: DigestStudent, now: Date = new Date()
     const scores = weekEntries.map((entry) => `${entry.score} ${goal.unit}`).join(", ");
     const carryover = [...weekEntries].reverse().find((entry) => entry.homeCarryover)?.homeCarryover;
     return {
-      summary: goal.plainLanguageSummary,
-      scores: scores || "No present session this week.",
+      summary: familyGoalSummary(goal, locale),
+      scores: scores || copy.noPresent,
       carryover: carryover?.trim() || null,
     };
   });
   return {
-    subject: digestSubject(student.preferredName),
+    subject: digestSubject(student.preferredName, locale),
     weekLabel: `${formatDate(start)} – ${formatDate(end)}`,
     sections,
   };
@@ -69,25 +78,27 @@ export function formatDigestText(input: {
   portalUrl: string;
   unsubscribeUrl: string;
   productName: string;
+  locale?: FamilyLocale;
 }) {
+  const copy = familyCopy(input.locale ?? "en");
   const lines = [
-    `This is a weekly update for ${input.preferredName} (${input.weekLabel}).`,
-    "It uses scores and home-carryover notes the school already wrote. It does not suggest services or placement.",
+    copy.digestOpener(input.preferredName, input.weekLabel),
+    copy.digestDisclaimer,
     "",
   ];
   if (input.sections.length === 0) {
-    lines.push("No shared goals are on this update.");
+    lines.push(copy.digestEmpty);
   }
   for (const section of input.sections) {
     lines.push(section.summary);
-    lines.push(`Last week’s scores: ${section.scores}`);
-    if (section.carryover) lines.push(`To try at home: ${section.carryover}`);
+    lines.push(`${copy.digestScores} ${section.scores}`);
+    if (section.carryover) lines.push(`${copy.tryAtHome} ${section.carryover}`);
     lines.push("");
   }
-  lines.push(`Who can see this: guardians linked to ${input.preferredName} who opted in.`);
-  lines.push(`Read more in the family portal: ${input.portalUrl}`);
-  lines.push(`Unsubscribe: ${input.unsubscribeUrl}`);
-  lines.push(`${input.productName} does not include disability labels or official IEP wording in this email.`);
+  lines.push(copy.digestWho(input.preferredName));
+  lines.push(`${copy.digestReadMore} ${input.portalUrl}`);
+  lines.push(`${copy.digestUnsub} ${input.unsubscribeUrl}`);
+  lines.push(copy.digestNoLabels(input.productName));
   return lines.join("\n");
 }
 

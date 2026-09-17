@@ -10,7 +10,11 @@ import { PrintButton } from "@/components/print-button";
 import { Logo } from "@/components/logo";
 import { formatDateLong } from "@/lib/utils";
 import { SERVICE_AREA_LABELS, type ProgressCode, type ServiceArea } from "@/lib/constants";
+import { cookies } from "next/headers";
 import { APP_NAME } from "@/lib/brand";
+import { familyCopy } from "@/lib/family-copy";
+import { FAMILY_LOCALE_COOKIE, familyGoalSummary, resolveFamilyLocale } from "@/lib/family-locale";
+import { FamilyLocaleToggle } from "@/components/family-locale-toggle";
 
 export const metadata = { title: "Printable progress report" };
 
@@ -25,6 +29,14 @@ export default async function ReportPreviewPage({
   const { studentId } = await params;
   const { periodId } = await searchParams;
   const student = await getStudentDetail(user, studentId);
+  const locale =
+    user.role === "PARENT"
+      ? resolveFamilyLocale(
+          (await cookies()).get(FAMILY_LOCALE_COOKIE)?.value,
+          student.guardians.find((guardian) => guardian.userId === user.id)?.familyLocale,
+        )
+      : "en";
+  const copy = familyCopy(locale);
   const periods = await listReportingPeriods(user);
   const period = periods.find((item) => item.id === periodId) ?? currentReportingPeriod(periods);
   const filed = isStaff(user.role) ? await listFiledDocuments(user, studentId) : [];
@@ -32,9 +44,19 @@ export default async function ReportPreviewPage({
   return (
     <div className="mx-auto max-w-3xl space-y-8 bg-white p-6 print:p-0">
       <div className="no-print flex flex-wrap justify-end gap-2">
-        <Button asChild variant="secondary">
-          <Link href={`/reports/${student.id}/meeting/room`}>Meeting room</Link>
-        </Button>
+        {user.role === "PARENT" ? (
+          <>
+            <Button asChild variant="secondary">
+              <Link href={`/parent?studentId=${student.id}`}>Back to Family home</Link>
+            </Button>
+            <FamilyLocaleToggle locale={locale} returnTo={`/reports/${studentId}`} />
+          </>
+        ) : null}
+        {isStaff(user.role) ? (
+          <Button asChild variant="secondary">
+            <Link href={`/reports/${student.id}/meeting/room`}>Meeting room</Link>
+          </Button>
+        ) : null}
         {isStaff(user.role) ? (
           <FilePdfForm
             studentId={student.id}
@@ -51,7 +73,9 @@ export default async function ReportPreviewPage({
         <div className="flex items-center gap-3">
           <Logo />
           <div>
-            <p className="font-serif text-2xl">{APP_NAME} report</p>
+            <p className="font-serif text-2xl">
+              {APP_NAME} {copy.reportHeader}
+            </p>
             <p className="text-sm text-muted">{student.organization.name}</p>
             {period ? <p className="text-sm">{period.label}</p> : null}
           </div>
@@ -66,9 +90,9 @@ export default async function ReportPreviewPage({
         <p className="text-sm text-muted">Case manager: {student.caseManager.name}</p>
       </section>
       <p className="rounded-lg bg-paper p-4 text-sm">
-        This report uses everyday language so families can follow progress. Official IEP wording is
-        included under each goal. Staff choose the progress code for the period. Chart indicators
-        describe recent scores. They are not grades, evaluations, or IEP team decisions.
+        {user.role === "PARENT"
+          ? copy.reportDisclaimer
+          : "This report uses everyday language so families can follow progress. Official IEP wording is included under each goal. Staff choose the progress code for the period. Chart indicators describe recent scores. They are not grades, evaluations, or IEP team decisions."}
       </p>
       {student.goals.map((goal) => {
         const latest = [...goal.entries].reverse().find((entry) => entry.sessionOutcome === "PRESENT");
@@ -88,7 +112,7 @@ export default async function ReportPreviewPage({
             <p className="text-sm font-semibold uppercase tracking-wide text-forest">
               {SERVICE_AREA_LABELS[goal.serviceArea as ServiceArea]}
             </p>
-            <h2 className="mt-1 font-serif text-2xl">{goal.plainLanguageSummary}</h2>
+            <h2 className="mt-1 font-serif text-2xl">{familyGoalSummary(goal, locale)}</h2>
             <p className="mt-2 text-sm">
               <strong>Official goal:</strong> {goal.officialWording}
             </p>

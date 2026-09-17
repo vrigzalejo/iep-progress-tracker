@@ -15,6 +15,32 @@ export function formatDate(value: Date | string) {
   }).format(date);
 }
 
+export function formatTime(value: Date | string) {
+  const date = typeof value === "string" ? new Date(value) : value;
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
+export function formatThreadDay(
+  value: Date | string,
+  labels: { today: string; yesterday: string },
+  locale: "en" | "es" = "en",
+  now = new Date(),
+) {
+  const date = typeof value === "string" ? new Date(value) : value;
+  const startOfLocalDay = (item: Date) => new Date(item.getFullYear(), item.getMonth(), item.getDate()).getTime();
+  const diff = Math.round((startOfLocalDay(now) - startOfLocalDay(date)) / 86_400_000);
+  if (diff === 0) return labels.today;
+  if (diff === 1) return labels.yesterday;
+  return new Intl.DateTimeFormat(locale === "es" ? "es-US" : "en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
 export function formatDateLong(value: Date | string) {
   const date = typeof value === "string" ? new Date(value) : value;
   return new Intl.DateTimeFormat("en-US", {

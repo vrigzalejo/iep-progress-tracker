@@ -7,6 +7,7 @@ import { HallwayLock } from "@/components/hallway-lock";
 import { HallwaySync } from "@/components/hallway-sync";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { hallwayWorkHref, pickHallwayNext } from "@/lib/hallway";
 import { can } from "@/lib/permissions";
 
 export const metadata = { title: "Hallway" };
@@ -28,33 +29,46 @@ export default async function HallwayPage({
   if (!can(user.role, "progress.create")) notFound();
   const query = await searchParams;
   const { due } = await getTodayCaseload(user);
-  const selected =
-    due.find((row) => row.goalId === query.goalId) ??
-    due.find((row) => row.studentId === query.studentId) ??
-    due[0];
-  if (!selected?.goalId) {
+
+  let goalId = query.goalId;
+  if (!goalId && query.studentId) {
+    const student = await getStudentDetail(user, query.studentId);
+    goalId =
+      due.find((row) => row.studentId === student.id && row.goalId)?.goalId ??
+      student.goals[0]?.id ??
+      undefined;
+  }
+  if (!goalId) {
+    goalId = due.find((row) => row.goalId)?.goalId ?? undefined;
+  }
+  if (!goalId) {
     return (
       <div className="mx-auto max-w-xl space-y-4">
         <h1 className="font-serif text-3xl">Hallway</h1>
-        <p className="text-muted">No remaining sessions are on today’s list.</p>
+        <p className="text-muted">
+          {query.studentId
+            ? "This student has no IEP goal to log yet."
+            : "No remaining sessions are on today’s list."}
+        </p>
         <Button asChild>
-          <Link href="/today">Back to Today</Link>
+          <Link href="/today">Today</Link>
         </Button>
       </div>
     );
   }
-  const goal = await getGoalDetail(user, selected.goalId);
+
+  const goal = await getGoalDetail(user, goalId);
   const student = await getStudentDetail(user, goal.studentId);
-  const next =
-    (query.nextGoalId
-      ? due.find((row) => row.goalId === query.nextGoalId)
-      : undefined) ?? due.find((row) => row.studentId !== selected.studentId && row.goalId);
-  const nextHref = next?.goalId
-    ? `/hallway?studentId=${next.studentId}&goalId=${next.goalId}`
-    : "/today";
+  const selected = { studentId: student.id, goalId: goal.id };
+  const next = pickHallwayNext(due, selected, {
+    nextStudentId: query.nextStudentId,
+    nextGoalId: query.nextGoalId,
+  });
+  const nextAfter = next ? pickHallwayNext(due, next) : null;
+  const nextHref = next ? hallwayWorkHref(next, nextAfter) : "/today";
 
   return (
-    <div className="mx-auto max-w-xl space-y-4">
+    <div className="mx-auto max-w-xl space-y-4 pb-24 sm:pb-0">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-forest">Hallway</p>
@@ -67,12 +81,28 @@ export default async function HallwayPage({
       </div>
       {query.saved ? (
         <Alert title="Saved" tone="success">
-          Session is on the record. Opening the next student when one remains.
+          Session is on the record.{" "}
+          {next?.goalId
+            ? `Next on the list is ready — save again to move on, or open Today.`
+            : "No other student remains on today’s list."}
         </Alert>
       ) : null}
+      {next?.goalId ? (
+        <p className="text-sm text-muted">
+          After this save, Hallway opens the next student still owed a session on Today.
+        </p>
+      ) : (
+        <p className="text-sm text-muted">
+          After this save you return to Today.{" "}
+          {query.studentId && !due.some((row) => row.studentId === student.id)
+            ? "This student is not on today’s remaining list, so Hallway stays on them until you save."
+            : null}
+        </p>
+      )}
       {query.queued ? (
         <Alert title="Saved on this device" tone="warning">
           You were offline. This session will sync when the network returns. It was not dropped.
+          Evidence files are not queued offline — attach them when you have a network.
         </Alert>
       ) : null}
       <HallwaySync />

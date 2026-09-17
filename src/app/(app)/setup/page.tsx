@@ -46,14 +46,16 @@ export default async function SetupPage({
         <p className="mt-2 text-muted">
           Signed in as {user.name} ({user.email}).
           {hasPassword
-            ? " Change the demo passphrase before any real deployment."
+            ? isDemoMode()
+              ? " Change the demo passphrase before any real deployment."
+              : " You can change your password here."
             : " This account signs in with school SSO."}
         </p>
       </div>
       {mfaRequired && hasPassword && !mfaEnabled ? (
         <Alert title="Authenticator required" tone="warning">
-          Password sign-in is on while demonstration mode is off. Enroll an authenticator before
-          using other screens, or turn on school SSO and set AUTH_CREDENTIALS_ENABLED=false.
+          Password sign-in is on. Enroll an authenticator before using other screens, or turn on
+          school SSO and set AUTH_CREDENTIALS_ENABLED=false.
         </Alert>
       ) : null}
       {updated === "1" ? (

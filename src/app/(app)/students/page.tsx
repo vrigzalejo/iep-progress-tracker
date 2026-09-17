@@ -107,7 +107,7 @@ export default async function StudentsPage({
                   <p className="mt-3 text-sm">
                     {student.goals.length} IEP goal{student.goals.length === 1 ? "" : "s"}
                   </p>
-                  <Button asChild variant="secondary" className="mt-4">
+                  <Button asChild variant="link" className="mt-4">
                     <Link href={`/students/${student.id}`}>Open profile</Link>
                   </Button>
                 </Card>

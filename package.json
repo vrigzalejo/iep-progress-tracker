@@ -1,6 +1,6 @@
 {
   "name": "iep-progress-tracker",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "engines": {
     "node": ">=22"
@@ -16,9 +16,11 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "docker:up": "docker compose --env-file .env.local up --build",
+    "docker:up": "docker compose --env-file .env.local up --build --watch",
     "docker:db": "docker compose --env-file .env.local up db mailpit -d",
     "docker:down": "docker compose --env-file .env.local down",
+    "docker:logs": "docker compose --env-file .env.local logs -f --tail=200",
+    "docker:logs:ui": "docker compose --env-file .env.local --profile logs up dozzle -d",
     "postinstall": "prisma generate",
     "vercel-build": "prisma generate && prisma migrate deploy && next build"
   },

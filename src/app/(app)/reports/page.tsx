@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireUser, listVisibleStudents, listReportingPeriods, currentReportingPeriod } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ export default async function ReportsPage({
   searchParams: Promise<{ studentId?: string; periodId?: string }>;
 }) {
   const user = await requireUser();
+  if (user.role === "PARENT") redirect("/parent");
   const params = await searchParams;
   const students = await listVisibleStudents(user);
   const periods = await listReportingPeriods(user);
@@ -67,7 +69,7 @@ export default async function ReportsPage({
             </Button>
           </form>
           {selected ? (
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
               <Button asChild>
                 <Link
                   href={
@@ -76,25 +78,25 @@ export default async function ReportsPage({
                       : `/reports/${selected.id}`
                   }
                 >
-                  Open print preview
+                  Preview
                 </Link>
               </Button>
               {isStaff(user.role) && period ? (
                 <>
-                  <Button asChild variant="secondary">
+                  <Button asChild variant="link">
                     <Link href={`/reports/studio?periodId=${period.id}`}>Open report studio</Link>
                   </Button>
-                  <Button asChild variant="secondary">
+                  <Button asChild variant="link">
                     <Link href={`/reports/${selected.id}/period?periodId=${period.id}`}>
                       Write period comments
                     </Link>
                   </Button>
                 </>
               ) : null}
-              <Button asChild variant="secondary">
+              <Button asChild variant="link">
                 <Link href={`/reports/${selected.id}/meeting`}>Meeting packet</Link>
               </Button>
-              <Button asChild variant="secondary">
+              <Button asChild variant="link">
                 <Link href={`/reports/${selected.id}/meeting/room`}>Meeting room</Link>
               </Button>
             </div>

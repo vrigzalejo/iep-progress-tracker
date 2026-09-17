@@ -1,4 +1,4 @@
-const CACHE = "iep-hallway-v1";
+const CACHE = "iep-hallway-v2";
 const SHELL = ["/today", "/hallway", "/icon.svg"];
 
 self.addEventListener("install", (event) => {

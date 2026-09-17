@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { hash, compare } from "bcryptjs";
@@ -31,13 +31,25 @@ import {
   studentSchema,
   teamMemberSchema,
   trialSchema,
+  forgotPasswordSchema,
+  setPasswordFromTokenSchema,
 } from "@/lib/validation";
+import { FAMILY_LOCALE_COOKIE, parseFamilyLocale } from "@/lib/family-locale";
+import {
+  createPasswordResetSecret,
+  hashPasswordResetSecret,
+  passwordResetExpiry,
+  passwordResetMatches,
+  passwordSetUrl,
+} from "@/lib/password-reset";
 import { ROLE_LABELS, SERVICE_AREAS, type ServiceArea } from "@/lib/constants";
 import { isSsoConfigured } from "@/lib/sso";
 import {
+  mailConfigured,
   sendAccountDeactivatedMail,
   sendAccountReactivatedMail,
   sendFamilyMessageMail,
+  sendPasswordSetMail,
   sendTeamInviteMail,
 } from "@/lib/mail";
 import { utcMeetingOn } from "@/lib/meeting";
@@ -82,8 +94,12 @@ function optionalInt(value: string) {
 }
 
 function fail(returnTo: string, message: string): never {
-  const path = returnTo.startsWith("/") ? returnTo.split("?")[0] : "/dashboard";
-  redirect(`${path}?error=${encodeURIComponent(message)}`);
+  const raw = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/dashboard";
+  const path = raw.split("?")[0] || "/dashboard";
+  const params = new URLSearchParams(raw.includes("?") ? raw.slice(raw.indexOf("?") + 1) : "");
+  params.delete("saved");
+  params.set("error", message);
+  redirect(`${path}?${params.toString()}`);
 }
 
 function parseTrials(json: string | undefined) {
@@ -192,6 +208,7 @@ export async function createGoalAction(formData: FormData): Promise<void> {
     studentId,
     officialWording: formString(formData, "officialWording"),
     plainLanguageSummary: formString(formData, "plainLanguageSummary"),
+    plainLanguageSummaryEs: formString(formData, "plainLanguageSummaryEs"),
     baseline: formString(formData, "baseline"),
     measurableTarget: formString(formData, "measurableTarget"),
     targetValue: formString(formData, "targetValue"),
@@ -222,12 +239,14 @@ export async function createGoalAction(formData: FormData): Promise<void> {
     presentLevelsSnapshot,
     nextReportDue,
     startDate,
+    plainLanguageSummaryEs,
     ...goalFields
   } = parsed.data;
 
   const goal = await prisma.iepGoal.create({
     data: {
       ...goalFields,
+      plainLanguageSummaryEs: plainLanguageSummaryEs || null,
       presentLevelsSnapshot: presentLevelsSnapshot || null,
       nextReportDue: new Date(nextReportDue),
       startDate: new Date(startDate),
@@ -325,6 +344,7 @@ export async function updateGoalAction(formData: FormData): Promise<void> {
       nextReportDue: nextReportDue ? new Date(nextReportDue) : existing.nextReportDue,
       officialWording: nextSnapshot.officialWording,
       plainLanguageSummary: nextSnapshot.plainLanguageSummary,
+      plainLanguageSummaryEs: formString(formData, "plainLanguageSummaryEs") || null,
       baseline: nextSnapshot.baseline,
       measurableTarget: nextSnapshot.measurableTarget,
       targetValue: nextSnapshot.targetValue,
@@ -593,7 +613,8 @@ export async function sendMessageAction(formData: FormData): Promise<void> {
     await Promise.all([...recipients].map((email) => sendFamilyMessageMail(email)));
   }
 
-  redirect(`${returnTo}?saved=1`);
+  const next = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : `/messages/${parsed.data.studentId}`;
+  redirect(withSaved(next));
 }
 
 export async function savePeriodStatementAction(formData: FormData): Promise<void> {
@@ -663,8 +684,8 @@ export async function createTeamMemberAction(formData: FormData): Promise<void> 
   if (!parsed.success) {
     fail("/team", parsed.error.issues[0]?.message ?? "Check the team form.");
   }
-  if (!parsed.data.password && !isSsoConfigured()) {
-    fail("/team", "Set a temporary password, or configure school SSO first.");
+  if (!parsed.data.password && !isSsoConfigured() && !mailConfigured()) {
+    fail("/team", "Set a temporary password, configure school SSO, or configure mail so they can set a password.");
   }
   const passwordHash = parsed.data.password ? await hash(parsed.data.password, 12) : null;
   const created = await prisma.user.create({
@@ -684,7 +705,23 @@ export async function createTeamMemberAction(formData: FormData): Promise<void> 
     resourceType: "user",
     resourceId: created.id,
   });
-  await sendTeamInviteMail(created.email, ROLE_LABELS[parsed.data.role]);
+  if (mailConfigured()) {
+    const secret = createPasswordResetSecret();
+    await prisma.user.update({
+      where: { id: created.id },
+      data: {
+        passwordResetTokenHash: hashPasswordResetSecret(secret),
+        passwordResetExpiresAt: passwordResetExpiry(),
+      },
+    });
+    await sendTeamInviteMail(
+      created.email,
+      ROLE_LABELS[parsed.data.role],
+      passwordSetUrl(created.id, secret),
+    );
+  } else {
+    await sendTeamInviteMail(created.email, ROLE_LABELS[parsed.data.role]);
+  }
   revalidatePath("/team");
   redirect("/team?saved=1");
 }
@@ -1100,11 +1137,13 @@ export async function setDigestOptInAction(formData: FormData) {
     where: { studentId, userId: user.id },
   });
   if (!contact) fail("/parent", "This account is not linked to that student.");
+  const jar = await cookies();
   await prisma.guardianContact.update({
     where: { id: contact.id },
     data: {
       digestOptIn: optIn,
       digestUnsubscribedAt: optIn ? null : new Date(),
+      familyLocale: parseFamilyLocale(jar.get(FAMILY_LOCALE_COOKIE)?.value),
     },
   });
   await writeAudit({
@@ -1208,4 +1247,112 @@ export async function fileStudentPdfAction(formData: FormData) {
     details: kind,
   });
   redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}filed=${filed.id}`);
+}
+
+export async function requestPasswordResetAction(formData: FormData): Promise<void> {
+  const parsed = forgotPasswordSchema.safeParse({ email: formString(formData, "email") });
+  if (!parsed.success) {
+    fail("/forgot-password", parsed.error.issues[0]?.message ?? "Enter a valid email.");
+  }
+  const email = parsed.data.email.toLowerCase();
+  const record = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, email: true, deactivatedAt: true, passwordHash: true },
+  });
+  if (record && !record.deactivatedAt && mailConfigured() && (record.passwordHash || !isSsoConfigured())) {
+    const secret = createPasswordResetSecret();
+    await prisma.user.update({
+      where: { id: record.id },
+      data: {
+        passwordResetTokenHash: hashPasswordResetSecret(secret),
+        passwordResetExpiresAt: passwordResetExpiry(),
+      },
+    });
+    await sendPasswordSetMail(record.email, passwordSetUrl(record.id, secret), "reset");
+  }
+  redirect("/forgot-password?sent=1");
+}
+
+export async function setPasswordFromTokenAction(formData: FormData): Promise<void> {
+  const parsed = setPasswordFromTokenSchema.safeParse({
+    userId: formString(formData, "userId"),
+    token: formString(formData, "token"),
+    newPassword: formString(formData, "newPassword"),
+    confirmPassword: formString(formData, "confirmPassword"),
+  });
+  const returnTo = `/set-password?uid=${encodeURIComponent(formString(formData, "userId"))}&t=${encodeURIComponent(formString(formData, "token"))}`;
+  if (!parsed.success) {
+    fail(returnTo, parsed.error.issues[0]?.message ?? "Check the password.");
+  }
+  const record = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: {
+      id: true,
+      passwordResetTokenHash: true,
+      passwordResetExpiresAt: true,
+      deactivatedAt: true,
+    },
+  });
+  if (
+    !record ||
+    record.deactivatedAt ||
+    !record.passwordResetTokenHash ||
+    !record.passwordResetExpiresAt ||
+    record.passwordResetExpiresAt.getTime() < Date.now() ||
+    !passwordResetMatches(parsed.data.token, record.passwordResetTokenHash)
+  ) {
+    fail("/forgot-password", "This password link is not valid or has expired.");
+  }
+  await prisma.user.update({
+    where: { id: record.id },
+    data: {
+      passwordHash: await hash(parsed.data.newPassword, 12),
+      passwordResetTokenHash: null,
+      passwordResetExpiresAt: null,
+      failedSignIns: 0,
+      lockedUntil: null,
+    },
+  });
+  redirect("/sign-in?reset=1");
+}
+
+export async function setFamilyLocaleAction(formData: FormData): Promise<void> {
+  const locale = parseFamilyLocale(formString(formData, "locale"));
+  const returnTo = formString(formData, "returnTo") || "/parent";
+  const stay = formString(formData, "stay") === "1";
+  const jar = await cookies();
+  jar.set(FAMILY_LOCALE_COOKIE, locale, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+    httpOnly: true,
+  });
+  const user = await requireUser();
+  if (user.role === "PARENT") {
+    await prisma.guardianContact.updateMany({
+      where: { userId: user.id },
+      data: { familyLocale: locale },
+    });
+  }
+  revalidatePath("/", "layout");
+  if (stay) return;
+  redirect(returnTo.startsWith("/") ? returnTo : "/parent");
+}
+
+export async function setEvidenceInPacketAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const entryId = formString(formData, "entryId");
+  const returnTo = formString(formData, "returnTo") || "/students";
+  const entry = await prisma.progressEntry.findUnique({
+    where: { id: entryId },
+    include: { goal: { select: { studentId: true } } },
+  });
+  if (!entry) fail(returnTo, "Evidence not found.");
+  await assertStudentAccess(user, entry.goal.studentId);
+  await prisma.progressEntry.update({
+    where: { id: entryId },
+    data: { evidenceInPacket: formBool(formData, "evidenceInPacket") },
+  });
+  revalidatePath(returnTo);
+  redirect(returnTo);
 }

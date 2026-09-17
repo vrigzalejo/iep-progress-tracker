@@ -51,7 +51,26 @@ npm run dev -- --port 43147 --hostname 127.0.0.1
 
 Open [http://127.0.0.1:43147](http://127.0.0.1:43147).
 
+### Watch logs
+
+Compose writes JSON request/error lines to stdout (method + redacted path such as `/students/:id`). Query strings, emails, names, and goal text are not logged. Health checks are skipped so they do not flood the stream.
+
+```bash
+npm run docker:logs
+```
+
+Optional browser UI on the loopback interface only (needs the Docker socket):
+
+```bash
+npm run docker:logs:ui
+```
+
+Open [http://127.0.0.1:8888](http://127.0.0.1:8888). Set `LOG_REQUESTS=false` in `.env.local` if you need to silence request lines. Unhandled request errors also go to stdout via `src/instrumentation.ts`. Optional `SENTRY_DSN` is still not wired and must never receive student payloads.
+
+
 ### Local HTTPS
+
+The mobile app is this site on the home screen (installable PWA), not a second native client. On iPhone or iPad: Safari Share → Add to Home Screen. On Android Chrome: menu → Install app. `start_url` is `/` so staff and families land on the right home. Offline cache is Today and Hallway scores for the current day only.
 
 PWA install and secure cookies need TLS. Create a trusted local cert (once), set `AUTH_URL="https://127.0.0.1:43147"` in `.env.local`, then:
 
@@ -129,7 +148,8 @@ Roles stay in this app. The identity provider only proves who the person is.
 | `NEXT_PUBLIC_APP_SLUG` | No | URL-safe id for demo emails and export files. Derived from the name if omitted |
 | `NEXT_PUBLIC_DEMO_EMAIL_DOMAIN` | No | Domain for demo accounts. Default: `demo.{slug}.school` |
 | `NEXT_PUBLIC_DEMO_PASSPHRASE` | No | Shared demo sign-in passphrase |
-| `SENTRY_DSN` | No | Optional error monitoring. Do not send student payloads |
+| `SENTRY_DSN` | No | Optional error monitoring. Do not send student payloads. Not initialized in v0.8; stdout JSON logs are the supported path |
+| `LOG_REQUESTS` | No | JSON request lines on stdout. Default on. Set `false` to silence |
 | `HF_TOKEN` | No | Optional Hugging Face token for the how-to chatbot (`HUGGINGFACE_HUB_TOKEN` also works). Monthly free credits on Inference Providers. Unset = in-app guide answers only. Never send student records |
 | `HF_CHAT_MODEL` | No | Chat model id. Default: `Qwen/Qwen2.5-3B-Instruct:cheapest` |
 | `HF_CHAT_BASE_URL` | No | OpenAI-compatible HF router. Default: `https://router.huggingface.co/v1` |
@@ -209,6 +229,8 @@ The Compose file starts **Postgres**, the app, a **Caddy** proxy, and a small po
 npm run docker:up
 ```
 
+Leave that process running. Compose Watch rebuilds the **app image** when you save `src/`, `prisma/`, `public/`, or the Dockerfile (production Next.js, so a rebuild takes a minute, not hot reload). Saving `.env.local` restarts the app container without a rebuild. Host-only paths such as `.certs/` are ignored so they do not loop a build. For faster UI work against the same Postgres, keep using `npm run docker:db` and `npm run dev` below.
+
 Optional: `brew install mkcert && mkcert -install`, then put those certs in `.certs/` (or run `npm run dev:https` once) to avoid a browser warning.
 
 Open [https://127.0.0.1:43147](https://127.0.0.1:43147) or [http://127.0.0.1:43147](http://127.0.0.1:43147) (redirects to HTTPS). Stop with `npm run docker:down`. Volumes keep Postgres data (`pg-data`) and uploads (`app-uploads`).
@@ -239,9 +261,9 @@ The app still stores evidence files on disk, so keep **one app replica** until y
 Manifests are in `deploy/k8s` (namespace, config, secret, PVCs, Postgres StatefulSet, app Deployment, Service, Ingress).
 
 ```bash
-docker build -t iep-progress-tracker:0.7.0 .
-# Kind: kind load docker-image iep-progress-tracker:0.7.0
-# Minikube: minikube image load iep-progress-tracker:0.7.0
+docker build -t iep-progress-tracker:0.8.0 .
+# Kind: kind load docker-image iep-progress-tracker:0.8.0
+# Minikube: minikube image load iep-progress-tracker:0.8.0
 # Production: use ghcr.io/vrigzalejo/iep-progress-tracker:latest (published on merge to main)
 
 # Edit deploy/k8s/secret.yaml (AUTH_SECRET, POSTGRES_PASSWORD)
@@ -309,7 +331,7 @@ Residual risks: point production Postgres at encrypted volumes and backups; this
 - [ ] District retention schedule entered; `CRON_SECRET` set so the daily sweep can run
 - [ ] Parent consent workflow confirmed with your legal team (per linked student; re-ack on notice-version change)
 - [ ] Optional email configured for invites and family-message pings (SMTP or Resend)
-- [ ] Error monitoring configured **without** student payloads
+- [ ] Error monitoring: stdout JSON without student payloads (`npm run docker:logs`); optional Sentry only with PII scrubbing
 - [ ] Accessibility review (WCAG 2.2 AA) with keyboard and screen-reader testing
 - [ ] Incident response contact posted for staff
 - [ ] Data processing agreement if any subprocessors are added (including Vercel, Supabase, Neon, and Blob storage)

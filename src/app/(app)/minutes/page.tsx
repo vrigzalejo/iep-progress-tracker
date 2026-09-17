@@ -23,7 +23,7 @@ export default async function MinutesPage() {
           </p>
         </div>
         <Button asChild variant="secondary">
-          <Link href="/today">Today’s worklist</Link>
+          <Link href="/today">Today</Link>
         </Button>
       </header>
       {rows.length === 0 ? (
@@ -52,7 +52,19 @@ export default async function MinutesPage() {
                 <p className="mt-2 text-sm">
                   Absent {row.absent} · Declined {row.declined} · Makeup scheduled {row.makeupScheduled}
                 </p>
-                <div className="mt-3 overflow-x-auto">
+                <ul className="mt-3 space-y-1 text-sm md:hidden">
+                  {row.days.map((day) => (
+                    <li key={day.date}>
+                      {day.date.slice(5)}:{" "}
+                      {day.presentMinutes || day.absent || day.declined || day.makeup
+                        ? `${day.presentMinutes}m${day.absent ? ` / ${day.absent} abs` : ""}${
+                            day.makeup ? ` / ${day.makeup} mu` : ""
+                          }`
+                        : "—"}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-3 hidden overflow-x-auto md:block">
                   <table className="min-w-full text-sm">
                     <thead>
                       <tr className="text-left text-muted">
@@ -79,7 +91,7 @@ export default async function MinutesPage() {
                   </table>
                 </div>
                 {row.gap > 0 ? (
-                  <Button asChild size="sm" className="mt-3">
+                  <Button asChild variant="link" className="mt-3">
                     <Link href={`/hallway?studentId=${row.studentId}`}>Schedule makeup</Link>
                   </Button>
                 ) : null}
