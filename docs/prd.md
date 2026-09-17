@@ -1,11 +1,11 @@
 # Product Requirements Document
 
-**IEP Progress Tracker — after 0.7.0 through v1.0**
+**IEP Progress Tracker — after 0.8.0 through v1.0**
 
 | | |
 | --- | --- |
-| **Status** | Living roadmap (`0.7.0` shipped 2026-09-09; v0.8 is family comprehension, production sign-in, phone/tablet layout, the installable mobile app, and privacy-safe log monitoring) |
-| **Current product** | Meeting, digest, and filed-PDF MVP (`0.7.0`); fictional demo data until a district sets `NEXT_PUBLIC_DEMO_MODE=false` |
+| **Status** | Living roadmap (`0.8.0` shipped 2026-09-16; v1.0 is district hierarchy, rostering, coverage, and WCAG 2.2 AA) |
+| **Current product** | Family-readable IEP progress app (`0.8.0`); fictional demo data until a district sets `NEXT_PUBLIC_DEMO_MODE=false` |
 | **Audience** | Educators, related-service providers, school admins, parents/guardians |
 | **North star** | The fastest, most defensible way to log IEP progress in the moment and send home a report a family can actually read — without the product making IEP decisions. |
 
@@ -23,7 +23,7 @@ The app already covers the core loop:
 
 It is **not** a legal FERPA certification, **not** an IEP writer, and **not** a placement or services recommender. Charts and “on track / needs attention / goal met” badges describe **data against the written mastery rule**. That constraint stays.
 
-**v0.5** closed the production-privacy blockers that kept demo from being turned off. **v0.6** closed the “one goal, one form” bottleneck. **v0.7** adds an opt-in weekly digest, a projector-safe meeting room, and filed report/packet PDFs. **v0.8** is leftover family work, a production sign-in that does not still look like a demo, a phone/tablet shell that does not overflow or fight itself, the **same product as an installable phone/iPad app** (not a second native codebase), and **privacy-safe logs** operators can follow while testing.
+**v0.5** closed the production-privacy blockers that kept demo from being turned off. **v0.6** closed the “one goal, one form” bottleneck. **v0.7** adds an opt-in weekly digest, a projector-safe meeting room, and filed report/packet PDFs. **v0.8** shipped family Spanish, production sign-in copy, a phone/tablet shell, the installable home-screen app, privacy-safe logs, how-to chat coverage, and staff chrome. Remaining how-to coach follow-up (spotlight, focus trap, e2e) can trail into v1.0.
 
 ### Sign-in when demonstration mode is off (`NEXT_PUBLIC_DEMO_MODE=false`)
 
@@ -59,7 +59,7 @@ Sessions stay HTTP-only cookies, eight hours, idle sign-out (default 20 minutes)
 
 ## 3. What needs to improve (before new toys)
 
-P0 production-privacy work shipped in **0.5.0**. Daily-workflow P1 rows shipped in **0.6.0**. Meeting/digest/PDF shipped in **0.7.0**. Remaining rows below are the **v0.8** family, production-sign-in, and layout slice, then v1.0 model debt. Cool features still should not outrun a district review (object storage, `demo: false`, MFA or SSO).
+P0 production-privacy work shipped in **0.5.0**. Daily-workflow P1 rows shipped in **0.6.0**. Meeting/digest/PDF shipped in **0.7.0**. Family, production-sign-in, layout, installable app, logs, and staff chrome shipped in **0.8.0**. Remaining rows below are leftover how-to coach follow-up and **v1.0** model debt. Cool features still should not outrun a district review (object storage, `demo: false`, MFA or SSO).
 
 ### P0 — Production and privacy (shipped in 0.5.0)
 
@@ -392,7 +392,7 @@ Meeting room mode · server PDFs · family weekly digest · admin Schools list �
 
 **Done when:** an IEP meeting can run from the projector view, and a guardian who never bookmarks the portal still sees a weekly update they opted into.
 
-### v0.8 — “A family can read it without a demo banner” (shipped as `0.8.0`)
+### v0.8 — “A family can read it without a demo banner” (shipped 2026-09-16 as `0.8.0`)
 
 Spanish family UI · evidence gallery · staff-written home-carryover cards · production sign-in copy (no “demonstration” footer) · forgot / first-login password from the invite mail · caseload search filters · next student after Hallway save · phone and tablet shell · installable home-screen app · privacy-safe stdout logs (`npm run docker:logs`) · staff chrome (status badges vs action buttons, conversation message threads, report-studio list grouped by student).
 
@@ -441,6 +441,6 @@ Smallest useful slices, in the repo’s `{issue}-{slug}` style. v0.6 daily workf
 
 ## 9. Recommendation
 
-P0 safety shipped in 0.5.0. Daily workflow shipped in 0.6.0. Family digest, meeting room, filed PDFs, Schools, and Resend/SMTP mail shipped in 0.7.0. **v0.8** is family Spanish, evidence gallery, home-carryover cards, production sign-in copy, a phone/tablet shell, the same site as an installable app, privacy-safe logs, and staff chrome (badges vs buttons, conversation threads, report-studio list). Remaining how-to coach follow-up (spotlight, focus trap, e2e) can trail into v1.0.
+P0 safety shipped in 0.5.0. Daily workflow shipped in 0.6.0. Family digest, meeting room, filed PDFs, Schools, and Resend/SMTP mail shipped in 0.7.0. **v0.8** (`0.8.0`) shipped family Spanish, evidence gallery, home-carryover cards, production sign-in copy, a phone/tablet shell, the same site as an installable app, privacy-safe logs, how-to chat coverage, and staff chrome. Remaining how-to coach follow-up (spotlight, focus trap, e2e) can trail into v1.0.
 
 Land work the usual way: GitHub issue (what / who / done-when) → branch `{issue-number}-{short-slug}` off `development` → PR into `development` with `Fixes #N`. Do not commit this file to `development` or `main` directly.
