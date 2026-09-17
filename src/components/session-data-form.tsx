@@ -168,13 +168,13 @@ export function SessionDataForm({
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <Button type="button" className="min-h-16 text-base sm:min-h-20" onClick={() => addTrial("INDEPENDENT")}>
+              <Button type="button" className="min-h-16 rounded-2xl text-base sm:min-h-20" onClick={() => addTrial("INDEPENDENT")}>
                 Independent
               </Button>
               <Button
                 type="button"
                 variant="secondary"
-                className="min-h-16 text-base"
+                className="min-h-16 rounded-2xl text-base"
                 onClick={() => addTrial("PROMPTED")}
               >
                 Prompted
@@ -182,7 +182,7 @@ export function SessionDataForm({
               <Button
                 type="button"
                 variant="danger"
-                className="min-h-16 text-base"
+                className="min-h-16 rounded-2xl text-base"
                 onClick={() => addTrial("INCORRECT")}
               >
                 Incorrect

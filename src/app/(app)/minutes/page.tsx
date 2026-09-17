@@ -23,7 +23,7 @@ export default async function MinutesPage() {
           </p>
         </div>
         <Button asChild variant="secondary">
-          <Link href="/today">Today’s worklist</Link>
+          <Link href="/today">Today</Link>
         </Button>
       </header>
       {rows.length === 0 ? (
@@ -91,7 +91,7 @@ export default async function MinutesPage() {
                   </table>
                 </div>
                 {row.gap > 0 ? (
-                  <Button asChild size="sm" className="mt-3">
+                  <Button asChild variant="link" className="mt-3">
                     <Link href={`/hallway?studentId=${row.studentId}`}>Schedule makeup</Link>
                   </Button>
                 ) : null}

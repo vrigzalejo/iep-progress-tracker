@@ -20,6 +20,7 @@ import {
   type ProgressCode,
   type ServiceArea,
 } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Report studio" };
 
@@ -77,75 +78,70 @@ export default async function ReportStudioPage({
       )}
       {!period ? null : (
         <>
-          <Card className="overflow-x-auto">
-            <CardTitle>Caseload grid</CardTitle>
-            <ul className="mt-4 space-y-3 md:hidden">
-              {rows.map((row) => (
-                <li key={row.goalId} className="rounded-lg border border-border p-3">
-                  <p className="font-semibold">{row.studentName}</p>
-                  <p className="text-sm">{row.goalSummary}</p>
-                  <div className="mt-2">
-                    <StatusIndicator signal={row.signal} />
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    {row.written ? (
-                      <ProgressCodeBadge code={row.progressCode as ProgressCode} />
-                    ) : (
-                      <Badge tone="gold">Missing</Badge>
-                    )}
-                    <Button asChild size="sm" variant="secondary">
-                      <Link href={`/reports/studio?periodId=${period.id}&goalId=${row.goalId}`}>
-                        Write
-                      </Link>
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <table className="mt-4 hidden min-w-full text-sm md:table">
-              <thead>
-                <tr className="text-left text-muted">
-                  <th className="px-2 py-2">Student</th>
-                  <th className="px-2 py-2">Goal</th>
-                  <th className="px-2 py-2">Data signal (reference)</th>
-                  <th className="px-2 py-2">Period comment</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.goalId} className="border-t border-border">
-                    <td className="px-2 py-2 font-semibold">{row.studentName}</td>
-                    <td className="px-2 py-2">
-                      <p>{row.goalSummary}</p>
-                      <p className="text-xs text-muted">
-                        {SERVICE_AREA_LABELS[row.serviceArea as ServiceArea] ?? row.serviceArea}
-                      </p>
-                    </td>
-                    <td className="px-2 py-2">
-                      <StatusIndicator signal={row.signal} />
-                    </td>
-                    <td className="px-2 py-2">
-                      {row.written ? (
-                        <ProgressCodeBadge code={row.progressCode as ProgressCode} />
-                      ) : (
-                        <Badge tone="gold">Missing</Badge>
-                      )}
-                      <Button asChild size="sm" variant="secondary" className="ml-2">
-                        <Link href={`/reports/studio?periodId=${period.id}&goalId=${row.goalId}`}>
-                          Write
-                        </Link>
-                      </Button>
-                    </td>
-                  </tr>
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle>Caseload</CardTitle>
+              {missing.length > 0 ? (
+                <Badge tone="gold">{missing.length} missing</Badge>
+              ) : (
+                <Badge tone="forest">All written</Badge>
+              )}
+            </div>
+            {rows.length === 0 ? (
+              <p className="mt-4 text-sm text-muted">No IEP goals are on this caseload yet.</p>
+            ) : (
+              <ul className="mt-4 divide-y divide-border">
+                {groupStudioRows(rows).map((group) => (
+                  <li key={group.studentId} className="py-3 first:pt-0 last:pb-0">
+                    <p className="font-semibold">{group.studentName}</p>
+                    <ul className="mt-2 space-y-2">
+                      {group.goals.map((row) => {
+                        const active = selected?.goalId === row.goalId;
+                        return (
+                          <li
+                            key={row.goalId}
+                            className={cn(
+                              "rounded-xl px-3 py-2",
+                              active ? "bg-paper" : "hover:bg-paper/70",
+                            )}
+                          >
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="min-w-0">
+                                <p className="line-clamp-2 text-sm">{row.goalSummary}</p>
+                                <p className="mt-0.5 text-xs text-muted">
+                                  {SERVICE_AREA_LABELS[row.serviceArea as ServiceArea] ?? row.serviceArea}
+                                </p>
+                              </div>
+                              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                                <StatusIndicator signal={row.signal} />
+                                {row.written ? (
+                                  <ProgressCodeBadge code={row.progressCode as ProgressCode} />
+                                ) : (
+                                  <Badge tone="gold">Missing</Badge>
+                                )}
+                                <Button asChild variant="link">
+                                  <Link href={`/reports/studio?periodId=${period.id}&goalId=${row.goalId}`}>
+                                    Write
+                                  </Link>
+                                </Button>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </li>
                 ))}
-              </tbody>
-            </table>
+              </ul>
+            )}
           </Card>
           {selected ? (
             <Card>
-              <CardTitle>
-                Write: {selected.studentName} · {selected.goalSummary}
-              </CardTitle>
+              <p className="text-sm font-semibold uppercase tracking-wide text-forest">
+                {selected.studentName}
+              </p>
+              <CardTitle className="mt-1">Period comment</CardTitle>
+              <p className="mt-2 text-sm text-muted">{selected.goalSummary}</p>
               <p className="mt-2 text-sm text-muted">
                 Data signal is shown as reference only. It does not choose the progress code.
               </p>
@@ -230,4 +226,19 @@ export default async function ReportStudioPage({
       )}
     </div>
   );
+}
+
+function groupStudioRows<T extends { studentId: string; studentName: string }>(rows: T[]) {
+  const groups: { studentId: string; studentName: string; goals: T[] }[] = [];
+  const index = new Map<string, number>();
+  for (const row of rows) {
+    const existing = index.get(row.studentId);
+    if (existing === undefined) {
+      index.set(row.studentId, groups.length);
+      groups.push({ studentId: row.studentId, studentName: row.studentName, goals: [row] });
+    } else {
+      groups[existing]?.goals.push(row);
+    }
+  }
+  return groups;
 }

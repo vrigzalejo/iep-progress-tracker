@@ -45,7 +45,7 @@ Ask about any staff screen:
 
 **Sessions** — Present / Absent / Declined / Makeup; trial pad (Independent, Prompted, Incorrect) or frequency/score; setting, minutes, accommodations, home carryover, optional evidence file
 
-**Reports** — [Report studio](/reports/studio) is the caseload × period grid (cards on a phone). [Reports](/reports) still opens one student. Staff write the progress code and narrative. Snippets are district phrases you paste. **Meeting room** is the projector view. **File PDF** stores a packet or report as an evidence-class file.
+**Reports** — [Report studio](/reports/studio) is the caseload × period list, grouped by student. [Reports](/reports) still opens one student. Staff write the progress code and narrative. Snippets are district phrases you paste. **Meeting room** is the projector view. **File PDF** stores a packet or report as an evidence-class file.
 
 **Find and talk** — header search with filters (school, grade, service area, data signal, overdue report) · [Messages](/messages) threads with unread badges · profile thread (Family vs Staff only). A family-thread note can email assigned staff; the mail itself has no student records
 
@@ -235,7 +235,7 @@ This demonstration school is already filled with fictional students so you can c
         "this page",
         "this screen",
       ],
-      body: `Staff [Dashboard](/dashboard) is a work list, not an IEP decision engine. Greeting uses your first name. **Open caseload** goes to [Students](/students).
+      body: `Staff [Dashboard](/dashboard) is a work list, not an IEP decision engine. Greeting uses your first name. **Caseload** goes to [Students](/students).
 
 Four counts: (1) **Upcoming reporting** — active goals with a report due in 14 days, (2) **Needs recent data** — goals without a fresh present-session note, (3) **IEP reviews** — annual reviews due in 30 days, (4) **Minutes gap** — assigned services below this week’s prescribed minutes. Open a row to the student or goal.
 
@@ -325,7 +325,7 @@ On an open goal you can edit those fields, add more objectives, see the trend ch
         "setting",
         "probe",
       ],
-      body: `From [Today](/today), tap **Log in hallway** or **Open hallway** for huge trial buttons. After save, Hallway opens the next student still on Today. On a profile, **Hallway** is that same pad. **Log a session** stays on this student and does not jump. Choose outcome: Present, Absent, Declined/refused, or Makeup scheduled (date and place). Only **Present** sessions count toward the consecutive mastery streak. Offline hallway saves stay on this device until Wi‑Fi returns—they are never dropped silently.
+      body: `From [Today](/today), tap **Log in hallway** or **Hallway** for huge trial buttons. After save, Hallway opens the next student still on Today. On a profile, **Hallway** is that same pad. **Log a session** stays on this student and does not jump. Choose outcome: Present, Absent, Declined/refused, or Makeup scheduled (date and place). Only **Present** sessions count toward the consecutive mastery streak. Offline hallway saves stay on this device until Wi‑Fi returns—they are never dropped silently.
 
 For trial-based goals (percent accuracy or independent trials), set prompt level first, then tap Independent, Prompted, or Incorrect. Undo last if needed. Frequency and duration goals use +/− counts. Rubric and rate enter a numeric score. Same form: date, setting (classroom, pull-out, group, telehealth, home), minutes delivered, group size, condition (typical supports, without extras, 1:1, small group), and accommodations.
 
@@ -352,7 +352,7 @@ Optional: session notes, home carryover (families can see this), and one photo o
 **Goal met** — recent consecutive sessions meet the written mastery rule (data snapshot, not an IEP vote).
 **On track** — scores are moving toward the target.
 **Needs attention** — scores slowed/declined or a report date is close; review with the IEP team.
-**Needs recent data** — no fresh present-session note.
+**Needs data** — no fresh present-session note.
 
 The goal page also stacks **prompt levels over time** (independent, gesture, verbal, model, physical). That chart is share of trials, not a recommendation to change the prompt hierarchy.
 
@@ -375,7 +375,7 @@ These labels never choose an IEP progress code. Staff pick that code on the peri
         "insufficient",
         "comment",
       ],
-      body: `Open [Report studio](/reports/studio) for the whole caseload × period grid (missing vs written). Click **Write** to enter the IEP progress code and narrative. The data-status badge is reference only. You can bulk-mark remaining goals **not yet introduced** (type NOT_INTRODUCED). Save staff-authored snippets to paste—never generated per student. [Reports](/reports) still opens one student: print preview or period comments.
+      body: `Open [Report studio](/reports/studio) for the whole caseload × period list, grouped by student (missing vs written). Click **Write** to enter the IEP progress code and narrative. The data-status badge is reference only. You can bulk-mark remaining goals **not yet introduced** (type NOT_INTRODUCED). Save staff-authored snippets to paste—never generated per student. [Reports](/reports) still opens one student: print preview or period comments.
 
 Parents open the same report from [Family home](/parent) and can switch **English / Español** on that page. Use **Print** in the browser—the gold banner, sidebar, and this assistant hide. Staff can **File PDF** to store a report as an evidence-class file (authenticated download, not a public URL). Codes are professional judgment, not chatbot output.`,
     },
@@ -424,7 +424,7 @@ On [Search](/search) you can also filter by school, grade, service area, data si
       title: "Messages",
       hrefs: ["/messages"],
       keywords: ["message", "messages", "thread", "family", "staff", "note", "contact", "inbox"],
-      body: `[Messages](/messages) lists one thread per student with an unread badge. Open a thread to mark it read. Staff can post a **family** note (parents see it) or a **staff-only** note. Family messages can email assigned staff (no student records in the mail). Parents only see family messages for linked students.
+      body: `[Messages](/messages) lists one thread per student, including students with no notes yet. Unread threads show a badge. Open a thread to mark it read. Your notes sit on the right; the other person’s on the left. Staff can post a **family** note (parents see it) or a **staff-only** note (gold background). Family messages can email assigned staff (no student records in the mail). Parents only see family messages for linked students.
 
 Send a new note from the thread, the student profile, or [Family home](/parent). Keep extra identifiers and other families’ information out of the thread.`,
     },
@@ -600,7 +600,7 @@ When you **Log a session**, you can attach the entry to one objective or to the 
       hrefs: ["/today", "/hallway"],
       roles: ["ADMINISTRATOR", "EDUCATOR", "PROVIDER"],
       keywords: ["today", "hallway", "worklist", "offline", "pwa", "ipad", "queue"],
-      body: `[Today](/today) lists students still owed a session or minutes this week. **Open hallway** and **Log in hallway** both pass the next student on the list. After save, hallway opens that student. Opening Hallway from a profile stays on that student even if they are not on Today. Install the app from the browser if you want a home-screen icon; the start page is the site home (/) — staff dashboard or family home after sign-in.
+      body: `[Today](/today) lists students still owed a session or minutes this week. **Hallway** and **Log in hallway** both pass the next student on the list. After save, hallway opens that student. Opening Hallway from a profile stays on that student even if they are not on Today. Install the app from the browser if you want a home-screen icon; the start page is the site home (/) — staff dashboard or family home after sign-in.
 
 If the hallway Wi‑Fi drops, the session stays in a queue on this device and syncs when you are back online. A failed sync stays visible. Optional device PIN is only for a shared cart—it does not replace sign-in.`,
     },

@@ -6,21 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input, Label, Textarea } from "@/components/ui/input";
-import { requireUser, getStudentDetail, listStudentEvidence } from "@/lib/queries";
+import { requireUser, getStudentDetail, listStudentEvidence, markStudentMessagesRead } from "@/lib/queries";
 import { EvidenceGallery } from "@/components/evidence-gallery";
+import { MessageThread } from "@/components/message-thread";
 import { can, isStaff } from "@/lib/permissions";
 import {
   addAccommodationAction,
   archiveAccommodationAction,
-  sendMessageAction,
   updateStudentDatesAction,
 } from "@/app/actions";
-import {
-  MESSAGE_VISIBILITY_LABELS,
-  SERVICE_AREA_LABELS,
-  type MessageVisibility,
-  type ServiceArea,
-} from "@/lib/constants";
+import { SERVICE_AREA_LABELS, type ServiceArea } from "@/lib/constants";
 import { deliveredMinutesInRange } from "@/lib/progress";
 import { endOfUtcWeek, formatDate, isoDate, startOfUtcWeek } from "@/lib/utils";
 
@@ -41,6 +36,7 @@ export default async function StudentPage({
   }
   const student = await getStudentDetail(user, id);
   if (!student) notFound();
+  await markStudentMessagesRead(user, student.id);
   const evidence = isStaff(user.role) ? await listStudentEvidence(user, id) : [];
   const weekStart = startOfUtcWeek();
   const weekEnd = endOfUtcWeek();
@@ -55,22 +51,22 @@ export default async function StudentPage({
             Grade {student.grade} · {student.school}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {can(user.role, "goal.create") ? (
             <Button asChild>
               <Link href={`/students/${student.id}/goals/new`}>Add IEP goal</Link>
             </Button>
           ) : null}
-          <Button asChild variant="secondary">
+          <Button asChild variant="link">
             <Link href={`/students/${student.id}/carryover`}>Home practice cards</Link>
           </Button>
-          <Button asChild variant="secondary">
+          <Button asChild variant="link">
             <Link href={`/reports?studentId=${student.id}`}>Build report</Link>
           </Button>
-          <Button asChild variant="secondary">
+          <Button asChild variant="link">
             <Link href={`/reports/${student.id}/meeting`}>Meeting packet</Link>
           </Button>
-          <Button asChild variant="secondary">
+          <Button asChild variant="link">
             <Link href={`/reports/${student.id}/meeting/room`}>Meeting room</Link>
           </Button>
         </div>
@@ -223,8 +219,8 @@ export default async function StudentPage({
                     </div>
                     <StatusIndicator signal={goal.signal} />
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Button asChild variant="secondary">
+                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <Button asChild variant="link">
                       <Link href={`/goals/${goal.id}`}>Open goal and chart</Link>
                     </Button>
                     {can(user.role, "progress.create") ? (
@@ -234,7 +230,7 @@ export default async function StudentPage({
                             Hallway
                           </Link>
                         </Button>
-                        <Button asChild variant="secondary">
+                        <Button asChild variant="link">
                           <Link href={`/goals/${goal.id}/progress/new`}>Log a session</Link>
                         </Button>
                       </>
@@ -285,49 +281,26 @@ export default async function StudentPage({
 
       <section className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" aria-hidden="true" />
-            {isStaff(user.role) ? "Team and family messages" : "Messages with the team"}
+          <CardTitle className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" aria-hidden="true" />
+              {isStaff(user.role) ? "Team and family messages" : "Messages with the team"}
+            </span>
+            <Button asChild variant="link">
+              <Link href={`/messages/${student.id}`}>Open thread</Link>
+            </Button>
           </CardTitle>
-          <ul className="mt-4 max-h-80 space-y-3 overflow-auto">
-            {student.messages.map((message) => (
-              <li key={message.id} className="rounded-lg bg-paper px-3 py-2">
-                <p className="text-xs text-muted">
-                  {message.fromUser.name} · {formatDate(message.createdAt)}
-                  {isStaff(user.role) ? (
-                    <>
-                      {" "}
-                      · {MESSAGE_VISIBILITY_LABELS[message.visibility as MessageVisibility]}
-                    </>
-                  ) : null}
-                </p>
-                <p>{message.body}</p>
-              </li>
-            ))}
-            {student.messages.length === 0 ? (
-              <li className="text-sm text-muted">No messages yet. Keep notes short and supportive.</li>
-            ) : null}
-          </ul>
-          <form action={sendMessageAction} className="mt-4 space-y-3">
-            <input type="hidden" name="studentId" value={student.id} />
-            <input type="hidden" name="returnTo" value={`/students/${student.id}`} />
-            <Label htmlFor="body">Write a message</Label>
-            <Textarea id="body" name="body" required maxLength={2000} placeholder="Share an update the family or team can use." />
-            {isStaff(user.role) ? (
-              <fieldset>
-                <legend className="mb-2 text-sm font-semibold">Who can see this</legend>
-                <label className="flex min-h-11 items-center gap-2">
-                  <input type="radio" name="visibility" value="FAMILY" defaultChecked className="h-4 w-4" />
-                  Family thread
-                </label>
-                <label className="flex min-h-11 items-center gap-2">
-                  <input type="radio" name="visibility" value="STAFF" className="h-4 w-4" />
-                  Staff only — not shown in the parent portal
-                </label>
-              </fieldset>
-            ) : null}
-            <Button type="submit">Send message</Button>
-          </form>
+          <div className="mt-4">
+            <MessageThread
+              messages={student.messages}
+              currentUserId={user.id}
+              studentId={student.id}
+              returnTo={`/students/${student.id}`}
+              isStaffUser={isStaff(user.role)}
+              compact
+              composerId="profile-message-body"
+            />
+          </div>
         </Card>
         {isStaff(user.role) ? (
           <Card>
